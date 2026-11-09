@@ -127,7 +127,7 @@ const TRL={
  sl:{n:'Semi log trailer',cls:'semi',bar:6.2,co:3,hw:4,hh:1,cap:40,cargo:'logs',king:1,cost:700},
  dl:{n:'Dolly',cls:'dolly',bar:2,co:0,hw:.5,hh:1,cap:0,cargo:'none',fifth:-.2,cost:150}};
 let nid=1;const veh={},trl={},cnt={};
-function addVeh(kind,o){o=o||{};const id='v'+nid++;cnt[kind]=(cnt[kind]||0)+1;return veh[id]={id,kind,bed:o.bed||(kind=='dump'?'coal':null),color:o.color||null,name:TKINDS[kind].n+(o.bed=='logs'?' (log bed)':'')+' #'+cnt[kind],out:false,x:0,y:0,a:0,v:0,st:0,fuel:TKINDS[kind].fuel,cargo:{type:null,amt:0},tr:null}}
+function addVeh(kind,o){o=o||{};const id='v'+nid++;cnt[kind]=(cnt[kind]||0)+1;return veh[id]={id,kind,bed:o.bed||(kind=='dump'?'coal':null),color:o.color||null,name:TKINDS[kind].n+(kind=='pickup'&&o.bed?' ('+o.bed+' bed)':o.bed=='logs'?' (log bed)':'')+' #'+cnt[kind],out:false,x:0,y:0,a:0,v:0,st:0,fuel:TKINDS[kind].fuel,cargo:{type:null,amt:0},tr:null}}
 function addTrl(kind,col){const id='t'+nid++;cnt[kind]=(cnt[kind]||0)+1;return trl[id]={id,on:true,kind,color:col||null,name:TRL[kind].n+' #'+cnt[kind],out:false,x:0,y:0,b:0,hx:0,hy:0,kx:0,ky:0,coupled:false,host:null,tr:null,cargo:{type:null,amt:0}}}
 const NOTR={on:false,kind:null,coupled:false,host:null,cargo:{type:null,amt:0}};
 const JACK=1.75,TURNBRAKE=.5,STEERRATE=1,VINNER=.5,FUELP=1.5;
@@ -182,7 +182,7 @@ function pushOut(o,ox,oy,oa,x0,x1,h,r){
 // ----- cargo carriers -----
 function rigCs(){const o=[];if(!T.out)return o;
  for(const t of chain()){const tr=TRL[t.kind];if(tr.cap>0)o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>Math.abs(T.v)<1.2})}
- if(KD.cap>0)o.push({cg:T.cargo,cap:KD.cap,cargo:T.bed||'any',fm:20,ox:T.x,oy:T.y,a:T.a,e0:KD.b0,e1:KD.b1,slow:()=>Math.abs(T.v)<1.2});
+ if(KD.cap>0)o.push({cg:T.cargo,cap:T.bed==='fuel'?KD.cap*20:KD.cap,cargo:T.bed||'any',fm:20,ox:T.x,oy:T.y,a:T.a,e0:KD.b0,e1:KD.b1,slow:()=>Math.abs(T.v)<1.2});
  return o}
 function carriers(){const o=P.driving?rigCs():[];
  for(const t of Object.values(trl)){const k=t.kind;if(t.out&&TRL[k].cap>0&&!chainOf(T).includes(t)&&(!t.coupled||'b' in t.host)){const tr=TRL[k];o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>true})}}
@@ -266,7 +266,7 @@ function cfgView(){const isT=cfg.t=='t',d=isT?TRL[cfg.k]:TKINDS[cfg.k],bt=(a,k,t
  h+=`<div class='r'><img src='${icon(cfg.k,isT,cfg.col,cfg.bed)}' alt=''><span><b>${isT?(cfg.g=='dolly'?'Dolly':cfg.g[0].toUpperCase()+cfg.g.slice(1)+' trailer'):d.n}</b><small>${isT?trInfo(d):(d.cap?d.cap+' t bed':'no bed')+' · '+d.fuel+' L tank · tows '+d.tl.join(' / ')}</small></span></div>`;
  if(isT&&TGROUPS[cfg.g].length>1)h+=`<div class='r'><span><b>Cargo</b></span></div><div class='tabs'>${TGROUPS[cfg.g].map(k=>bt('cvar',k,VARN[k]+' · $'+TRL[k].cost,cfg.k==k)).join('')}</div>`;
  if(!isT&&cfg.k=='dump')h+=`<div class='r'><span><b>Bed</b></span></div><div class='tabs'>${bt('cbed','coal','Dumpster (coal)',cfg.bed=='coal')}${bt('cbed','logs','Log bed',cfg.bed=='logs')}</div>`;
- if(!isT&&cfg.k=='pickup')h+=`<div class='r'><small>Open bed: carries coal, logs or fuel (up to ${d.cap*20} L of fuel).</small></div>`;
+ if(!isT&&cfg.k=='pickup')h+=`<div class='r'><span><b>Bed</b><small>Open bed carries coal, logs or fuel (up to ${d.cap*20} L of fuel).</small></span></div><div class='tabs'>${bt('cbed','','Open bed (any)',!cfg.bed)}${bt('cbed','coal','Coal bed',cfg.bed=='coal')}${bt('cbed','logs','Log bed',cfg.bed=='logs')}${bt('cbed','fuel','Fuel tank bed',cfg.bed=='fuel')}</div>`;
  if(!(isT&&cfg.g=='dolly'))h+=`<div class='r'><span><b>Colour</b></span></div><div class='sw'>${PAL.map(c=>bt('ccol',c||'',c?'':'Std',0,'background:'+(c||'#555')+';border:2px solid '+((cfg.col||null)==c?'#ffd166':'#fff4'))).join('')}</div>`;
  return h+`<div class='r'><span><b>Price</b><small>Appears in the shop lot, ready to drive</small></span><button data-a='buycfg'${cash<d.cost?' disabled':''}>Buy $${d.cost}</button></div>`}
 function renderGarage(){
@@ -316,7 +316,7 @@ $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
  else if(a=='cfgt'){cfg={t:'t',k,g:Object.keys(TGROUPS).find(x=>TGROUPS[x].includes(k)),col:null};pmsg=''}
  else if(a=='cback'){cfg=null;pmsg=''}
  else if(a=='cvar')cfg.k=k;
- else if(a=='cbed')cfg.bed=k;
+ else if(a=='cbed')cfg.bed=k||null;
  else if(a=='ccol')cfg.col=k||null;
  else if(a=='buycfg'){const d=cfg.t=='t'?TRL[cfg.k]:TKINDS[cfg.k];if(cash>=d.cost){const isT=cfg.t=='t',o=isT?addTrl(cfg.k,cfg.col):addVeh(cfg.k,{bed:cfg.bed,color:cfg.col});if(spawnShop(o,isT)){cash-=d.cost;pmsg='Bought: '+o.name+'. It is in the shop lot (pink rectangle). Walk to it and press F, or hitch it.'}else{delete (isT?trl:veh)[o.id];cnt[cfg.k]--;pmsg='The shop lot is full. Move something out of the pink rectangle first.'}}}
  else if(a=='buyv'){const d=TKINDS[k];if(used()>=SLOTS.n)pmsg='The garage is full ('+used()+'/'+SLOTS.n+' slots). Upgrade it at the garage upgrade pad first.';else if(cash>=d.cost){cash-=d.cost;pmsg='Bought: '+addVeh(k).name+'. It is waiting in your garage.'}}
@@ -549,7 +549,7 @@ function drawPickup(v){const u=S;
  g.save();g.translate(v.x,v.y);g.rotate(v.a);
  g.fillStyle='#0003';g.fillRect(-u+2,-u+3,4*u,2*u);
  wheel(0,-.95,0);wheel(0,.95,0);wheel(2.4,-.95,v.st);wheel(2.4,.95,v.st);
- g.fillStyle='#8f6f10';g.fillRect(-u,-u,2.4*u,2*u);g.fillStyle='#232326';g.fillRect(-.85*u,-.8*u,2.1*u,1.6*u);cargoShape(-.85,1.25,.8,v.cargo,v.cargo.type==='fuel'?100:5);
+ g.fillStyle='#8f6f10';g.fillRect(-u,-u,2.4*u,2*u);g.fillStyle=v.bed==='logs'?'#5b4a36':v.bed==='fuel'?'#3a3f47':'#232326';g.fillRect(-.85*u,-.8*u,2.1*u,1.6*u);cargoShape(-.85,1.25,.8,v.cargo,v.bed==='fuel'||v.cargo.type==='fuel'?100:5);if(v.bed==='logs')stakes(-1,1.4);
  g.fillStyle=v.color||'#2f6db5';g.fillRect(1.4*u,-u,1.6*u,2*u);g.fillStyle='#9fd3e8';g.fillRect(1.7*u,-.8*u,.5*u,1.6*u);
  g.fillStyle='#fff8c8';g.fillRect(3*u,-.9*u,.15*u,.4*u);g.fillRect(3*u,.5*u,.15*u,.4*u);
  g.restore()}
