@@ -31,7 +31,7 @@ body.mapmode #hud,body.mapmode #tbtn,body.mapmode #tp,body.mapmode #gp,body.mapm
 #tbtn{position:fixed;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:6;background:var(--panel);color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;touch-action:auto}
 #tp{display:none;position:fixed;right:12px;top:calc(env(safe-area-inset-top,0px) + 50px);z-index:6;width:min(86vw,260px);background:rgba(18,22,18,.96);border:1px solid #fff3;border-radius:10px;padding:12px 14px;font-size:14px;touch-action:auto}
 #tp b{color:var(--accent)}#tp label{display:block;margin:10px 0 4px;font-size:12px;opacity:.8}
-#tp .row{display:flex;gap:6px}#tp input{flex:1;min-width:0;background:#0d120d;color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 8px;font:inherit}
+#tp .row{display:flex;gap:6px}#tp input,#tp select{flex:1;min-width:0;background:#0d120d;color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 8px;font:inherit}
 #tp button{background:#2b3a2b;color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
 #touch{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:none;justify-content:space-between;align-items:flex-end;padding:0 max(12px,env(safe-area-inset-left,0px));pointer-events:none;z-index:3;--bs:min(58px,14vw);--js:min(140px,36vw)}
 #touch>div{display:grid;gap:8px;pointer-events:none}
@@ -57,7 +57,7 @@ html,body,#hud,#bl,#msg,#touch{-webkit-user-select:none;user-select:none;-webkit
  <div class="p" id="hk"></div>
 </div>
 <button id="tbtn">Test</button>
-<div id="tp"><b>Test</b> · debug<label for="tcash">Cash (set to)</label><div class="row"><input id="tcash" type="number" step="100" inputmode="numeric" placeholder="e.g. 5000"><button id="tset">Set</button></div><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tbed" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Bed type change in the garage</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tcol" type="checkbox" checked style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Collision (kerbs, walls, buildings)</span></label><div id="tmsg" style="min-height:18px;margin-top:8px;font-size:12px;color:#ffd29f"></div></div>
+<div id="tp"><b>Test</b> · debug<label for="tcash">Cash (set to)</label><div class="row"><input id="tcash" type="number" step="100" inputmode="numeric" placeholder="e.g. 5000"><button id="tset">Set</button></div><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tbed" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Bed type change in the garage</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tcol" type="checkbox" checked style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Collision (kerbs, walls, buildings)</span></label><label for="ttp">Teleport player to</label><div class="row"><select id="ttp"></select><button id="ttpgo">Go</button></div><div id="tmsg" style="min-height:18px;margin-top:8px;font-size:12px;color:#ffd29f"></div></div>
 <div id="gp"></div>
 <div id="bl"><div class="p" id="selp" style="display:none;align-items:center"></div><div id="vd" class="p" style="display:none"><div id="vn"></div><div class="vr">Load <span id="cl"></span></div><div class="bar"><i id="load"></i></div><div id="dial"></div><div class="vr" style="text-align:center;margin:0 0 2px;min-height:15px"><b id="spd"></b></div><div class="vr">Fuel <span id="fl"></span></div><div class="bar"><i id="fbar"></i></div></div></div>
 <div id="msg"></div>
@@ -198,7 +198,7 @@ const padOn=q=>q.exit||q.minein?false:q.own?!!(IN&&IN.o.n===q.own):q.up?!!(IN&&q
 // ---------- input ----------
 const K={};
 const keys={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right',' ':'brake'};
-addEventListener('keydown',e=>{if(e.target&&e.target.tagName=='INPUT'){if(e.key=='Enter')$('tset').click();return}const k=e.key.toLowerCase();if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){mapAxis^=1;return}const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='f'){interact();return}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
+addEventListener('keydown',e=>{if(e.target&&e.target.tagName=='INPUT'){if(e.key=='Enter')$('tset').click();return}const k=e.key.toLowerCase();if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){mapPiece=(mapPiece+1)%PIECES.length;return}const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='f'){interact();return}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
 addEventListener('keyup',e=>{{const m=MKEYS[e.key.toLowerCase()];if(m)MK[m]=0}const k=keys[e.key.toLowerCase()];if(k)K[k]=0});
 document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();K[k]=1;b.classList.add('dn');b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>{K[k]=0;b.classList.remove('dn')}));b.addEventListener('contextmenu',e=>e.preventDefault())});
 {const st=$('stick'),kn=$('knob');let pid=null;JOY.g=1;
@@ -321,6 +321,8 @@ let cash=0;const money=c=>Math.abs(c-Math.round(c))<.005?String(Math.round(c)):c
 let bedCust=false;   // the bed type can only be changed in the garage while this test switch is on
 $('tcol').onchange=()=>{COLL=$('tcol').checked;$('tmsg').textContent='Collision: '+(COLL?'ON':'OFF')+'.'};
 $('tbed').onchange=()=>{bedCust=$('tbed').checked;$('tmsg').textContent='Bed type change in the garage: '+(bedCust?'ON':'OFF')+'.';if(panelOpen)renderGarage()};
+{const sel=$('ttp');sel.innerHTML=OFFICES.map((o,i)=>'<option value="'+i+'">'+o.n.charAt(0).toUpperCase()+o.n.slice(1)+'</option>').join('');   /* the player appears just outside the building's door */
+ $('ttpgo').onclick=()=>{const o=OFFICES[+sel.value];if(!o)return;if(IN){IN=null;Z=Zsave}P.driving=false;if(o.rot){P.x=o.X-28;P.y=o.Y+75;P.a=Math.PI}else{P.x=o.X+75;P.y=o.Y+(o.eh||66*(o.rooms||2))+28;P.a=Math.PI/2}cam.x=P.x;cam.y=P.y;$('tmsg').textContent='Player moved to the '+o.n+'.'}}
 $('tbtn').onclick=()=>{const o=$('tp').style.display!=='block';$('tp').style.display=o?'block':'none';if(o){$('tcash').value=Math.floor(cash);$('tmsg').textContent=''}};
 $('tset').onclick=()=>{const v=parseFloat($('tcash').value);if(isNaN(v))return $('tmsg').textContent='Enter a number.';cash=v;$('tmsg').textContent='Cash set to $'+Math.floor(v)+'.'};
 
@@ -1029,7 +1031,7 @@ const fh=P.driving?freeHost():null;
   g.strokeStyle='rgba(255,170,60,.85)';g.lineWidth=2;g.setLineDash([4,5]);g.stroke();g.setLineDash([]);
   const st=nearTip(fh);
   if(st){const p=tipPt(st);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(p.x,p.y,10,0,7);g.stroke();txt('C: couple',p.x,p.y-16,'#ffd166')}}}
-function drawPlayer(){if(IN){/* drawn at the size he has outside: the room is zoomed in, so he is scaled down by the zoom ratio */const k=Math.max(.15,Math.min(3,Zsave/Z));g.save();g.translate(P.x,P.y);g.scale(k,k);g.translate(-P.x,-P.y);drawPlayer0();g.restore();return}drawPlayer0()}
+function drawPlayer(){/* the player keeps one size on screen everywhere, inside and out, whatever the zoom: he is drawn at the size he has at zoom 1 */const k=Math.max(.15,Math.min(4,1/Z));g.save();g.translate(P.x,P.y);g.scale(k,k);g.translate(-P.x,-P.y);drawPlayer0();g.restore()}
 function drawPlayer0(){
  const seated=P.driving&&T.out?[T,-1]:P.pass?[P.pass,P.seatSd]:null;
  let px=P.x,py=P.y,pa=P.a,r=S*.55;
@@ -1105,8 +1107,8 @@ function drawMap(mx,my,mw,mh,s,big,full){
   g.restore();g.restore()}
 
 // ---------- the map view (M): a screen of its own, the game is paused and the HUD changes to the build tools ----------
-const MTOOLS=[{k:'road',n:'Roads',d:'Click or drag over free ground to lay street tiles. They join the roads next to them; where 3 or more meet there is a junction. R turns a lone piece.'},{k:'big',n:'Big junction',d:'Click a junction to make it a 3x3 intersection with big rounded corners. The other 8 tiles must be grass or road (a road there is removed if it leads nowhere else).'},{k:'lot',n:'Lots & buildings',d:'Place a new asphalt lot with a gate and a building.  (not in yet)'},{k:'yard',n:'Yards & parking',d:'Paint gravel yards and parking next to a lot.  (not in yet)'},{k:'del',n:'Demolish',d:'Click a road or big junction you built to remove it.'}];
-let mapAxis=0,mapTool=null,MBTN=[],mapCam={x:0,y:0},mapS=.2,mapFit=true,mapDrag=null;const MK={},MKEYS={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
+const MTOOLS=[{k:'road',n:'Roads',d:'Click or drag to lay a road piece. R cycles straight and bends. Lay a piece over a road to add its sides: stack pieces to make junctions.'},{k:'big',n:'Big junction',d:'Click a junction to make it a 3x3 intersection with big rounded corners. The other 8 tiles must be grass or road (a road there is removed if it leads nowhere else).'},{k:'lot',n:'Lots & buildings',d:'Place a new asphalt lot with a gate and a building.  (not in yet)'},{k:'yard',n:'Yards & parking',d:'Paint gravel yards and parking next to a lot.  (not in yet)'},{k:'del',n:'Demolish',d:'Click a road or big junction you built to remove it.'}];
+let mapTool=null,MBTN=[],mapCam={x:0,y:0},mapS=.2,mapFit=true,mapDrag=null;const MK={},MKEYS={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
 const mapZoom=f=>{mapS=Math.max(.04,Math.min(.8,mapS*f))};
 function mapToWorld(x,y){return[mapCam.x+(x-MAPR.x-MAPR.w/2)/mapS,mapCam.y+(y-MAPR.y-MAPR.h/2)/mapS]}
 let MAPR={x:0,y:0,w:1,h:1};
@@ -1136,10 +1138,10 @@ function drawMapScreen(){
   const w0=mapToWorld(mx,my),w1=mapToWorld(mx+mw,my+mh),sx=c=>mx+mw/2+(c*TS-mapCam.x)*sc,sy=r=>my+mh/2+(r*TS-mapCam.y)*sc;
   for(let c=Math.floor(w0[0]/TS);c<=Math.ceil(w1[0]/TS);c++){g.moveTo(sx(c),my);g.lineTo(sx(c),my+mh)}for(let r=Math.floor(w0[1]/TS);r<=Math.ceil(w1[1]/TS);r++){g.moveTo(mx,sy(r));g.lineTo(mx+mw,sy(r))}g.stroke();
   if(MX!=null&&!mapDrag&&MX>=mx&&MX<=mx+mw&&MY>=my&&MY<=my+mh){const wp=mapToWorld(MX,MY),c=Math.floor(wp[0]/TS),r=Math.floor(wp[1]/TS);let pc='#ffd166',bx=1,e0=null;
-   if(mapTool==='road'){e0=RC.has(ck(c,r))?'x':!tileFree(c,r)?'x':null;pc=e0?'#ff5a5a':'#5ad17a'}
+   if(mapTool==='road'){const m0=RC.get(ck(c,r));e0=!tileFree(c,r)||(m0!==undefined&&(m0|PIECES[mapPiece])===m0)?'x':null;pc=e0?'#ff5a5a':m0!==undefined?'#ffd166':'#5ad17a'}
    else if(mapTool==='big'){bx=3;e0=bigCheck(c,r);pc=e0?'#ff5a5a':'#5ad17a'}
    else if(mapTool==='del'){pc='#ff9a3c'}
-   const o=bx===3?1:0;if(mapTool==='road'){g.strokeStyle='#ffffffcc';g.lineWidth=Math.max(2,TS*sc*.12);g.beginPath();if(mapAxis){g.moveTo(sx(c)+TS*sc/2,sy(r)+TS*sc*.1);g.lineTo(sx(c)+TS*sc/2,sy(r)+TS*sc*.9)}else{g.moveTo(sx(c)+TS*sc*.1,sy(r)+TS*sc/2);g.lineTo(sx(c)+TS*sc*.9,sy(r)+TS*sc/2)}g.stroke();g.lineWidth=2}g.fillStyle=pc+'55';g.fillRect(sx(c-o),sy(r-o),TS*sc*bx,TS*sc*bx);g.strokeStyle=pc;g.lineWidth=2;g.strokeRect(sx(c-o),sy(r-o),TS*sc*bx,TS*sc*bx);
+   const o=bx===3?1:0;if(mapTool==='road'){const pc=PIECES[mapPiece],cx=sx(c)+TS*sc/2,cy=sy(r)+TS*sc/2;g.strokeStyle='#ffffffe0';g.lineCap='round';g.lineWidth=Math.max(3,TS*sc*.14);g.beginPath();for(const d of BDIR)if(pc&d.b){g.moveTo(cx,cy);g.lineTo(cx+d.dc*TS*sc*.5,cy+d.dr*TS*sc*.5)}g.stroke();g.lineWidth=2;g.lineCap='butt'}g.fillStyle=pc+'55';g.fillRect(sx(c-o),sy(r-o),TS*sc*bx,TS*sc*bx);g.strokeStyle=pc;g.lineWidth=2;g.strokeRect(sx(c-o),sy(r-o),TS*sc*bx,TS*sc*bx);
    g.fillStyle='#fff';g.font='bold 12px sans-serif';g.textAlign='left';g.fillText('tile '+c+','+r,sx(c)+4,sy(r)-6)}g.restore()}
  // footer: what the picked tool will do
  const tl=MTOOLS.find(t=>t.k===mapTool);g.fillStyle='#171e26';g.fillRect(0,VH-FB,VW,FB);g.textAlign='left';g.textBaseline='middle';g.font='14px sans-serif';
@@ -1158,15 +1160,18 @@ function gateBits(c,r){let m=0;for(const l of LOTS){const g=l.gate;   // a stree
 const OPP={E:'W',S:'N',W:'E',N:'S'},hubAt=(c,r)=>WIDE.find(f=>f.k==='hub'&&Math.floor(f.cx/TS)===c&&Math.floor(f.cy/TS)===r);
 function hubArmBits(c,r){let m=0;for(const f of WIDE)if(f.k==='hub'){const hc=Math.floor(f.cx/TS),hr=Math.floor(f.cy/TS);   // my tile sits at the end of a hub arm: join it
  for(let i=0;i<4;i++)if(f.al[i]){const D=DIRS['ESWN'[i]];if(hc+2*D[0]===c&&hr+2*D[1]===r)m|=BDIR.find(d=>d.n===OPP['ESWN'[i]]).b}}return m}
-function armPlan(c,r){const out=[];for(const d of BDIR){const hc=c+d.dc,hr=r+d.dr,f=hubAt(hc,hr);if(!f)continue;const i='ESWN'.indexOf(OPP[d.n]);if(f.al[i])continue;
+function armPlan(c,r,pc){const out=[];for(const d of BDIR){if(!(pc&d.b))continue;const hc=c+d.dc,hr=r+d.dr,f=hubAt(hc,hr);if(!f)continue;const i='ESWN'.indexOf(OPP[d.n]);if(f.al[i])continue;
  const wd=[];for(const j of[(i+1)%4,(i+3)%4])if(f.al[j]){const a=DIRS['ESWN'[i]],b=DIRS['ESWN'[j]],dk=ck(hc+a[0]+b[0],hr+a[1]+b[1]);if(RC.has(dk)||LOTT.has(dk)||WT.has(dk)||inYard((hc+a[0]+b[0]+.5)*TS,(hr+a[1]+b[1]+.5)*TS))return{err:'The big junction cannot grow a road here: its corner tile is taken.'};if(!WD.has(dk))wd.push(dk)}
  out.push({f,i,wd})}return{out}}
-function placeRoad(c,r){const k=ck(c,r);if(RC.has(k))return'There is a road here already.';if(!tileFree(c,r))return'That tile is not free (lot, yard or big junction).';
- const pl=armPlan(c,r);if(pl.err)return pl.err;if(cash<ROADCOST)return'Not enough cash.';
- let m=gateBits(c,r)|hubArmBits(c,r);for(const d of BDIR){const nk=ck(c+d.dc,r+d.dr);if(RC.has(nk)){m|=d.b;RC.set(nk,RC.get(nk)|d.o)}}
+const PIECES=[EB|WB,WB|NB,NB|SB,NB|EB,EB|SB,SB|WB],UM=new Map();let mapPiece=0;   // straight, then the four bends in between: R turns the piece
+function placeRoad(c,r){const k=ck(c,r),pc=PIECES[mapPiece];if(!tileFree(c,r))return'That tile is not free (lot, yard or big junction).';
+ if(RC.has(k)){const old=RC.get(k),nm=old|pc;if(nm===old)return'This road already has that piece.';   /* laying a piece over a road adds its sides: stack pieces to build the junction you want */
+  if(!UR.has(k)&&!UM.has(k))UM.set(k,old);RC.set(k,nm);for(const d of BDIR)if((nm&d.b)&&!(old&d.b)){const nk=ck(c+d.dc,r+d.dr),n=RC.get(nk);if(n!==undefined)RC.set(nk,n|d.o)}return null}
+ const pl=armPlan(c,r,pc);if(pl.err)return pl.err;if(cash<ROADCOST)return'Not enough cash.';
+ let m=pc|gateBits(c,r)|hubArmBits(c,r);for(const d of BDIR)if(m&d.b){const nk=ck(c+d.dc,r+d.dr);if(RC.has(nk))RC.set(nk,RC.get(nk)|d.o)}
  cash-=ROADCOST;
  if(pl.out.length){const u={arm:1,f:pl.out[0].f,i:pl.out[0].i,wt:[k],wd:[],rm:[],ups:pl.out};for(const q of pl.out){q.f.al[q.i]=1.5*TS;for(const x of q.wd){WD.add(x);u.wd.push(x)}}WT.add(k);UH.push(u);return null}
- if(!m)m=mapAxis?(NB|SB):(EB|WB);RC.set(k,m);UR.add(k);return null}
+ RC.set(k,m);UR.add(k);return null}
 function bigCheck(c,r){const m=RC.get(ck(c,r));if(m===undefined)return'Pick a road tile where 3 or more roads meet.';if(WT.has(ck(c,r)))return'That is a big junction already.';if(pop4(m)<3)return'Only 3 or more roads meeting make a junction.';
  const ring=[];for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){if(!i&&!j)continue;const kk=ck(c+i,r+j);if(WT.has(kk)||WD.has(kk))return'Another big junction is in the way.';if(LOTT.has(kk)||inYard((c+i+.5)*TS,(r+j+.5)*TS))return'A lot or yard is in the way: the 3x3 needs grass or road.';ring.push([c+i,r+j])}
  const arm=new Set(BDIR.filter(d=>m&d.b).map(d=>ck(c+d.dc,r+d.dr)));
@@ -1179,8 +1184,12 @@ function makeBig(c,r){const e=bigCheck(c,r);if(e)return e;const m=RC.get(ck(c,r)
  UH.push({f,wt:[...wt,...rm.map(x=>x[0]).filter(k=>!wt.includes(k))],wd,rm});return null}
 function demolish(c,r){const k=ck(c,r),h=UH.findIndex(u=>u.wt.includes(k)||u.wd.includes(k));
  if(h>=0){const u=UH[h];if(u.arm){for(const q of u.ups)q.f.al[q.i]=0}else WIDE.splice(WIDE.indexOf(u.f),1);for(const x of u.wt)WT.delete(x);for(const x of u.wd)WD.delete(x);for(const[x,m]of u.rm)if(m!==undefined)RC.set(x,m);UH.splice(h,1);return null}
+ if(UM.has(k)&&!UR.has(k)){const old=UM.get(k),m=RC.get(k);for(const d of BDIR)if((m&d.b)&&!(old&d.b)){const nk=ck(c+d.dc,r+d.dr);if(RC.has(nk))RC.set(nk,RC.get(nk)&~d.o)}RC.set(k,old);UM.delete(k);return null}
  if(UR.has(k)){const m=RC.get(k);for(const d of BDIR)if(m&d.b){const nk=ck(c+d.dc,r+d.dr);if(RC.has(nk))RC.set(nk,RC.get(nk)&~d.o)}RC.delete(k);UR.delete(k);return null}
  return'Only roads and big junctions you built can be demolished.'}
+function fixLinks(c,r){for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){const k=ck(c+i,r+j),m=RC.get(k);if(m===undefined)continue;   /* two street tiles are linked if either side says so: make both sides agree (building and demolishing next to wide pieces could leave a one-way link, drawn as a dead end) */
+ for(const d of BDIR){const nk=ck(c+i+d.dc,r+j+d.dr),n=RC.get(nk);if(n===undefined)continue;if((m&d.b)&&!(n&d.o))RC.set(nk,n|d.o);else if(!(m&d.b)&&(n&d.o))RC.set(k,RC.get(k)|d.b)}}}
+{const wrap=f=>(...a)=>{const e=f(...a);fixLinks(a[0],a[1]);return e};placeRoad=wrap(placeRoad);makeBig=wrap(makeBig);demolish=wrap(demolish)}
 let mapMsg=null,mapPaint=null;
 const mapSay=(t,ok)=>{mapMsg={t,ok,ts:performance.now()}};
 const mapTile=(x,y)=>{const w=mapToWorld(x,y);return[Math.floor(w[0]/TS),Math.floor(w[1]/TS)]};
