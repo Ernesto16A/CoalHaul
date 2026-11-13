@@ -66,7 +66,7 @@ html,body,#hud,#bl,#msg,#touch{-webkit-user-select:none;user-select:none;-webkit
 <script>
 const cv=document.getElementById('c'),$=id=>document.getElementById(id);let g=cv.getContext('2d');
 let VW,VH,dpr;
-function rs(){dpr=Math.min(devicePixelRatio||1,2);VW=innerWidth;VH=innerHeight;cv.width=VW*dpr;cv.height=VH*dpr}
+function rs(){dpr=Math.min(devicePixelRatio||1,1.5);VW=innerWidth;VH=innerHeight;cv.width=VW*dpr;cv.height=VH*dpr}
 addEventListener('resize',rs);rs();
 
 // ---------- world: an endless grid of grass tiles; the streets are tiles too ----------
@@ -2268,7 +2268,10 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2
    else drawPerson(h.x,h.y,h.a,hue);
    txt('Player '+p.peer.slice(0,2).toUpperCase(),h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)','bold 10px sans-serif')}catch(e){}}
  for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
-function loop(n){syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
+let lastDraw=0;
+function loop(n){if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
+ if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
+ syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
 requestAnimationFrame(loop);
