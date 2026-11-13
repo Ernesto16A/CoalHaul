@@ -1218,14 +1218,14 @@ function step(dt){
    const k=KOF(o),d=dir(o.a),mc=(k.b0+k.b1)/2*S;if(!satHit(zoneBox(z),vBody(o))||o.fuel>=k.fuel-.05)continue;
    const q=Math.min(k.fuel*.2*dt,k.fuel-o.fuel,c.cg.amt);o.fuel+=q;c.cg.amt-=q;if(c.cg.amt<=.001){c.cg.amt=0;c.cg.type=null}
    if(o===T&&P.driving)m=m||'Refuelling from '+e.name+'… '+Math.round(o.fuel)+' / '+k.fuel+' L'}}
- mine.stock=Math.min(mine.cap,mine.stock+mine.rate*dt);
+ if(netProd())mine.stock=Math.min(mine.cap,mine.stock+mine.rate*dt);   // in a shared world only the host's browser makes things; the others get the result
  plantRun=false;
  // every item a powered building makes costs 1 t of coal from the power plant (the coal mine makes coal and needs none)
- if(plantOn&&lumberOn&&lumber.built&&lumber.stock+lumber.prog<lumber.cap){const q=Math.min(lumber.rate*dt,plant.stock,lumber.cap-lumber.stock-lumber.prog);if(q>0){lumber.prog+=q;plant.stock-=q;plantRun=true;if(lumber.prog>=1-1e-9){lumber.prog-=1;lumber.stock+=1}}}   // logs are made one at a time: a log appears each time a coal's worth is burnt
- if(plantOn&&quarryOn&&quarry.built&&quarry.stock<quarry.cap&&plant.stock>0){const q=Math.min(quarry.rate*dt,quarry.cap-quarry.stock,plant.stock);if(q>0){quarry.stock+=q;plant.stock-=q;plantRun=true}}   // 1 coal makes 1 t of rock
- if(plantOn&&ironOn&&iron.built&&iron.stock<iron.cap&&plant.stock>0){const q=Math.min(iron.rate*dt,iron.cap-iron.stock,plant.stock);if(q>0){iron.stock+=q;plant.stock-=q;plantRun=true}}   // 1 coal makes 1 t of iron ore
+ if(netProd()&&plantOn&&lumberOn&&lumber.built&&lumber.stock+lumber.prog<lumber.cap){const q=Math.min(lumber.rate*dt,plant.stock,lumber.cap-lumber.stock-lumber.prog);if(q>0){lumber.prog+=q;plant.stock-=q;plantRun=true;if(lumber.prog>=1-1e-9){lumber.prog-=1;lumber.stock+=1}}}   // logs are made one at a time: a log appears each time a coal's worth is burnt
+ if(netProd()&&plantOn&&quarryOn&&quarry.built&&quarry.stock<quarry.cap&&plant.stock>0){const q=Math.min(quarry.rate*dt,quarry.cap-quarry.stock,plant.stock);if(q>0){quarry.stock+=q;plant.stock-=q;plantRun=true}}   // 1 coal makes 1 t of rock
+ if(netProd()&&plantOn&&ironOn&&iron.built&&iron.stock<iron.cap&&plant.stock>0){const q=Math.min(iron.rate*dt,iron.cap-iron.stock,plant.stock);if(q>0){iron.stock+=q;plant.stock-=q;plantRun=true}}   // 1 coal makes 1 t of iron ore
  siteAbsorb();
- if(plantOn&&sawOn&&sawmill.built&&plankFree().length){const sb=Math.min(sawmill.stock,sawmill.burn*dt,plant.stock);if(sb>0){sawmill.stock-=sb;planks+=sb;plant.stock-=sb;plantRun=true;   // 1 log and 1 coal make 1 plank
+ if(netProd()&&plantOn&&sawOn&&sawmill.built&&plankFree().length){const sb=Math.min(sawmill.stock,sawmill.burn*dt,plant.stock);if(sb>0){sawmill.stock-=sb;planks+=sb;plant.stock-=sb;plantRun=true;   // 1 log and 1 coal make 1 plank
   while(planks>=1&&plankMake())planks-=1}}
  power=plantOn&&plant.stock>0?100+50*plant.lvl:0;syncLogs();
  // ----- messages / HUD -----
@@ -2274,6 +2274,7 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2
 
 // ---------- one shared world (browsers connected through PeerJS) ----------
 // Every browser keeps a full copy of the shared things: vehicles, trailers and the cash. A thing that changes here is sent to the others ten or fifteen times a second; the newest change wins. The cash is sent as the amount it went up or down, so two players' sales and purchases add up. A browser that joins gets everything the host has, then picks its own pickup. If the host leaves, the next one already has the whole world.
+const netProd=()=>{const r=NET.room;return!(r&&r.shared)||r.isHost()};
 const netBusy=v=>{const r=NET.room;if(!r||!r.shared)return false;for(const p of r.peers())if(!p.sameTab&&p.presence&&p.presence.d===v.id)return true;return false};
 const WS={on:false,joined:false,last:{},ver:{},cb:0,iv:0};
 NET.world=function(host){const room=NET.room;if(!room||!room.shared)return;
@@ -2283,7 +2284,7 @@ NET.world=function(host){const room=NET.room;if(!room||!room.shared)return;
  const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,name:v.name,out:v.out,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null});
  const trec=t=>({k:'t',id:t.id,kind:t.kind,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null});
  const recOf=e=>e.id[0]==='v'?vrec(e):trec(e),byId=id=>id?veh[id]||trl[id]||null:null;
- const mine=e=>P.driving&&T.out&&(T===e||(()=>{let q=T.tr,n=0;while(q&&n++<6){if(q===e)return true;q=q.tr}return false})());
+ const ownedByMe=e=>P.driving&&T.out&&(T===e||(()=>{let q=T.tr,n=0;while(q&&n++<6){if(q===e)return true;q=q.tr}return false})());
  function apply(r){let e=r.k==='v'?veh[r.id]:trl[r.id],fresh=false;
   if(!e){fresh=true;if(r.k==='v'){e=addVeh(r.kind,{bed:r.bed,color:r.color,bedColor:r.bedColor,eng:r.eng,nose:r.nose,forks:r.forks,hitch:r.hitch});delete veh[e.id];e.id=r.id;veh[r.id]=e}else{e=addTrl(r.kind,r.color);delete trl[e.id];e.id=r.id;trl[r.id]=e}}
   Object.assign(e,{hitch:r.hitch,name:r.name,out:r.out,color:r.color});e.cargo.type=r.cg[0];e.cargo.amt=r.cg[1];
@@ -2291,20 +2292,36 @@ NET.world=function(host){const room=NET.room;if(!room||!room.shared)return;
   if(r.k==='v')Object.assign(e,{bed:r.bed,bedColor:r.bedColor,forks:r.forks,v:r.v,st:r.st,fuel:r.fuel});else Object.assign(e,{hx:r.hx,hy:r.hy,kx:r.kx,ky:r.ky,coupled:r.coupled,on:r.on,nz:r.nz,ramp:r.ramp,rp:r.rp});
   if(fresh||!r.out||Math.hypot(r.x-e.x,r.y-e.y)>300){e.x=r.x;e.y=r.y;Object.assign(e,px);e._g=null}else e._g=Object.assign({x:r.x,y:r.y},px);
   return e}
+
+ // the shared numbers (stock of every building, what a site has been given, upgrades, planks, the garage storage): each browser sends how much each went up or down since the last time, and adds what the others send. The on/off levers and "built" are set to what the last change said.
+ const BL={mine,plant,lumber,sawmill,quarry,iron},CT={},FLG={};
+ for(const n in BL){const b=BL[n];for(const f of['stock','prog','lvl','cap','rate','burn']){const d=Object.getOwnPropertyDescriptor(b,f);if(d&&typeof d.value==='number')CT[n+'.'+f]={get:()=>b[f],set:v=>{b[f]=f==='lvl'||f==='cap'||f==='rate'||f==='burn'?v:Math.max(0,v)}}}
+  (b.reqs||[]).forEach((r,i)=>{CT[n+'.r'+i]={get:()=>r.got,set:v=>{r.got=Math.max(0,v)}}});if('built' in b)FLG[n+'.built']={get:()=>b.built,set:v=>{if(v&&!b.built)b.built=true}}}
+ CT.planks={get:()=>planks,set:v=>{planks=Math.max(0,v)}};for(const k of['coal','logs','fuel'])CT['store.'+k]={get:()=>STORE[k],set:v=>{STORE[k]=Math.max(0,v)}};
+ for(const k of['plantOn','lumberOn','sawOn','quarryOn','ironOn'])FLG[k]={get:()=>eval(k),set:v=>{eval(k+'='+v)}};
+ const BASE=WS.base||(WS.base={}),FB=WS.fb||(WS.fb={});
+ const resync=()=>{for(const b of Object.values(BL))if(b.reqs&&!b.built)reqSync(b)};
+ const sets=(a,fl)=>{for(const k in a)if(CT[k]){CT[k].set(a[k]);BASE[k]=CT[k].get()}for(const k in fl)if(FLG[k]){FLG[k].set(fl[k]);FB[k]=FLG[k].get()}resync()};
+ const absAll=()=>{const a={},f={};for(const k in CT)a[k]=CT[k].get();for(const k in FLG)f[k]=FLG[k].get();return[a,f]};
+ if(!WS.fbInit){WS.fbInit=1;for(const k in CT)BASE[k]=CT[k].get();for(const k in FLG)FB[k]=FLG[k].get()}
  function link(list){for(const[r,e]of list){e.tr=byId(r.tr);if(r.k==='t')e.host=byId(r.host)}R=T.tr||NOTR}
- function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=veh[r.id]||trl[r.id];if(cur&&mine(cur))continue;WS.ver[r.id]=r.ver;const e=apply(r);ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(recOf(e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
+ function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=veh[r.id]||trl[r.id];if(cur&&ownedByMe(cur))continue;WS.ver[r.id]=r.ver;const e=apply(r);ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(recOf(e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
  function drop(list){for(const[id,v]of list||[]){if((WS.ver[id]||0)>v)continue;const e=veh[id]||trl[id];if(!e||e===T&&P.driving)continue;WS.ver[id]=v;if(e.tr){e.tr.coupled=false;e.tr.host=null}delete veh[id];delete trl[id];delete WS.last[id]}}
  room.onMsg=(from,d)=>{if(!d)return;
-  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
+  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
   if(!WS.on)return;
   if(d.c){cash+=d.c;WS.cb+=d.c}
+  if(d.k){for(const k in d.k)if(CT[k]){CT[k].set(CT[k].get()+d.k[k]);BASE[k]=CT[k].get()}resync()}
+  if(d.f)for(const k in d.f)if(FLG[k]){FLG[k].set(d.f[k]);FB[k]=FLG[k].get()}
   take(d.e,from);drop(d.x)};
- room.onJoin=id=>{const all=[];for(const dd of[veh,trl])for(const e of Object.values(dd)){const r=recOf(e);r.ver=WS.ver[e.id]||1;if(!WS.ver[e.id])WS.ver[e.id]=1;all.push(r)}room.sendTo(id,{snap:1,e:all,cash})};
+ room.onJoin=id=>{const all=[];for(const dd of[veh,trl])for(const e of Object.values(dd)){const r=recOf(e);r.ver=WS.ver[e.id]||1;if(!WS.ver[e.id])WS.ver[e.id]=1;all.push(r)}const[sa,sf]=absAll();room.sendTo(id,{snap:1,e:all,cash,s:sa,fl:sf})};
  clearInterval(WS.iv);WS.iv=setInterval(()=>{if(!WS.on||!room.connected())return;const e=[],x=[];
   for(const dd of[veh,trl])for(const o of Object.values(dd)){if(o._g)continue;const r=recOf(o),j=JSON.stringify(r);if(WS.last[o.id]!==j){WS.last[o.id]=j;r.ver=WS.ver[o.id]=(WS.ver[o.id]||0)+1;e.push(r)}}
   for(const id in WS.last)if(!veh[id]&&!trl[id]){delete WS.last[id];x.push([id,WS.ver[id]=(WS.ver[id]||0)+1])}
   const c=Math.round((cash-WS.cb)*1e4)/1e4;if(c)WS.cb=cash;
-  if(e.length||x.length||c)room.msg({e,x,c})},66);
+  const kk={},ff={};let nk=0;for(const k in CT){const v=CT[k].get(),d=Math.round((v-BASE[k])*1e4)/1e4;if(d){kk[k]=d;BASE[k]+=d;nk++}}
+  for(const k in FLG){const v=FLG[k].get();if(v!==FB[k]){ff[k]=v;FB[k]=v;nk++}}
+  if(e.length||x.length||c||nk)room.msg({e,x,c,k:kk,f:ff})},66);
 };
 // what other players move eases across the screen instead of jumping
 function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const dd of[veh,trl])for(const e of Object.values(dd)){const g=e._g;if(!g)continue;if(P.driving&&T===e){e._g=null;continue}
