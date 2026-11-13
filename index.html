@@ -2048,7 +2048,7 @@ function draw(t){
  drawGround();drawBuildings(t);drawInfo(t);drawPads(t);
  drawGrid();drawLogs();
  for(const p of PALS)if(!p.fk&&!p.on)drawPallet(p);   // pallets lie on the ground, under the vehicles
- drawFleet(t);
+ drawFleet(t);drawPeers(t);
  for(const p of PALS)if(p.on&&p.on.e.out)drawPallet(p);   // and on the flatbeds, over them
  for(const p of PALS)if(p.fk)drawPallet(p);for(const l of LG)if(l.fk)drawLog(l);drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  drawReach();
@@ -2083,6 +2083,7 @@ function drawMap(mx,my,mw,mh,s,big,full){
   g.strokeStyle='#ffffffaa';g.lineWidth=1;g.strokeRect((cam.x-VW/Z/2)*s,(cam.y-VH/Z/2)*s,VW/Z*s,VH/Z*s);
   // vehicles out on the map, and the player (an arrow showing where he looks)
   for(const k in veh){const v=veh[k];if(v.out&&v!==T){g.save();g.translate(v.x*s,v.y*s);g.rotate(v.a);g.scale(sc,sc);g.fillStyle='#d8dbe2';g.fillRect(-2.5,-1.4,5,2.8);g.restore()}}
+  if(NET.room)for(const p of NET.room.peers()){if(p.sameTab||p.kind!=='viewer'||!p.presence||p.presence.in||typeof p.presence.x!=='number')continue;g.save();g.translate(p.presence.x*s,p.presence.y*s);g.rotate(p.presence.a||0);g.scale(sc,sc);g.fillStyle='hsl('+(p.presence.hue||200)+',80%,60%)';g.strokeStyle='#0b120c';g.lineWidth=1;g.beginPath();g.moveTo(5,0);g.lineTo(-3.5,3.4);g.lineTo(-1.6,0);g.lineTo(-3.5,-3.4);g.closePath();g.fill();g.stroke();g.restore()}   // the other players on the maps
   const px=px0*s,py=py0*s,pa=dr?T.a:P.a;
   g.save();g.translate(px,py);g.rotate(pa);g.scale(sc,sc);g.fillStyle=dr?'#ff5a3c':'#ffffff';g.strokeStyle='#0b120c';g.lineWidth=1;g.beginPath();g.moveTo(5,0);g.lineTo(-3.5,3.4);g.lineTo(-1.6,0);g.lineTo(-3.5,-3.4);g.closePath();g.fill();g.stroke();g.restore();
   g.restore();g.restore()}
@@ -2199,7 +2200,75 @@ const plankN=()=>PALS.filter(plankInArea).length;
 const plankFree=()=>plankCells().filter(([x,y])=>!PALS.some(p=>!p.fk&&!p.on&&Math.hypot(p.x-x,p.y-y)<38));
 const plankMake=()=>{const c=plankFree()[0];if(!c)return false;PALS.push({x:c[0],y:c[1],a:SWS.rot*Math.PI/2,crates:Array(9).fill(null),fk:null,da:0,planks:true});return true};
 let last=performance.now();
-function loop(n){syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);draw(n);requestAnimationFrame(loop)}
+// ---------- multiplayer: everyone who has the page open is in the one room and sees the others move on the map ----------
+// Presence only: each browser still runs its own world; what travels is where each player is, what he drives and what it carries.
+const NET={room:null,last:0,gh:new Map(),hue:Math.floor(Math.random()*360)};
+(async()=>{try{
+ if(window.claude&&window.claude.use){const r=await window.claude.use('room');if(!r)return;NET.room=r;   // inside the Claude page: the page's own room
+  r.onPeers(c=>{for(const p of c.joined)if(!p.sameTab&&p.kind==='viewer')try{flash('Another player is on the map.')}catch(e){}});return}
+ netPeerJS()}catch(e){}})();
+// Anywhere else (GitHub Pages): browsers connect to each other (WebRTC through PeerJS's free matchmaking). The first browser to open the game claims a fixed name and is the host; every later one finds that name and joins it, so everyone lands in the one room with no code. The host passes each player's position on to the others. If the host leaves, the others race to claim the name and one takes over.
+function netPeerJS(){
+ const LOBBY='coalhaul-ernesto16a-lobby-v1',qs=new URLSearchParams(location.search),ph=qs.get('peerhost'),opts=ph?{host:ph.split(':')[0],port:+ph.split(':')[1]||9000,path:'/',secure:false}:{};   // ?peerhost=localhost:9000 points it at a PeerServer of your own (testing)
+ const load=src=>new Promise((ok,no)=>{const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)});
+ let rx=0,peer=null,myId=null,isHost=false,online=false,hostConn=null,mine={},ver=0,cache=null;const M=new Map(),conns=new Map(),subs=[];
+ const now=()=>performance.now(),mk=(id,e)=>({peer:id,by:null,isMe:false,sameTab:false,kind:'viewer',guest:false,presence:e.pr,updatedAt:e.t});
+ const put=(id,pr)=>{if(id===myId)return;const nw=!M.has(id);M.set(id,{pr,t:now()});ver++;if(nw&&subs.length){const j=[mk(id,M.get(id))];for(const f of subs)try{f({peers:cache||[],joined:j,left:[],updated:[]})}catch(e){}}};
+ const drop=id=>{if(M.delete(id))ver++};
+ const room={presence:async pr=>{mine=pr;const m={t:'p',id:myId,pr};if(isHost){for(const c of conns.values())if(c.open)c.send(m)}else if(hostConn&&hostConn.open)hostConn.send({t:'p',pr})},
+  peers:()=>{const t=now();for(const[k,e]of M)if(t-e.t>6000)M.delete(k);cache=[...M].map(([k,e])=>mk(k,e));return cache},
+  onPeers:f=>{subs.push(f);return()=>{const i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}},connected:()=>online,emit:async()=>{},on:()=>()=>{}};
+ room.onPeers(c=>{for(const p of c.joined)try{flash('Another player is on the map.')}catch(e){}});
+ setInterval(()=>{if(isHost){for(const c of conns.values())if(c.open)c.send({t:'h'})}else if(hostConn&&online&&now()-rx>4000)again()},1000);
+ NET.dbg=()=>({isHost,online,myId,conns:conns.size,M:M.size,hc:!!hostConn});
+ const stop=()=>{online=false;isHost=false;hostConn=null;conns.clear();M.clear();ver++;try{peer&&peer.destroy()}catch(e){}peer=null};
+ const again=()=>{stop();setTimeout(start,300+Math.random()*1500)};
+ function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;
+  p.on('connection',c=>{c.on('open',()=>{conns.set(c.peer,c);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
+   c.on('data',d=>{if(!d||d.t!=='p')return;put(c.peer,d.pr);const m={t:'p',id:c.peer,pr:d.pr};for(const o of conns.values())if(o!==c&&o.open)o.send(m)});
+   const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);drop(c.peer);for(const o of conns.values())if(o.open)o.send({t:'l',id:c.peer})}};c.on('close',gone);c.on('error',gone)});
+  p.on('disconnected',()=>{try{p.reconnect()}catch(e){}});p.on('error',e=>{if(e.type!=='peer-unavailable')again()})}
+ function joinClient(){const p=new Peer(undefined,opts);peer=p;
+  p.on('open',id=>{myId=id;const c=p.connect(LOBBY);
+   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room});
+   c.on('data',d=>{if(!d)return;rx=now();if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id)});
+   c.on('close',again);c.on('error',again)});
+  p.on('error',e=>{if(e.type==='peer-unavailable'||e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed')again()})}
+ function start(){const p=new Peer(LOBBY,opts);peer=p;let opened=false;
+  p.on('open',()=>{opened=true;becomeHost(p)});
+  p.on('error',e=>{if(opened)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}joinClient()}else again()})}
+ load('https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js').catch(()=>load('https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js')).then(start).catch(()=>{})}
+function netSend(t){const r=NET.room;if(!r||t-NET.last<66)return;NET.last=t;
+ const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,v:null,t:null};
+ if(drv){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
+  const tr=T.tr;if(tr)pr.t={k:tr.kind,col:tr.color||null,x:Math.round(tr.x),y:Math.round(tr.y),b:+tr.b.toFixed(2)}}
+ try{r.presence(pr).catch(()=>{})}catch(e){}}
+const angLerp=(a,b,k)=>a+(((b-a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)*k;
+function drawPerson(px,py,pa,hue){const r=S*.55,ca=Math.cos(pa),sa=Math.sin(pa),sw=Math.sin((px+py)*.22)*r*.45;
+ for(const[k,c]of[[1.5,'rgba(8,12,20,.2)'],[3.2,'rgba(8,12,20,.16)']]){g.fillStyle=c;g.beginPath();g.ellipse(px+SUN[0]*k,py+SUN[1]*k,r*.68,r,pa,0,7);g.fill()}
+ const hp=[];for(const sd of[-1,1]){const f=r*.95+sd*sw,l=sd*r*.9;hp.push([px+ca*f-sa*l,py+sa*f+ca*l,px-sa*sd*r*.7,py+ca*sd*r*.7])}
+ g.lineCap='round';for(const[w,c]of[[r*.44+2,INK],[r*.44,'hsl('+hue+',60%,34%)']]){g.strokeStyle=c;g.lineWidth=w;g.beginPath();for(const h of hp){g.moveTo(h[2],h[3]);g.lineTo(h[0],h[1])}g.stroke()}g.lineCap='butt';
+ hp.forEach(h=>{g.beginPath();g.arc(h[0],h[1],r*.36,0,7);inked('#ecc9a2',1)});
+ g.beginPath();g.ellipse(px,py,r*.66,r,pa,0,7);inked('hsl('+hue+',70%,46%)',1.3);
+ g.fillStyle=WHT[6];g.beginPath();g.ellipse(px-SUN[0]*r*.2,py-SUN[1]*r*.2,r*.4,r*.7,pa,0,7);g.fill();
+ g.beginPath();g.ellipse(px+ca*r*.3,py+sa*r*.3,r*.44,r*.5,pa,0,7);inked('#d39f12',1);
+ g.beginPath();g.arc(px+ca*r*.06,py+sa*r*.06,r*.5,0,7);inked('#f7c927',1.1)}
+// the other players: a character on foot, or the vehicle (and trailer) he drives, eased from the last positions heard
+function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2/Z+240,vh=VH/2/Z+240;
+ for(const p of r.peers()){if(p.sameTab||p.kind!=='viewer')continue;const q=p.presence;if(!q||typeof q.x!=='number'||typeof q.y!=='number')continue;seen.add(p.peer);
+  let h=NET.gh.get(p.peer);if(!h){h={x:q.x,y:q.y,a:q.a||0,t:t,v:null,vk:'',tr:null,tk:''};NET.gh.set(p.peer,h)}
+  const k=1-Math.exp(-Math.min(.25,(t-h.t)/1000)*14);h.t=t;h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;h.a=angLerp(h.a,q.a||0,k);
+  if(q.in||Math.abs(h.x-cam.x)>vw||Math.abs(h.y-cam.y)>vh)continue;
+  try{const hue=typeof q.hue==='number'?q.hue:200,d=q.v;
+   if(d&&TKINDS[d.k]){const key=[d.k,d.bed,d.col,d.bc,d.eng,d.nose].join('|');
+    if(h.vk!==key){const o=addVeh(d.k,{bed:d.bed,color:d.col,bedColor:d.bc,eng:d.eng,nose:!!d.nose});delete veh[o.id];cnt[d.k]--;o.out=true;h.v=o;h.vk=key}
+    const v=h.v;v.x=h.x;v.y=h.y;v.a=h.a;v.st=d.st||0;v.v=d.sp||0;v.cargo=d.cg?{type:d.cg[0],amt:d.cg[1]}:{type:null,amt:0};
+    const tq=q.t;if(tq&&TRL[tq.k]){if(h.tk!==tq.k+'|'+tq.col){const o=addTrl(tq.k,tq.col);delete trl[o.id];cnt[tq.k]--;o.out=true;h.tr=o;h.tk=tq.k+'|'+tq.col}h.tr.x=tq.x;h.tr.y=tq.y;h.tr.b=tq.b;h.tr.coupled=false;h.tr.ld=null;cast(shapesOf(h.tr,[],.5));drawTrailer(h.tr)}else{h.tr=null;h.tk=''}
+    cast(shapesOf(v,[],.5));if(d.k=='semi')drawTractor(v);else if(d.k=='dump')drawDump(v);else if(d.k=='forklift')drawForklift(v);else drawPickup(v)}
+   else drawPerson(h.x,h.y,h.a,hue);
+   txt('Player '+p.peer.slice(0,2).toUpperCase(),h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)','bold 10px sans-serif')}catch(e){}}
+ for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
+function loop(n){syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
 requestAnimationFrame(loop);
