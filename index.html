@@ -322,13 +322,13 @@ const TRL={
  mf:{n:'Short semi flatbed trailer',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:0,cargo:'flat',king:1,places:2,cost:320},   // flatbeds: each place takes one pallet, or 4 crates / items in its 2x2 slots
  pi:{n:'Small item trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:0,cargo:'items',cost:200},
  dl:{n:'Dolly',cls:'dolly',bar:2.5,co:0,hw:.5,hh:1,cap:0,cargo:'none',fifth:-.2,cost:150}};
-let nid=1;const veh={},trl={},cnt={};
+let nid=1;const veh={},trl={},cnt={},NETP=Math.random().toString(36).slice(2,5);   // NETP: this browser's mark in every id it makes, so two players' vehicles never share an id
 // engines: more pull and speed, more fuel burnt, a higher price. A long nose (dump truck, semi truck): a bonnet ahead of the cab, the front axle under it
 const ENG=[{n:'Standard',acc:1,vmax:1,burn:1,c:0},{n:'Strong',acc:1.35,vmax:1.1,burn:1.3,c:.35},{n:'Powerful',acc:1.7,vmax:1.2,burn:1.65,c:.8}],NOSE=1.6,NOSEC=.25,hasNose=k=>k==='dump'||k==='semi';
 const kdOf=(kind,eng,nose)=>{const b=TKINDS[kind];if(!eng&&!nose)return b;const e=ENG[eng||0],o=Object.assign({},b,{acc:b.acc*e.acc,vmax:b.vmax*e.vmax,burn:b.burn*e.burn});if(nose){o.wb+=NOSE;o.b1+=NOSE;o.nose=1}return o};
 const KOF=v=>v.kd||TKINDS[v.kind],priceOf=(kind,eng,nose)=>Math.round(TKINDS[kind].cost*(1+ENG[eng||0].c+(nose?NOSEC:0))/10)*10;
-function addVeh(kind,o){o=o||{};const id='v'+nid++;cnt[kind]=(cnt[kind]||0)+1;return veh[id]={id,hitch:!!o.hitch,kind,bed:o.bed||(kind=='dump'?'coal':null),color:o.color||null,bedColor:o.bedColor||null,slots:o.bed==='items'?Array(4).fill(null):o.bed==='flat'?Array(4*TKINDS[kind].flat).fill(null):null,pals:o.bed==='flat'?Array(TKINDS[kind].flat).fill(null):null,name:TKINDS[kind].n+(o.forks==='logs'?' (log claw)':'')+(kind=='pickup'&&o.bed?' ('+o.bed+' bed)':o.bed=='logs'?' (log bed)':'')+' #'+cnt[kind],out:false,x:0,y:0,a:0,v:0,st:0,fuel:TKINDS[kind].fuel,cargo:{type:null,amt:0},tr:null,forks:o.forks||null,eng:o.eng||0,nose:!!o.nose,kd:kdOf(kind,o.eng,o.nose)}}
-function addTrl(kind,col){const id='t'+nid++;cnt[kind]=(cnt[kind]||0)+1;return trl[id]={id,hitch:false,on:true,kind,color:col||null,slots:kind==='pi'?Array(4).fill(null):TRL[kind].cargo==='flat'?Array(4*TRL[kind].places).fill(null):null,pals:TRL[kind].cargo==='flat'?Array(TRL[kind].places).fill(null):null,nz:false,ramp:false,rp:0,name:TRL[kind].n+' #'+cnt[kind],out:false,x:0,y:0,b:0,hx:0,hy:0,kx:0,ky:0,coupled:false,host:null,tr:null,cargo:{type:null,amt:0}}}
+function addVeh(kind,o){o=o||{};const id='v'+NETP+nid++;cnt[kind]=(cnt[kind]||0)+1;return veh[id]={id,hitch:!!o.hitch,kind,bed:o.bed||(kind=='dump'?'coal':null),color:o.color||null,bedColor:o.bedColor||null,slots:o.bed==='items'?Array(4).fill(null):o.bed==='flat'?Array(4*TKINDS[kind].flat).fill(null):null,pals:o.bed==='flat'?Array(TKINDS[kind].flat).fill(null):null,name:TKINDS[kind].n+(o.forks==='logs'?' (log claw)':'')+(kind=='pickup'&&o.bed?' ('+o.bed+' bed)':o.bed=='logs'?' (log bed)':'')+' #'+cnt[kind],out:false,x:0,y:0,a:0,v:0,st:0,fuel:TKINDS[kind].fuel,cargo:{type:null,amt:0},tr:null,forks:o.forks||null,eng:o.eng||0,nose:!!o.nose,kd:kdOf(kind,o.eng,o.nose)}}
+function addTrl(kind,col){const id='t'+NETP+nid++;cnt[kind]=(cnt[kind]||0)+1;return trl[id]={id,hitch:false,on:true,kind,color:col||null,slots:kind==='pi'?Array(4).fill(null):TRL[kind].cargo==='flat'?Array(4*TRL[kind].places).fill(null):null,pals:TRL[kind].cargo==='flat'?Array(TRL[kind].places).fill(null):null,nz:false,ramp:false,rp:0,name:TRL[kind].n+' #'+cnt[kind],out:false,x:0,y:0,b:0,hx:0,hy:0,kx:0,ky:0,coupled:false,host:null,tr:null,cargo:{type:null,amt:0}}}
 const NOTR={on:false,kind:null,coupled:false,host:null,cargo:{type:null,amt:0}};
 const JACK=1.75,TURNBRAKE=.5,STEERRATE=1,VINNER=.5,FUELP=1.5;
 let T=addVeh('pickup'),R=NOTR,KD=TKINDS.pickup;
@@ -860,13 +860,13 @@ function getInOut(){
   const ca=dir(T.a),o=(KD.b1-1.2)*S;P.x=T.x+ca[0]*o+ca[1]*2.1*S;P.y=T.y+ca[1]*o-ca[0]*2.1*S;P.a=T.a;P.driving=false;T.v=0;flash('You got out.');
  }else if(P.pass){
   const v=P.pass;
-  if(h&&h.v===v&&h.sd===-1){if(heldList().length)return flash('You cannot drive while holding an item. Put it down or store it first.');setActive(v);P.pass=null;P.driving=true;return flash('You are driving the '+KOF(v).n+'.')}
+  if(h&&h.v===v&&h.sd===-1){if(netBusy(v))return flash('Another player is driving that.');if(heldList().length)return flash('You cannot drive while holding an item. Put it down or store it first.');setActive(v);P.pass=null;P.driving=true;return flash('You are driving the '+KOF(v).n+'.')}
   const ca=dir(v.a),o=(KOF(v).b1-1.2)*S;P.x=v.x+ca[0]*o-ca[1]*2.1*S;P.y=v.y+ca[1]*o+ca[0]*2.1*S;P.a=v.a;P.pass=null;flash('You got out.');
  }else{
   let v,sd=-1;
   if(h){v=h.v;sd=h.sd;if(!inReach(v))return flash('Walk up to the cab to take a seat.')}else v=nearCab();
   if(!v)return flash('Walk up to a cab to get in. Click a seat to get in.');
-  if(sd===-1){if(heldList().length)return flash('You cannot drive while holding an item. Put it down or store it first. The passenger seat is fine.');setActive(v);P.driving=true;flash('You are driving the '+KOF(v).n+'.')}
+  if(sd===-1){if(netBusy(v))return flash('Another player is driving that.');if(heldList().length)return flash('You cannot drive while holding an item. Put it down or store it first. The passenger seat is fine.');setActive(v);P.driving=true;flash('You are driving the '+KOF(v).n+'.')}
   else{P.pass=v;P.seatSd=1;P.a=v.a;flash('You ride as a passenger. Click off the vehicle to get out, or click the driver seat to drive.')}
  }}
 // ---------- items: carried by hand (one per hand, some need two); the hitch on the back of a truck is the first item ----------
@@ -2217,21 +2217,23 @@ function netPeerJS(){
  const drop=id=>{if(M.delete(id))ver++};
  const room={presence:async pr=>{mine=pr;const m={t:'p',id:myId,pr};if(isHost){for(const c of conns.values())if(c.open)c.send(m)}else if(hostConn&&hostConn.open)hostConn.send({t:'p',pr})},
   peers:()=>{const t=now();for(const[k,e]of M)if(t-e.t>6000)M.delete(k);cache=[...M].map(([k,e])=>mk(k,e));return cache},
-  onPeers:f=>{subs.push(f);return()=>{const i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}},connected:()=>online,emit:async()=>{},on:()=>()=>{}};
+  onPeers:f=>{subs.push(f);return()=>{const i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}},connected:()=>online,emit:async()=>{},on:()=>()=>{},shared:true,
+  msg:d=>{if(isHost){for(const c of conns.values())if(c.open)c.send({t:'w',f:LOBBY,d})}else if(hostConn&&hostConn.open)hostConn.send({t:'w',d})},
+  sendTo:(id,d)=>{const c=conns.get(id);if(c&&c.open)c.send({t:'w',f:LOBBY,d})},onMsg:null,onJoin:null,isHost:()=>isHost,myId:()=>myId};
  room.onPeers(c=>{for(const p of c.joined)try{flash('Another player is on the map.')}catch(e){}});
  setInterval(()=>{if(isHost){for(const c of conns.values())if(c.open)c.send({t:'h'})}else if(hostConn&&online&&now()-rx>4000)again()},1000);
  NET.dbg=()=>({isHost,online,myId,conns:conns.size,M:M.size,hc:!!hostConn});
  const stop=()=>{online=false;isHost=false;hostConn=null;conns.clear();M.clear();ver++;try{peer&&peer.destroy()}catch(e){}peer=null};
  const again=()=>{stop();setTimeout(start,300+Math.random()*1500)};
- function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;
-  p.on('connection',c=>{c.on('open',()=>{conns.set(c.peer,c);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
-   c.on('data',d=>{if(!d||d.t!=='p')return;put(c.peer,d.pr);const m={t:'p',id:c.peer,pr:d.pr};for(const o of conns.values())if(o!==c&&o.open)o.send(m)});
+ function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;NET.world&&NET.world(true);
+  p.on('connection',c=>{c.on('open',()=>{conns.set(c.peer,c);setTimeout(()=>{try{room.onJoin&&room.onJoin(c.peer)}catch(e){}},50);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
+   c.on('data',d=>{if(d&&d.t==='w'){try{room.onMsg&&room.onMsg(c.peer,d.d)}catch(e){}for(const o of conns.values())if(o!==c&&o.open)o.send({t:'w',f:c.peer,d:d.d});return}if(!d||d.t!=='p')return;put(c.peer,d.pr);const m={t:'p',id:c.peer,pr:d.pr};for(const o of conns.values())if(o!==c&&o.open)o.send(m)});
    const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);drop(c.peer);for(const o of conns.values())if(o.open)o.send({t:'l',id:c.peer})}};c.on('close',gone);c.on('error',gone)});
   p.on('disconnected',()=>{try{p.reconnect()}catch(e){}});p.on('error',e=>{if(e.type!=='peer-unavailable')again()})}
  function joinClient(){const p=new Peer(undefined,opts);peer=p;
   p.on('open',id=>{myId=id;const c=p.connect(LOBBY);
-   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room});
-   c.on('data',d=>{if(!d)return;rx=now();if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id)});
+   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room;NET.world&&NET.world(false)});
+   c.on('data',d=>{if(!d)return;rx=now();if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id);else if(d.t==='w'){try{room.onMsg&&room.onMsg(d.f,d.d)}catch(e){}}});
    c.on('close',again);c.on('error',again)});
   p.on('error',e=>{if(e.type==='peer-unavailable'||e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed')again()})}
  function start(){const p=new Peer(LOBBY,opts);peer=p;let opened=false;
@@ -2239,8 +2241,8 @@ function netPeerJS(){
   p.on('error',e=>{if(opened)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}joinClient()}else again()})}
  load('https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js').catch(()=>load('https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js')).then(start).catch(()=>{})}
 function netSend(t){const r=NET.room;if(!r||t-NET.last<66)return;NET.last=t;
- const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,v:null,t:null};
- if(drv){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
+ const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,v:null,t:null,d:drv?T.id:null};
+ if(drv&&!r.shared){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
   const tr=T.tr;if(tr)pr.t={k:tr.kind,col:tr.color||null,x:Math.round(tr.x),y:Math.round(tr.y),b:+tr.b.toFixed(2)}}
  try{r.presence(pr).catch(()=>{})}catch(e){}}
 const angLerp=(a,b,k)=>a+(((b-a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)*k;
@@ -2260,18 +2262,69 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2
   const k=1-Math.exp(-Math.min(.25,(t-h.t)/1000)*14);h.t=t;h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;h.a=angLerp(h.a,q.a||0,k);
   if(q.in||Math.abs(h.x-cam.x)>vw||Math.abs(h.y-cam.y)>vh)continue;
   try{const hue=typeof q.hue==='number'?q.hue:200,d=q.v;
-   if(d&&TKINDS[d.k]){const key=[d.k,d.bed,d.col,d.bc,d.eng,d.nose].join('|');
+   if(q.d){}   // driving a shared vehicle: it is drawn with all the others, the driver is inside
+   else if(d&&TKINDS[d.k]){const key=[d.k,d.bed,d.col,d.bc,d.eng,d.nose].join('|');
     if(h.vk!==key){const o=addVeh(d.k,{bed:d.bed,color:d.col,bedColor:d.bc,eng:d.eng,nose:!!d.nose});delete veh[o.id];cnt[d.k]--;o.out=true;h.v=o;h.vk=key}
     const v=h.v;v.x=h.x;v.y=h.y;v.a=h.a;v.st=d.st||0;v.v=d.sp||0;v.cargo=d.cg?{type:d.cg[0],amt:d.cg[1]}:{type:null,amt:0};
     const tq=q.t;if(tq&&TRL[tq.k]){if(h.tk!==tq.k+'|'+tq.col){const o=addTrl(tq.k,tq.col);delete trl[o.id];cnt[tq.k]--;o.out=true;h.tr=o;h.tk=tq.k+'|'+tq.col}h.tr.x=tq.x;h.tr.y=tq.y;h.tr.b=tq.b;h.tr.coupled=false;h.tr.ld=null;cast(shapesOf(h.tr,[],.5));drawTrailer(h.tr)}else{h.tr=null;h.tk=''}
     cast(shapesOf(v,[],.5));if(d.k=='semi')drawTractor(v);else if(d.k=='dump')drawDump(v);else if(d.k=='forklift')drawForklift(v);else drawPickup(v)}
    else drawPerson(h.x,h.y,h.a,hue);
-   txt('Player '+p.peer.slice(0,2).toUpperCase(),h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)','bold 10px sans-serif')}catch(e){}}
+   if(!q.d)txt('Player '+p.peer.slice(0,2).toUpperCase(),h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)','bold 10px sans-serif')}catch(e){}}
  for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
+
+// ---------- one shared world (browsers connected through PeerJS) ----------
+// Every browser keeps a full copy of the shared things: vehicles, trailers and the cash. A thing that changes here is sent to the others ten or fifteen times a second; the newest change wins. The cash is sent as the amount it went up or down, so two players' sales and purchases add up. A browser that joins gets everything the host has, then picks its own pickup. If the host leaves, the next one already has the whole world.
+const netBusy=v=>{const r=NET.room;if(!r||!r.shared)return false;for(const p of r.peers())if(!p.sameTab&&p.presence&&p.presence.d===v.id)return true;return false};
+const WS={on:false,joined:false,last:{},ver:{},cb:0,iv:0};
+NET.world=function(host){const room=NET.room;if(!room||!room.shared)return;
+ if(host&&!WS.joined){WS.joined=true;WS.cb=cash}
+ WS.on=host||WS.joined;WS.cb=WS.joined?WS.cb:cash;
+ const rd=x=>Math.round(x*10)/10,cg=e=>[e.cargo.type,+e.cargo.amt.toFixed(2)];
+ const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,name:v.name,out:v.out,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null});
+ const trec=t=>({k:'t',id:t.id,kind:t.kind,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null});
+ const recOf=e=>e.id[0]==='v'?vrec(e):trec(e),byId=id=>id?veh[id]||trl[id]||null:null;
+ const mine=e=>P.driving&&T.out&&(T===e||(()=>{let q=T.tr,n=0;while(q&&n++<6){if(q===e)return true;q=q.tr}return false})());
+ function apply(r){let e=r.k==='v'?veh[r.id]:trl[r.id],fresh=false;
+  if(!e){fresh=true;if(r.k==='v'){e=addVeh(r.kind,{bed:r.bed,color:r.color,bedColor:r.bedColor,eng:r.eng,nose:r.nose,forks:r.forks,hitch:r.hitch});delete veh[e.id];e.id=r.id;veh[r.id]=e}else{e=addTrl(r.kind,r.color);delete trl[e.id];e.id=r.id;trl[r.id]=e}}
+  Object.assign(e,{hitch:r.hitch,name:r.name,out:r.out,color:r.color});e.cargo.type=r.cg[0];e.cargo.amt=r.cg[1];
+  const px=r.k==='v'?{a:r.a}:{b:r.b};
+  if(r.k==='v')Object.assign(e,{bed:r.bed,bedColor:r.bedColor,forks:r.forks,v:r.v,st:r.st,fuel:r.fuel});else Object.assign(e,{hx:r.hx,hy:r.hy,kx:r.kx,ky:r.ky,coupled:r.coupled,on:r.on,nz:r.nz,ramp:r.ramp,rp:r.rp});
+  if(fresh||!r.out||Math.hypot(r.x-e.x,r.y-e.y)>300){e.x=r.x;e.y=r.y;Object.assign(e,px);e._g=null}else e._g=Object.assign({x:r.x,y:r.y},px);
+  return e}
+ function link(list){for(const[r,e]of list){e.tr=byId(r.tr);if(r.k==='t')e.host=byId(r.host)}R=T.tr||NOTR}
+ function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=veh[r.id]||trl[r.id];if(cur&&mine(cur))continue;WS.ver[r.id]=r.ver;const e=apply(r);ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(recOf(e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
+ function drop(list){for(const[id,v]of list||[]){if((WS.ver[id]||0)>v)continue;const e=veh[id]||trl[id];if(!e||e===T&&P.driving)continue;WS.ver[id]=v;if(e.tr){e.tr.coupled=false;e.tr.host=null}delete veh[id];delete trl[id];delete WS.last[id]}}
+ room.onMsg=(from,d)=>{if(!d)return;
+  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
+  if(!WS.on)return;
+  if(d.c){cash+=d.c;WS.cb+=d.c}
+  take(d.e,from);drop(d.x)};
+ room.onJoin=id=>{const all=[];for(const dd of[veh,trl])for(const e of Object.values(dd)){const r=recOf(e);r.ver=WS.ver[e.id]||1;if(!WS.ver[e.id])WS.ver[e.id]=1;all.push(r)}room.sendTo(id,{snap:1,e:all,cash})};
+ clearInterval(WS.iv);WS.iv=setInterval(()=>{if(!WS.on||!room.connected())return;const e=[],x=[];
+  for(const dd of[veh,trl])for(const o of Object.values(dd)){if(o._g)continue;const r=recOf(o),j=JSON.stringify(r);if(WS.last[o.id]!==j){WS.last[o.id]=j;r.ver=WS.ver[o.id]=(WS.ver[o.id]||0)+1;e.push(r)}}
+  for(const id in WS.last)if(!veh[id]&&!trl[id]){delete WS.last[id];x.push([id,WS.ver[id]=(WS.ver[id]||0)+1])}
+  const c=Math.round((cash-WS.cb)*1e4)/1e4;if(c)WS.cb=cash;
+  if(e.length||x.length||c)room.msg({e,x,c})},66);
+};
+// what other players move eases across the screen instead of jumping
+function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const dd of[veh,trl])for(const e of Object.values(dd)){const g=e._g;if(!g)continue;if(P.driving&&T===e){e._g=null;continue}
+ e.x+=(g.x-e.x)*k;e.y+=(g.y-e.y)*k;const f=g.a!==undefined?'a':'b';e[f]=angLerp(e[f],g[f],k);
+ if(Math.abs(g.x-e.x)+Math.abs(g.y-e.y)<.15&&Math.abs(ang(g[f]-e[f]))<.004){e.x=g.x;e.y=g.y;e[f]=g[f];e._g=null}}}
+// a player who joins picks the pickup to start with; it is made in the shared world, free, for anybody to use
+function pickPickup(){if(document.getElementById('pickov'))return;const o=document.createElement('div');o.id='pickov';
+ o.style.cssText='position:fixed;inset:0;background:#0b120ccc;z-index:50;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif';
+ const opts=[['coal','Cargo bed','5 t of cargo (coal, rock)'],['logs','Log bed','3 logs'],['fuel','Fuel tank','a tank on the bed'],['flat','Flatbed','one pallet or 4 crates']];
+ o.innerHTML='<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:20px 24px;color:#eee;max-width:360px"><div style="font-size:18px;font-weight:700;margin-bottom:4px">Joining the game</div><div style="font-size:13px;opacity:.8;margin-bottom:12px">Choose the pickup you start with. It appears at the garage, free, and everyone in the game can use it.</div>'+opts.map(q=>'<button data-b="'+q[0]+'" style="display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer"><b>'+q[1]+'</b><br><small style="opacity:.75">'+q[2]+'</small></button>').join('')+'</div>';
+ document.body.appendChild(o);
+ o.querySelectorAll('button').forEach(b=>b.onclick=()=>{o.remove();spawnPick(b.dataset.b)})}
+function spawnPick(bed){const v=addVeh('pickup',{bed,eng:0});v.out=true;v.a=START.a;v.v=0;v.st=0;v.tr=null;v.fuel=KOF(v).fuel*.5;
+ let ok=false;for(let r=0;r<9&&!ok;r++)for(let c=0;c<9&&!ok;c++){v.x=START.x+(r%2?1:-1)*Math.ceil(r/2)*6*S*Math.cos(START.a+Math.PI/2)+(c-4)*0;v.y=START.y+(r%2?1:-1)*Math.ceil(r/2)*6*S*Math.sin(START.a+Math.PI/2);if(!spawnBlocked(vBody(v),v,SPAWNGAP))ok=true}
+ if(!ok){v.x=START.x;v.y=START.y}
+ setActive(v);const kd=KOF(v),ca=[Math.cos(v.a),Math.sin(v.a)],o=(kd.b1-1.2)*S;P.driving=false;P.pass=null;P.x=v.x+ca[0]*o-ca[1]*2.1*S;P.y=v.y+ca[1]*o+ca[0]*2.1*S;P.a=v.a;cam.x=P.x;cam.y=P.y;flash('You joined the game. Your pickup is next to you.')}
 let lastDraw=0;
 function loop(n){if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
+ syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
 requestAnimationFrame(loop);
