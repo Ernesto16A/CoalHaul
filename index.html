@@ -2274,23 +2274,51 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2
 
 // ---------- one shared world (browsers connected through PeerJS) ----------
 // Every browser keeps a full copy of the shared things: vehicles, trailers and the cash. A thing that changes here is sent to the others ten or fifteen times a second; the newest change wins. The cash is sent as the amount it went up or down, so two players' sales and purchases add up. A browser that joins gets everything the host has, then picks its own pickup. If the host leaves, the next one already has the whole world.
+
+// ---------- the map is shared as a list of what was done to it ----------
+// Laying a road, making a big junction, taking one away and turning a building are sent in the order they were done, and every browser does the same thing to its own map. A browser that joins later gets the whole list and does it all in the same order. The things standing in a turned building are not turned again on the other side: they come with the vehicles, pallets and items.
+const NETX={acts:[],applying:false,send:null,units:[['mine',MS],['power plant',PS],['garage',GS],['lumberyard',LS],['sawmill',SWS],['quarry',QS],['iron mine',IRS],['shop',SS],['fuel',FS]],rot:{}};
+for(const[n,U]of NETX.units)NETX.rot[n]=U.rot;
+{const w=(t,f)=>function(c,r){const e=f.apply(this,arguments);if(!e&&!NETX.applying){const a=t==='r'?['r',c,r,mapPiece]:[t,c,r];NETX.acts.push(a);if(NETX.send)NETX.send(a)}return e};placeRoad=w('r',placeRoad);makeBig=w('b',makeBig);demolish=w('d',demolish)}
+function netApplyAct(a){NETX.applying=true;try{const t=a[0];
+ if(t==='r'){const mp=mapPiece;mapPiece=a[3];try{placeRoad(a[1],a[2])}finally{mapPiece=mp}}else if(t==='b')makeBig(a[1],a[2]);else if(t==='d')demolish(a[1],a[2]);
+ else if(t==='u'){const q=NETX.units.find(u=>u[0]===a[1]);if(q&&q[1].rot!==a[2]){q[1].rot=a[2];NETX.rot[a[1]]=a[2];applyUnits();const o=OFFICES.find(x=>x.n===a[1]);if(IN&&IN.o===o){IN=null;Z=Zsave;P.driving=false;P.pass=null;[P.x,P.y,P.a]=doorOut(o);cam.x=P.x;cam.y=P.y}}}
+ }catch(e){}finally{NETX.applying=false}NETX.acts.push(a);if(typeof GCH!=='undefined')GCH.clear()}
+function netWatchTurns(){for(const[n,U]of NETX.units)if(U.rot!==NETX.rot[n]){NETX.rot[n]=U.rot;const a=['u',n,U.rot];NETX.acts.push(a);if(NETX.send)NETX.send(a)}}
 const netProd=()=>{const r=NET.room;return!(r&&r.shared)||r.isHost()};
 const netBusy=v=>{const r=NET.room;if(!r||!r.shared)return false;for(const p of r.peers())if(!p.sameTab&&p.presence&&p.presence.d===v.id)return true;return false};
 const WS={on:false,joined:false,last:{},ver:{},cb:0,iv:0};
-NET.world=function(host){const room=NET.room;if(!room||!room.shared)return;
- if(host&&!WS.joined){WS.joined=true;WS.cb=cash}
- WS.on=host||WS.joined;WS.cb=WS.joined?WS.cb:cash;
+NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room.shared)return;   // offline: only the tools to write and read the whole world (saves), nothing is connected
+ if(!offline){if(host&&!WS.joined){WS.joined=true;WS.cb=cash}
+ WS.on=host||WS.joined;WS.cb=WS.joined?WS.cb:cash}
  const rd=x=>Math.round(x*10)/10,cg=e=>[e.cargo.type,+e.cargo.amt.toFixed(2)];
- const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,name:v.name,out:v.out,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null});
- const trec=t=>({k:'t',id:t.id,kind:t.kind,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null});
- const recOf=e=>e.id[0]==='v'?vrec(e):trec(e),byId=id=>id?veh[id]||trl[id]||null:null;
+ const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,name:v.name,out:v.out,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null,sl:v.slots,pl:v.pals?v.pals.map(palId):null});
+ const trec=t=>({k:'t',id:t.id,kind:t.kind,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null,sl:t.slots,pl:t.pals?t.pals.map(palId):null});
+ const SH={PALLET,FSHELF,LSHELF,SSHELF,QSHELF,MSHELF,ISHELF};   // the shelves inside the shops
+ const ensure=(o,c)=>o._n||(o._n=c+NETP+(WS.n=(WS.n||0)+1)),palId=p=>p?ensure(p,'p'):null;   // pallets, logs and items get an id the first time they are sent
+ const prec=p=>({k:'p',id:ensure(p,'p'),x:rd(p.x),y:rd(p.y),a:+p.a.toFixed(3),da:+p.da.toFixed(3),planks:!!p.planks,fk:p.fk?p.fk.id:null,on:p.on?{e:p.on.e.id,p:p.on.p}:null,cr:p.crates});
+ const lrec=l=>({k:'l',id:ensure(l,'l'),x:rd(l.x),y:rd(l.y),a:+l.a.toFixed(3),fk:l.fk?l.fk.id:null});
+ const grec=it=>({k:'g',id:ensure(it,'g'),it});
+ const srec=n=>({k:'s',id:'sh.'+n,sl:SH[n].slots});
+ const fin={v:id=>veh[id],t:id=>trl[id],p:id=>PALS.find(q=>q._n===id),l:id=>LG.find(q=>q._n===id),g:id=>GI.find(q=>q._n===id),s:id=>({_s:1,slots:SH[id.slice(3)].slots})};
+ const entOf=id=>id?(fin[id[0]]||(()=>null))(id)||null:null,idOf=e=>e.id||e._n;
+ const mk={v:vrec,t:trec,p:prec,l:lrec,g:grec,s:o=>srec(o._k)},byId=id=>id?veh[id]||trl[id]||null:null;
+ const everything=()=>{const L=[];for(const o of Object.values(veh))L.push(['v',o]);for(const o of Object.values(trl))L.push(['t',o]);for(const o of PALS)L.push(['p',o]);for(const o of LG)if(!o.st)L.push(['l',o]);for(const o of GI)L.push(['g',o]);for(const n in SH)L.push(['s',{_s:1,_k:n,_n:'sh.'+n}]);return L};
  const ownedByMe=e=>P.driving&&T.out&&(T===e||(()=>{let q=T.tr,n=0;while(q&&n++<6){if(q===e)return true;q=q.tr}return false})());
  function apply(r){let e=r.k==='v'?veh[r.id]:trl[r.id],fresh=false;
   if(!e){fresh=true;if(r.k==='v'){e=addVeh(r.kind,{bed:r.bed,color:r.color,bedColor:r.bedColor,eng:r.eng,nose:r.nose,forks:r.forks,hitch:r.hitch});delete veh[e.id];e.id=r.id;veh[r.id]=e}else{e=addTrl(r.kind,r.color);delete trl[e.id];e.id=r.id;trl[r.id]=e}}
   Object.assign(e,{hitch:r.hitch,name:r.name,out:r.out,color:r.color});e.cargo.type=r.cg[0];e.cargo.amt=r.cg[1];
   const px=r.k==='v'?{a:r.a}:{b:r.b};
   if(r.k==='v')Object.assign(e,{bed:r.bed,bedColor:r.bedColor,forks:r.forks,v:r.v,st:r.st,fuel:r.fuel});else Object.assign(e,{hx:r.hx,hy:r.hy,kx:r.kx,ky:r.ky,coupled:r.coupled,on:r.on,nz:r.nz,ramp:r.ramp,rp:r.rp});
+  if(e.slots&&r.sl)e.slots.splice(0,e.slots.length,...r.sl);
   if(fresh||!r.out||Math.hypot(r.x-e.x,r.y-e.y)>300){e.x=r.x;e.y=r.y;Object.assign(e,px);e._g=null}else e._g=Object.assign({x:r.x,y:r.y},px);
+  return e}
+ function applyX(r){if(r.k==='s'){const a=SH[r.id.slice(3)].slots;a.splice(0,a.length,...r.sl);return{_s:1,_k:r.id.slice(3),_n:r.id,slots:a}}
+  let e=fin[r.k](r.id),fresh=false;
+  if(!e){fresh=true;if(r.k==='p'){e={x:r.x,y:r.y,a:r.a,crates:[],fk:null,da:r.da,planks:r.planks};PALS.push(e)}else if(r.k==='l'){e={x:r.x,y:r.y,a:r.a,st:false,fk:null};LG.push(e)}else{e={};GI.push(e)}e._n=r.id}
+  if(r.k==='g'){for(const k of Object.keys(e))if(!(k in r.it))delete e[k];Object.assign(e,r.it);e._n=r.id;return e}
+  if(r.k==='p'){e.crates.splice(0,e.crates.length,...r.cr);e.planks=r.planks;e.da=r.da}
+  if(fresh||Math.hypot(r.x-e.x,r.y-e.y)>300){e.x=r.x;e.y=r.y;e.a=r.a;e._g=null}else e._g={x:r.x,y:r.y,a:r.a};
   return e}
 
  // the shared numbers (stock of every building, what a site has been given, upgrades, planks, the garage storage): each browser sends how much each went up or down since the last time, and adds what the others send. The on/off levers and "built" are set to what the last change said.
@@ -2304,27 +2332,38 @@ NET.world=function(host){const room=NET.room;if(!room||!room.shared)return;
  const sets=(a,fl)=>{for(const k in a)if(CT[k]){CT[k].set(a[k]);BASE[k]=CT[k].get()}for(const k in fl)if(FLG[k]){FLG[k].set(fl[k]);FB[k]=FLG[k].get()}resync()};
  const absAll=()=>{const a={},f={};for(const k in CT)a[k]=CT[k].get();for(const k in FLG)f[k]=FLG[k].get();return[a,f]};
  if(!WS.fbInit){WS.fbInit=1;for(const k in CT)BASE[k]=CT[k].get();for(const k in FLG)FB[k]=FLG[k].get()}
- function link(list){for(const[r,e]of list){e.tr=byId(r.tr);if(r.k==='t')e.host=byId(r.host)}R=T.tr||NOTR}
- function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=veh[r.id]||trl[r.id];if(cur&&ownedByMe(cur))continue;WS.ver[r.id]=r.ver;const e=apply(r);ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(recOf(e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
- function drop(list){for(const[id,v]of list||[]){if((WS.ver[id]||0)>v)continue;const e=veh[id]||trl[id];if(!e||e===T&&P.driving)continue;WS.ver[id]=v;if(e.tr){e.tr.coupled=false;e.tr.host=null}delete veh[id];delete trl[id];delete WS.last[id]}}
- room.onMsg=(from,d)=>{if(!d)return;
-  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
+ function link(list){for(const[r,e]of list){if(r.k==='v'||r.k==='t'){e.tr=byId(r.tr);if(r.k==='t')e.host=byId(r.host);if(e.pals&&r.pl)r.pl.forEach((id,i)=>{e.pals[i]=id?fin.p(id)||null:null})}
+  else if(r.k==='p'){e.fk=byId(r.fk);e.on=r.on&&byId(r.on.e)?{e:byId(r.on.e),p:r.on.p}:null}else if(r.k==='l')e.fk=byId(r.fk)}R=T.tr||NOTR}
+ const heldByMe=e=>e.id!==undefined?ownedByMe(e):!!((e.fk&&ownedByMe(e.fk))||(e.on&&e.on.e&&ownedByMe(e.on.e)));
+ function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=entOf(r.id);if(cur&&!cur._s&&heldByMe(cur))continue;WS.ver[r.id]=r.ver;const e=(r.k==='v'||r.k==='t')?apply(r):applyX(r);ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(mk[r.k](e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
+ function drop(list){for(const[id,v]of list||[]){if((WS.ver[id]||0)>v)continue;const e=entOf(id);if(!e||e===T&&P.driving)continue;WS.ver[id]=v;if(id[0]==='v'||id[0]==='t'){if(e.tr){e.tr.coupled=false;e.tr.host=null}delete veh[id];delete trl[id]}else{const A=id[0]==='p'?PALS:id[0]==='l'?LG:GI,i=A.indexOf(e);if(i>=0)A.splice(i,1)}delete WS.last[id]}}
+ if(!offline)room.onMsg=(from,d)=>{if(!d)return;
+  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
   if(!WS.on)return;
   if(d.c){cash+=d.c;WS.cb+=d.c}
   if(d.k){for(const k in d.k)if(CT[k]){CT[k].set(CT[k].get()+d.k[k]);BASE[k]=CT[k].get()}resync()}
   if(d.f)for(const k in d.f)if(FLG[k]){FLG[k].set(d.f[k]);FB[k]=FLG[k].get()}
+  if(d.a)for(const a of d.a)netApplyAct(a);
   take(d.e,from);drop(d.x)};
- room.onJoin=id=>{const all=[];for(const dd of[veh,trl])for(const e of Object.values(dd)){const r=recOf(e);r.ver=WS.ver[e.id]||1;if(!WS.ver[e.id])WS.ver[e.id]=1;all.push(r)}const[sa,sf]=absAll();room.sendTo(id,{snap:1,e:all,cash,s:sa,fl:sf})};
- clearInterval(WS.iv);WS.iv=setInterval(()=>{if(!WS.on||!room.connected())return;const e=[],x=[];
-  for(const dd of[veh,trl])for(const o of Object.values(dd)){if(o._g)continue;const r=recOf(o),j=JSON.stringify(r);if(WS.last[o.id]!==j){WS.last[o.id]=j;r.ver=WS.ver[o.id]=(WS.ver[o.id]||0)+1;e.push(r)}}
-  for(const id in WS.last)if(!veh[id]&&!trl[id]){delete WS.last[id];x.push([id,WS.ver[id]=(WS.ver[id]||0)+1])}
+ const snap=()=>{const all=[];for(const[k,e]of everything()){const r=mk[k](e);r.ver=WS.ver[r.id]||1;if(!WS.ver[r.id])WS.ver[r.id]=1;all.push(r)}const[sa,sf]=absAll();return{e:all,cash,s:sa,fl:sf,acts:NETX.acts}};
+ // a saved game is put back on a map nobody has touched yet: the same steps as joining, with the player put where the save says
+ const restore=d=>{P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;WS.last={};WS.ver={};
+  take(d.e,'save');cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);
+  const m=d.me;if(m){const v=m.drv&&veh[m.drv],o=m.in&&OFFICES.find(q=>q.n===m.in);if(o){[P.x,P.y,P.a]=doorOut(o)}else{P.x=m.x;P.y=m.y;P.a=m.a}if(v){setActive(v);P.driving=true}else P.driving=false;cam.x=P.x;cam.y=P.y}};
+ NET.api={snap,restore};
+ if(offline)return;
+ room.onJoin=id=>{room.sendTo(id,Object.assign({snap:1},snap()))};
+ NETX.send=a=>{if(WS.on&&room.connected())room.msg({a:[a]})};
+ clearInterval(WS.iv);WS.iv=setInterval(()=>{if(!WS.on||!room.connected())return;netWatchTurns();const e=[],x=[];
+  const live=new Set();for(const[k,o]of everything()){const q=k==='s'?o._n:(o.id||o._n||ensure(o,k));live.add(q);if(o._g)continue;const r=mk[k](o),j=JSON.stringify(r);if(WS.last[q]!==j){WS.last[q]=j;r.ver=WS.ver[q]=(WS.ver[q]||0)+1;e.push(r)}}
+  for(const id in WS.last)if(!live.has(id)){delete WS.last[id];x.push([id,WS.ver[id]=(WS.ver[id]||0)+1])}
   const c=Math.round((cash-WS.cb)*1e4)/1e4;if(c)WS.cb=cash;
   const kk={},ff={};let nk=0;for(const k in CT){const v=CT[k].get(),d=Math.round((v-BASE[k])*1e4)/1e4;if(d){kk[k]=d;BASE[k]+=d;nk++}}
   for(const k in FLG){const v=FLG[k].get();if(v!==FB[k]){ff[k]=v;FB[k]=v;nk++}}
   if(e.length||x.length||c||nk)room.msg({e,x,c,k:kk,f:ff})},66);
 };
 // what other players move eases across the screen instead of jumping
-function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const dd of[veh,trl])for(const e of Object.values(dd)){const g=e._g;if(!g)continue;if(P.driving&&T===e){e._g=null;continue}
+function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const e of[...Object.values(veh),...Object.values(trl),...PALS,...LG]){const g=e._g;if(!g)continue;if(P.driving&&T===e){e._g=null;continue}
  e.x+=(g.x-e.x)*k;e.y+=(g.y-e.y)*k;const f=g.a!==undefined?'a':'b';e[f]=angLerp(e[f],g[f],k);
  if(Math.abs(g.x-e.x)+Math.abs(g.y-e.y)<.15&&Math.abs(ang(g[f]-e[f]))<.004){e.x=g.x;e.y=g.y;e[f]=g[f];e._g=null}}}
 // a player who joins picks the pickup to start with; it is made in the shared world, free, for anybody to use
@@ -2338,12 +2377,40 @@ function spawnPick(bed){const v=addVeh('pickup',{bed,eng:0});v.out=true;v.a=STAR
  let ok=false;for(let r=0;r<9&&!ok;r++)for(let c=0;c<9&&!ok;c++){v.x=START.x+(r%2?1:-1)*Math.ceil(r/2)*6*S*Math.cos(START.a+Math.PI/2)+(c-4)*0;v.y=START.y+(r%2?1:-1)*Math.ceil(r/2)*6*S*Math.sin(START.a+Math.PI/2);if(!spawnBlocked(vBody(v),v,SPAWNGAP))ok=true}
  if(!ok){v.x=START.x;v.y=START.y}
  setActive(v);const kd=KOF(v),ca=[Math.cos(v.a),Math.sin(v.a)],o=(kd.b1-1.2)*S;P.driving=false;P.pass=null;P.x=v.x+ca[0]*o-ca[1]*2.1*S;P.y=v.y+ca[1]*o+ca[0]*2.1*S;P.a=v.a;cam.x=P.x;cam.y=P.y;flash('You joined the game. Your pickup is next to you.')}
+
+// ---------- saving ----------
+// A save is the same description of the world that a joining player gets (vehicles, pallets, items, shelves, cash, stock, construction, and the list of what was done to the map), plus where you stand. It is kept in this browser (autosave every minute, 3 slots) and can be exported as a file. Loading is done by restarting the page and putting the save on the fresh map. In a game with other players only the host can load, and only when nobody else is connected.
+const netApi=()=>{if(!NET.api)NET.world(true,{shared:true,myId:()=>'local',connected:()=>false});return NET.api};
+const SAVEK='coalhaul.save.',PENDK='coalhaul.pending',sNow=()=>performance.now();
+const othersHere=()=>{const r=NET.room;try{return!!(r&&r.shared&&r.peers().some(p=>!p.sameTab))}catch(e){return false}};
+function gameSave(){const d=netApi().snap();d.v=1;d.t=Date.now();d.me={x:P.x,y:P.y,a:P.a,drv:P.driving&&T?T.id:null,in:IN?IN.o.n:null};return d}
+function saveTo(key){try{if(key===SAVEK+'auto'){const o=localStorage.getItem(key);if(o)localStorage.setItem(SAVEK+'prev',o)}localStorage.setItem(key,JSON.stringify(gameSave()));return true}catch(e){return false}}
+const readSave=key=>{try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch(e){return null}};
+function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;localStorage.setItem(PENDK,raw);location.reload();return true}catch(e){flash('That is not a Coal Haul save.');return false}}
+setInterval(()=>{if(sNow()>30000&&!bigMap)saveTo(SAVEK+'auto')},60000);   // not in the first seconds: a page opened by mistake must not replace a good autosave
+addEventListener('pagehide',()=>{if(sNow()>30000)saveTo(SAVEK+'auto')});
+const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
+function saveMenu(){let o=document.getElementById('gmenu');if(o){o.remove();return}
+ o=document.createElement('div');o.id='gmenu';o.style.cssText='position:fixed;inset:0;background:#0b120cbb;z-index:40;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';
+ const row=(label,key,canSave)=>{const d=readSave(key);return'<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><div style="flex:1"><b>'+label+'</b><br><small style="opacity:.7">'+fmtT(d)+'</small></div>'+(canSave?'<button data-s="'+key+'">Save</button>':'')+'<button data-l="'+key+'"'+(d?'':' disabled')+'>Load</button></div>'};
+ o.innerHTML='<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:18px 22px;color:#eee;width:min(92vw,380px);max-height:90vh;overflow:auto"><div style="font-size:18px;font-weight:700;margin-bottom:8px">Game</div>'+row('Slot 1',SAVEK+'1',1)+row('Slot 2',SAVEK+'2',1)+row('Slot 3',SAVEK+'3',1)+row('Autosave',SAVEK+'auto',0)+row('Before the last autosave',SAVEK+'prev',0)+
+  '<div style="display:flex;gap:8px;margin-top:10px"><button id="gm-ex" style="flex:1">Export to file</button><button id="gm-im" style="flex:1">Import file</button></div><div style="display:flex;gap:8px;margin-top:8px"><button id="gm-new" style="flex:1">New game</button><button id="gm-x" style="flex:1">Close</button></div><div id="gm-m" style="margin-top:8px;font-size:12px;opacity:.8;min-height:16px"></div><input id="gm-f" type="file" accept=".json,application/json" style="display:none"></div>';
+ document.body.appendChild(o);const say=t=>{o.querySelector('#gm-m').textContent=t};
+ o.querySelectorAll('button').forEach(b=>{b.style.cssText+=';padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer'});
+ o.querySelectorAll('button[data-s]').forEach(b=>b.onclick=()=>{say(saveTo(b.dataset.s)?'Saved.':'Could not save (the browser storage is full or blocked).');setTimeout(()=>{o.remove();saveMenu()},600)});
+ o.querySelectorAll('button[data-l]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(b.dataset.l);if(r&&!loadFrom(r))say('Not loaded.')});
+ o.querySelector('#gm-ex').onclick=()=>{const blob=new Blob([JSON.stringify(gameSave())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='coalhaul-save.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);say('Exported.')};
+ const fi=o.querySelector('#gm-f');o.querySelector('#gm-im').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))say('Not loaded.')};rd.readAsText(f)};
+ o.querySelector('#gm-new').onclick=()=>{if(othersHere()){say('Other players are connected.');return}if(confirm('Start a new game? The autosave will be replaced.')){try{localStorage.removeItem(SAVEK+'auto')}catch(e){}location.reload()}};
+ o.querySelector('#gm-x').onclick=()=>o.remove();o.addEventListener('pointerdown',e=>{if(e.target===o)o.remove()})}
+{const b=document.createElement('button');b.id='gmbtn';b.textContent='Menu';b.style.cssText='position:fixed;right:76px;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:6;background:var(--panel);color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;touch-action:auto';b.onclick=saveMenu;document.body.appendChild(b)}
 let lastDraw=0;
 function loop(n){if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
+ syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}else step(dt);netSend(n);draw(n);requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
+try{const raw=localStorage.getItem(PENDK);if(raw){localStorage.removeItem(PENDK);netApi().restore(JSON.parse(raw));flash('Game loaded.')}else if(localStorage.getItem(SAVEK+'auto'))flash('A saved game was found: open Menu to continue it.')}catch(e){}
 requestAnimationFrame(loop);
 </script></body></html>
 
