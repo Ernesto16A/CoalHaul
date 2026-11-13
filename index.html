@@ -2241,7 +2241,7 @@ function netPeerJS(){
   p.on('error',e=>{if(opened)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}joinClient()}else again()})}
  load('https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js').catch(()=>load('https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js')).then(start).catch(()=>{})}
 function netSend(t){const r=NET.room;if(!r||t-NET.last<66)return;NET.last=t;
- const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,v:null,t:null,d:drv?T.id:null};
+ const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,v:null,t:null,d:drv?T.id:null,s:P.pass?1:0};
  if(drv&&!r.shared){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
   const tr=T.tr;if(tr)pr.t={k:tr.kind,col:tr.color||null,x:Math.round(tr.x),y:Math.round(tr.y),b:+tr.b.toFixed(2)}}
  try{r.presence(pr).catch(()=>{})}catch(e){}}
@@ -2262,14 +2262,14 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2
   const k=1-Math.exp(-Math.min(.25,(t-h.t)/1000)*14);h.t=t;h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;h.a=angLerp(h.a,q.a||0,k);
   if(q.in||Math.abs(h.x-cam.x)>vw||Math.abs(h.y-cam.y)>vh)continue;
   try{const hue=typeof q.hue==='number'?q.hue:200,d=q.v;
-   if(q.d){}   // driving a shared vehicle: it is drawn with all the others, the driver is inside
+   if(q.d||q.s){}   // in a vehicle (driving or riding): the vehicle is drawn with all the others, the person is inside, so no figure and no name
    else if(d&&TKINDS[d.k]){const key=[d.k,d.bed,d.col,d.bc,d.eng,d.nose].join('|');
     if(h.vk!==key){const o=addVeh(d.k,{bed:d.bed,color:d.col,bedColor:d.bc,eng:d.eng,nose:!!d.nose});delete veh[o.id];cnt[d.k]--;o.out=true;h.v=o;h.vk=key}
     const v=h.v;v.x=h.x;v.y=h.y;v.a=h.a;v.st=d.st||0;v.v=d.sp||0;v.cargo=d.cg?{type:d.cg[0],amt:d.cg[1]}:{type:null,amt:0};
     const tq=q.t;if(tq&&TRL[tq.k]){if(h.tk!==tq.k+'|'+tq.col){const o=addTrl(tq.k,tq.col);delete trl[o.id];cnt[tq.k]--;o.out=true;h.tr=o;h.tk=tq.k+'|'+tq.col}h.tr.x=tq.x;h.tr.y=tq.y;h.tr.b=tq.b;h.tr.coupled=false;h.tr.ld=null;cast(shapesOf(h.tr,[],.5));drawTrailer(h.tr)}else{h.tr=null;h.tk=''}
     cast(shapesOf(v,[],.5));if(d.k=='semi')drawTractor(v);else if(d.k=='dump')drawDump(v);else if(d.k=='forklift')drawForklift(v);else drawPickup(v)}
    else drawPerson(h.x,h.y,h.a,hue);
-   if(!q.d)txt('Player '+p.peer.slice(0,2).toUpperCase(),h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)','bold 10px sans-serif')}catch(e){}}
+   if(!q.d&&!q.s)txt('Player '+p.peer.slice(0,2).toUpperCase(),h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)','bold 10px sans-serif')}catch(e){}}
  for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
 
 // ---------- one shared world (browsers connected through PeerJS) ----------
