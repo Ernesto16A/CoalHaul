@@ -77,7 +77,7 @@ const RW=72,SH=84.5,RR=TS/2,ROADW=98;   // ROADW: how far from a street's centre
 const NB=1,EB=2,SB=4,WB=8,ck=(c,r)=>c+','+r;
 const hash=(c,r,k)=>{let h=Math.imul(c|0,374761393)+Math.imul(r|0,668265263)+Math.imul((k||0)+1,1442695041)|0;h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return(h>>>0)/4294967296};
 // 3x3 asphalt lots (coal mine, power plant), each with a one-tile entrance where a street meets it
-const LOTS=[{c0:8,r0:4,c1:11,r1:7,gate:{side:'E',a:1*TS,b:2*TS}},{c0:0,r0:4,c1:3,r1:7,gate:{side:'W',a:9*TS,b:10*TS}},{c0:4,r0:4,c1:7,r1:7,gate:{side:'E',a:4*TS,b:5*TS}},{c0:16,r0:3,c1:19,r1:7,gate:{side:'W',a:1*TS,b:2*TS}},{c0:4,r0:8,c1:7,r1:12,gate:{side:'W',a:6*TS,b:7*TS}},{c0:1,r0:8,c1:3,r1:10,gate:{side:'S',a:10*TS,b:11*TS}},{c0:12,r0:4,c1:15,r1:7,gate:{side:'E',a:6*TS,b:7*TS},gates:[{side:'E',a:6*TS,b:7*TS},{side:'E',a:8*TS,b:9*TS}]},{c0:0,r0:0,c1:3,r1:3,gate:{side:'W',a:9*TS,b:10*TS}},{c0:4,r0:8,c1:7,r1:11,gate:{side:'E',a:9*TS,b:10*TS}},{c0:8,r0:8,c1:11,r1:11,gate:{side:'W',a:9*TS,b:10*TS}}].map(l=>({...l,x0:l.c0*TS,y0:l.r0*TS,x1:l.c1*TS,y1:l.r1*TS}));
+const LOTS=[{c0:8,r0:4,c1:11,r1:7,gate:{side:'E',a:1*TS,b:2*TS}},{c0:0,r0:4,c1:3,r1:7,gate:{side:'W',a:9*TS,b:10*TS}},{c0:4,r0:4,c1:7,r1:7,gate:{side:'E',a:4*TS,b:5*TS}},{c0:16,r0:3,c1:19,r1:7,gate:{side:'W',a:1*TS,b:2*TS}},{c0:4,r0:8,c1:7,r1:12,gate:{side:'W',a:6*TS,b:7*TS}},{c0:1,r0:8,c1:4,r1:11,gate:{side:'S',a:11*TS,b:12*TS}},{c0:12,r0:4,c1:15,r1:7,gate:{side:'E',a:6*TS,b:7*TS},gates:[{side:'E',a:6*TS,b:7*TS},{side:'E',a:8*TS,b:9*TS}]},{c0:0,r0:0,c1:3,r1:3,gate:{side:'W',a:9*TS,b:10*TS}},{c0:4,r0:8,c1:7,r1:11,gate:{side:'E',a:9*TS,b:10*TS}},{c0:8,r0:8,c1:11,r1:11,gate:{side:'W',a:9*TS,b:10*TS}},{c0:12,r0:8,c1:15,r1:12,gate:{side:'N',a:13*TS,b:14*TS}},{c0:4,r0:0,c1:8,r1:3,gate:{side:'W',a:1*TS,b:2*TS}}].map(l=>({...l,x0:l.c0*TS,y0:l.r0*TS,x1:l.c1*TS,y1:l.r1*TS}));
 const GATES=l=>l.gates||[l.gate];   // a lot's gates, all on one side (the fuel station has two: in and out)
 // the wall pieces along one side of a lot: the side from lo to hi, less the gates on it
 const sideSegs=(l,sd,lo,hi)=>{const o=[];let p=lo;for(const q of GATES(l).filter(q=>q.side===sd).sort((u,v)=>u.a-v.a)){o.push([p,q.a]);p=q.b}o.push([p,hi]);return o.filter(q=>q[1]>q[0])};
@@ -117,8 +117,8 @@ function curveHit(f,x,y,w){const px=x-f.px,py=y-f.py;
 const lz={x:5280,y:480,w:240,h:80},   /* fsz: the fuel station's ITEMS area, east of its building, 1 tile off the board, the building and the wall */
  swz={x:5280,y:2080,w:240,h:80};
 // the shop, written as it stands with its gate to the south (a 2x2-tile lot); S0 is its layout, sellZ its pink lot on the map. The office is OFFICES' 'shop'
-const S0={zone:{x:3680,y:1120,w:280,h:280},lot:{x0:3200,y0:960,x1:4160,y1:1600},gates:[{side:'S',a:10*TS,b:11*TS},{side:'S',a:12*TS,b:13*TS}]};   // the shop, written with its gates to the south: a 3 x 2 lot (the front two rows of the unit's 3 x 3), a gate in each outer front chunk like the fuel station; the shop (14 x 14 tiles) in the middle front chunk against the wall between them, the spawning platform (14 x 14) in the middle back chunk
-let sellZ=S0.zone;
+const S0={sell:{x:4000,y:1120,w:280,h:280},spawn:{x:3360,y:1120,w:280,h:280},lot:{x0:3200,y0:640,x1:4160,y1:1600},gates:[{side:'S',a:11*TS,b:12*TS}]};   // the shop, written with its gate to the south: a 3 x 3 lot with one gate in the middle front chunk. The shop (14 x 14) stands in the middle chunk, its door facing the gate. Going counterclockwise round it from the gate the first pad is the SELL / UNLOAD pad (east in this frame): what is fully on it shows under Sell in the shop menu. On the other side is the NEW PURCHASES pad (west): what is bought appears there, and it cannot be sold from there
+let sellZ=S0.sell,spawnZ=S0.spawn;
 // ---- the garage as one unit. Everything of it is written once, as it stands with its gate to the east (G0 and the numbers in its code);
 // GS says where its lot is and how many quarter turns (clockwise) it is turned. gRot takes a point of that layout to the map, gInv brings it back
 const G0={garage:{x:1750,y:1050,w:300,h:140},gUnl:{x:1020,y:1440,w:80,h:320},gPanel:{x:1130,y:1440,w:100,h:320},gLoad:{x:1240,y:1440,w:80,h:320},gate:{side:'E',a:4*TS,b:5*TS}};
@@ -133,9 +133,10 @@ const uRot=(U,x,y,q=U.rot)=>{const[cx,cy]=uC(U),[ox,oy]=uOff(U);let dx=x-cx,dy=y
 const uInv=(U,x,y)=>{const[cx,cy]=uC(U),[ox,oy]=uOff(U);let dx=x-ox-cx,dy=y-oy-cy;for(let k=0;k<(4-U.rot)%4;k++){const t=dx;dx=-dy;dy=t}return[cx+dx,cy+dy]};
 const uRect=(U,z)=>{const p=uRot(U,z.x,z.y);return U.rot&1?{...z,x:p[0],y:p[1],w:z.h,h:z.w}:{...z,x:p[0],y:p[1]}};
 // the building chunk: every building (mine, power plant, lumberyard, sawmill, quarry, iron mine, crusher) stands the way the crusher does: in the middle chunk of its lot a 14 x 7 building with two doors, a tile above it (in the unit's frame) two 7 x 7 boards side by side. LT / SWT turn the building and boards of the lumberyard and the sawmill so the doors face their gate (LS / SWS keep turning their yards)
-const LT=Object.create(LS,{rot:{get:()=>(LS.rot+1)%4}}),SWT=Object.create(SWS,{rot:{get:()=>(SWS.rot+1)%4}});   // they turn with their unit (a quarter more: the doors face the gate)
-const T2={mine:{U:MS,ox:8*TS,oy:4*TS},'power plant':{U:PS,ox:0,oy:4*TS},lumberyard:{U:LT,ox:15*TS,oy:0},sawmill:{U:SWT,ox:15*TS,oy:5*TS},quarry:{U:QS,ox:0,oy:0},'iron mine':{U:IRS,ox:16*TS,oy:8*TS},crusher:{U:CRS,ox:8*TS,oy:8*TS}};
-const SSO=Object.create(SS,{rot:{get:()=>(SS.rot+2)%4}});   // the shop's building: its door faces the platform behind it
+const LT=Object.create(LS,{rot:{get:()=>(LS.rot+1)%4}}),SWT=Object.create(SWS,{rot:{get:()=>(SWS.rot+1)%4}});
+const FNS={c0:4,r0:0,bc:15,br:5,rot:0},FNT=Object.create(FNS,{rot:{get:()=>(FNS.rot+1)%4}});   // the foundry: the sawmill's frame again (4 x 3), standing on the north block beside the street that runs up from the middle street; its gate is on the west side
+const FCS={c0:12,r0:8,bc:15,br:5,rot:1},FCT=Object.create(FCS,{rot:{get:()=>(FCS.rot+1)%4}});   // the factory: the sawmill's frame (4 x 3: a 3 x 3 and a back row, gate on the street side), standing on the block south of the middle street, east of the crusher   // they turn with their unit (a quarter more: the doors face the gate)
+const T2={mine:{U:MS,ox:8*TS,oy:4*TS},'power plant':{U:PS,ox:0,oy:4*TS},lumberyard:{U:LT,ox:15*TS,oy:0},sawmill:{U:SWT,ox:15*TS,oy:5*TS},quarry:{U:QS,ox:0,oy:0},'iron mine':{U:IRS,ox:16*TS,oy:8*TS},crusher:{U:CRS,ox:8*TS,oy:8*TS},factory:{U:FCT,ox:15*TS,oy:5*TS},foundry:{U:FNT,ox:15*TS,oy:5*TS}};
 const T2b=(n,i)=>{const t=T2[n],r=uBox(t.U,{x0:t.ox+340+i*140,y0:t.oy+340,x1:t.ox+480+i*140,y1:t.oy+480});return[r.x0,r.y0]};   // where board i stands on the map (top-left, upright: boards always read facing south)
 const T2s=n=>{const t=T2[n];return{X:t.ox+340,Y:t.oy+480,w:280,rh:70,board:null}},T2p=n=>{const t=T2[n];return{x:t.ox+480,y:t.oy+160,w:320,h:80}};   // a site: the building (where it will stand) and the unloading pad in the back yard (in the unit's frame)
 const T2z=n=>{const t=T2[n];return{x:t.ox+480,y:t.oy+690,w:100,h:140}};   // new vehicles appear in front of the doors (in the unit's frame)
@@ -158,6 +159,11 @@ function applyPlant(gate){Object.assign(dump,uRect(PS,LYP.pad));if(gate)LOTS[1].
 F0.fzs=F0.pumps.flatMap(([x,y])=>[{x:x-60,y,w:40,h:40,a:0},{x:x+60,y,w:40,h:40,a:0}]);   // 2x2 tiles, 1 tile from the pump on each side
 let garage=G0.garage,gUnl=G0.gUnl,gPanel=G0.gPanel,gLoad=G0.gLoad,FZS=F0.fzs,fsz=F0.fsz;
 const LANES=[G0.garage.y-35,G0.garage.y+35];   // the garage platform takes two vehicles side by side: the north lane first, then the south one
+// shop storage: anything unloaded on the shop's SELL / UNLOAD pad is kept here (SHCAP of each kind) until it is sold in the shop's Storage tab. Prices: the per-material prices of the game (coal $10 a ton, logs $20, rock and iron ore $10), sand and gravel $15 a ton, fuel half the pump price
+const SHST={coal:0,logs:0,planks:0,rock:0,iron:0,sand:0,gravel:0,fuel:0,ironbar:0,steelbar:0,glass:0,hitch:0,canister:0,crate:0,pallet:0},SHCAP={coal:50,logs:50,planks:50,rock:50,iron:50,sand:50,gravel:50,fuel:50,ironbar:50,steelbar:50,glass:50,hitch:50,canister:50,crate:50,pallet:50},SHMAX=1000,SHQ={},SHINT=new Set(['logs','planks','fuel','ironbar','steelbar','glass','hitch','canister','crate','pallet']),SHP={coal:10,logs:20,planks:60,rock:10,iron:10,sand:15,gravel:15,ironbar:5,steelbar:15,glass:8,hitch:40,canister:13,crate:15,pallet:30},SHN={coal:'Coal',logs:'Logs',planks:'Planks',rock:'Rock',iron:'Iron ore',sand:'Sand',gravel:'Gravel',fuel:'Fuel',ironbar:'Iron bars',steelbar:'Steel bars',glass:'Glass',hitch:'Hitches',canister:'Canisters',crate:'Crates',pallet:'Pallets'},SHU={coal:' t',logs:'',planks:'',rock:' t',iron:' t',sand:' t',gravel:' t',fuel:' L',ironbar:'',steelbar:'',glass:'',hitch:'',canister:'',crate:'',pallet:''};
+const shPrice=k=>k==='fuel'?FUELP*.5:SHP[k],shFmt=(k,v)=>(SHINT.has(k)?Math.floor(v+1e-6):v.toFixed(1))+SHU[k];
+// the most that can be put in the number box of a material (what is stored, whole units for logs, planks and fuel), the amount the box says (the most when untouched), and what that sells for
+const shMax=k=>SHINT.has(k)?Math.floor(SHST[k]+1e-6):Math.floor(SHST[k]*10+1e-6)/10,shQty=k=>{const m=shMax(k),q=SHQ[k]==null?m:Math.max(0,Math.min(SHQ[k],m));return q>=m?SHST[k]:q},shVal=(k,q)=>Math.round(q*shPrice(k)*100)/100;
 const STORE={coal:0,logs:0,fuel:0},STMAX=1000;const STCAP={coal:50,logs:50,fuel:50};   // garage: unload into storage, storage list, load out of storage
 LOTS[0].stop=load.x+load.w/2+8;LOTS[1].stop=dump.x-dump.w/2-8;
 const Y=(c0,r0,c1,r1,c)=>({x0:c0*TS,y0:r0*TS,x1:c1*TS,y1:r1*TS,c});   // gravel yards, in whole tiles
@@ -186,7 +192,7 @@ function nearRoad(x,y,m){const c=Math.floor(x/TS),r=Math.floor(y/TS);
  return false}
 
 // ---------- buildings & economy ----------
-let power=0,plantRun=false,plantOn=true,lumberOn=true,sawOn=true,quarryOn=true,ironOn=true,crusherOn=true;   // plantOn: the lever in the plant's building; off, the plant burns no coal and gives no power
+let power=0,plantRun=false,plantOn=true,lumberOn=true,sawOn=true,factoryOn=true,foundryOn=true,quarryOn=true,ironOn=true,crusherOn=true;   // plantOn: the lever in the plant's building; off, the plant burns no coal and gives no power
 const mine={stock:50,cap:50,lvl:0,rate:.1,name:'Coal mine',unit:'t'};   // the coal mine regenerates 0.1 t per second
 const plant={built:false,need:10,got:0,stock:0,cap:50,lvl:0,burn:1,name:'Power plant',unit:'t'};
 const lumber={built:false,need:10,got:0,stock:0,prog:0,ylvl:0,get cap(){const z=lzLay();return Math.floor(z.w/LOGCELL+1e-6)*Math.floor(z.h/LOGCELL+1e-6)},lvl:0,rate:.8,name:'Lumberyard',unit:'logs'};
@@ -198,18 +204,28 @@ const SITELAY={   // office (X is the same everywhere: Y, w, rh) and readout boa
  'iron mine':{site:T2s('iron mine'),done:sLay(LYI).done},
  crusher:{site:T2s('crusher'),done:{X:2900,Y:3040,w:280,rh:70,board:[2900,2900,280,140]}},   // the boards are drawn upright on the map, always facing south (readable), two 7 x 7 side by side; built: the middle chunk (16 x 16 tiles) holds them a tile off its top and sides and, a tile below them, the building (14 x 7), door south
    // the crusher's building and board stand in the middle chunk of its lot, built or not
- sawmill:{site:T2s('sawmill'),done:{X:5140,Y:2080,w:280,rh:70,board:[5140,1940,280,140]}}};
+ sawmill:{site:T2s('sawmill'),done:{X:5140,Y:2080,w:280,rh:70,board:[5140,1940,280,140]}},
+ factory:{site:T2s('factory'),done:{X:5140,Y:2080,w:280,rh:70,board:[5140,1940,280,140]}},
+ foundry:{site:T2s('foundry'),done:{X:5140,Y:2080,w:280,rh:70,board:[5140,1940,280,140]}}};   // the factory stands like the sawmill, in its own frame
 // the lumberyard is a unit like the others (LS): everything below is written as it stands with its gate to the west, and turned with the unit
 const U0={c0:0,r0:0,bc:0,br:0,rot:0},LZL={site:{x:5280,y:480,w:240,h:80},get done(){return{x:5920,y:480,w:280,h:YARDH[lumber.ylvl|0]}}},lzLay=()=>lumber.built?LZL.done:LZL.site;   // its yard: the coal drop-off while it is a site, the log station once built (2 chunks, 1 tile off the walls and chunk borders)
 const LV0=T2z('lumberyard'),LGATE={side:'W',a:1*TS,b:2*TS};let LVZ=LV0;   // the shop's VEHICLES area once built: between its building and the west wall, 1 tile off the board, the building and the wall (like the fuel station's); LVZ is where it stands on the map
 const lzU=()=>lumber.built?[LS,LZL.done]:[LT,T2p('lumberyard')],swU=()=>sawmill.built?[SWS,SZL.done]:[SWT,T2p('sawmill')],czU=()=>crusher.built?[CRS,CZL.done]:[CRS,T2p('crusher')];   // where each is unloaded: the site's pad, or the built yard
 function applyLumber(gate){Object.assign(lz,uRect(...lzU()));LVZ=uRect(LS,LV0);if(gate)LOTS[3].gate=uGate(LS,LOTS[3],LGATE)}
-const siteLay=n=>SITELAY[n][({lumberyard:lumber,sawmill,quarry,'iron mine':iron,crusher,'power plant':plant})[n].built?'done':'site'],bpos=n=>siteLay(n).board.slice(0,2);
+const siteLay=n=>SITELAY[n][({lumberyard:lumber,sawmill,factory,foundry,quarry,'iron mine':iron,crusher,'power plant':plant})[n].built?'done':'site'],bpos=n=>siteLay(n).board.slice(0,2);
 const YARDH=[280,600,920],YARDC=[0,400,800];   // the lumberyard's log station and the sawmill's plank area grow in 3 stages: 14, 30 and 46 tiles long (14 wide), centred in the back row; the price of each stage
 const PL0={x:5920,y:2080,w:280,get h(){return YARDH[sawmill.ylvl|0]}},PLZ={x:0,y:0,w:0,h:0};   // in the sawmill's frame: its back row (frame east, behind the 3 x 3), 1 tile off the walls and the front border of that row   // the sawmill's loading area: planks lie in it, one pallet-sized bundle (2 x 2 tiles) per cell, 1 tile off the walls and chunk borders, like the lumberyard's log station
 const SV0=T2z('sawmill'),SVZ={...SV0},SGATE={side:'W',a:6*TS,b:7*TS},swLay=()=>sawmill.built?SZL.done:SZL.site;   // the sawmill shop's VEHICLES area: between its building and the west wall, like the lumberyard's
 const SZL={site:{x:5280,y:2080,w:240,h:80},done:{x:5280,y:2400,w:320,h:80}};   // the sawmill's yard: the log drop-off in the middle of the lot while it is a site, then in the middle of its chunk 8 (the lot's bottom-middle chunk, counted row by row from the top-left)
 const sawmill={ylvl:0,built:false,need:10,got:0,stock:0,cap:50,lvl:0,burn:1,name:'Sawmill',unit:'logs'};let planks=0;
+// the factory: planks (pallets of planks set down on its unloading pad) become pallets and crates, lying on its items pad. It burns the power plant's coal while it works. A job is a product and an amount chosen in the building
+const factory={built:false,need:10,got:0,stock:0,cap:50,pall:0,crat:0,pcap:20,plvl:0,kcap:100,klvl:0,steel:0,scap:100,slvl:0,iron:0,icap:100,ilvl:0,ylvl:0,lvl:0,burn:.5,prog:0,q:[],why:'',name:'Factory',unit:'planks'},FACP=1,FACC=1,FACT={p:4,c:2,h:3,k:2};   // q: the queue of jobs, the first is made first, each {k:'p'|'c',n}; a pallet takes 1 plank and 4 s, a crate 1 plank and 2 s; every item burns 1 kg of the power plant's coal (1000 items per tonne)
+const fz={x:0,y:0,w:0,h:0},FIZ={x:0,y:0,w:0,h:0},FIL0={x:5920,y:2080,w:280,get h(){return YARDH[factory.ylvl|0]}},fcU=()=>factory.built?[FCS,SZL.done]:[FCT,T2p('factory')];   // its unloading pad (the site's, then the built one: the sawmill's yard strip), and its items pad in the back row, growing in 3 stages like the log station
+// the foundry: cargo (iron ore, coal) and pallets, crates and iron set down on its CARGO IN pad; it makes iron (from ore) and steel (from iron and coal) as items, packed in crates on pallets on its ITEMS pad. It burns 1 kg of the power plant's coal for every item.
+const foundry={built:false,need:0,got:0,ore:0,carb:0,sand:0,sacap:50,salvl:0,iron:0,pall:0,crat:0,cap:50,lvl:0,ccap:50,clvl:0,pcap:20,plvl:0,kcap:100,klvl:0,ylvl:0,prog:0,q:[],why:'',name:'Foundry',unit:'t'},FNIR=500,FNORE=.1,FNCARB=.001,FNSAND=.001,FNTIME={i:3,s:4,g:3};   // an iron takes 0.1 t of ore, a steel 1 iron and 1 kg of coal
+const fnz={x:0,y:0,w:0,h:0},FNIZ={x:0,y:0,w:0,h:0},FNIL0={x:5920,y:2080,w:280,get h(){return YARDH[foundry.ylvl|0]}},fnU=()=>foundry.built?[FNS,SZL.done]:[FNT,T2p('foundry')];
+function applyFoundry(gate){Object.assign(fnz,uRect(...fnU()));Object.assign(FNIZ,uRect(FNS,FNIL0));if(gate)LOTS[11].gate=uGate(FNS,LOTS[11],SGATE)}
+function applyFactory(gate){Object.assign(fz,uRect(...fcU()));Object.assign(FIZ,uRect(FCS,FIL0));if(gate)LOTS[10].gate=uGate(FCS,LOTS[10],SGATE)}
 // the quarry: a unit like the others (QS), laid out with its gate to the west. A site first (10 t of coal in the middle of the lot), then it makes rock from the power plant's coal (1 coal = 1 t) into a loading pad that trucks load from
 const quarry={built:false,need:10,got:0,stock:0,cap:50,lvl:0,rate:1,name:'Quarry',unit:'t'};
 const qz={x:480,y:480,w:80,h:240},qZ=()=>[QS,LYQ.pad];
@@ -218,10 +234,10 @@ function applyMineV(){Object.assign(MVZ,uRect(MS,MV0))}
 function applyQuarry(gate){Object.assign(qz,uRect(QS,LYQ.pad));Object.assign(QVZ,uRect(QS,QV0));if(gate)LOTS[7].gate=uGate(QS,LOTS[7],LYQ.gate)}
 // the iron mine: the quarry again, written in the quarry's frame (gate to the west, lot x shifted to the west edge of the map) and turned 180 degrees, so its gate is on the east. It makes iron ore from the power plant's coal (1 coal = 1 t)
 const iron={built:false,need:10,got:0,stock:0,cap:50,lvl:0,rate:1,name:'Iron mine',unit:'t'};
-reqInit(quarry,[['coal',10,'t']]);reqInit(plant,[['coal',50,'t']]);reqInit(lumber,[['coal',50,'t'],['rock',50,'t']]);reqInit(sawmill,[['coal',50,'t'],['rock',50,'t'],['logs',10,'']]);reqInit(iron,[['coal',50,'t'],['rock',50,'t'],['planks',20,'']]);   // what each site needs (garage, shop, coal mine and fuel station are built from the start)
+reqInit(quarry,[['coal',50,'t']]);reqInit(plant,[['coal',50,'t']]);reqInit(lumber,[['coal',50,'t'],['rock',50,'t']]);reqInit(sawmill,[['coal',50,'t'],['rock',50,'t'],['logs',10,'']]);reqInit(iron,[['coal',50,'t'],['rock',50,'t'],['planks',20,'']]);reqInit(factory,[['coal',50,'t'],['gravel',50,'t'],['logs',20,''],['planks',10,'']]);reqInit(foundry,[['coal',50,'t'],['gravel',50,'t'],['planks',20,''],['sand',20,'t']]);   // what each site needs (garage, shop, coal mine and fuel station are built from the start)
 // the crusher: a unit like the others (CRS): the lot at tile (8,8), turned a quarter so its gate and the building's door face west. 3 x 3 chunks: the building in the middle chunk, facing the gate, the sand loading pad on its north side and the rock unloading pad on its south side, each in the middle of its chunk (written in the unit's frame, where the gate is to the south and the pads are west and east)
 // A site first (50 t of rock and 50 t of coal on the unloading yard). Built, it crushes the rock that is unloaded (feed) into sand (stock), using the power plant's coal (1 coal for 1 t), and trucks load the sand at the loading pad
-const crusher={built:false,need:100,got:0,stock:0,gst:0,gsel:0,feed:0,cap:50,fcap:50,lvl:0,flvl:0,rate:1,name:'Crusher',unit:'t'};reqInit(crusher,[['rock',50,'t'],['coal',50,'t']]);
+const crusher={built:false,need:100,got:0,stock:0,gst:0,gsel:0,feed:0,cap:50,fcap:50,lvl:0,flvl:0,rate:1,name:'Crusher',unit:'t'};reqInit(crusher,[['rock',50,'t'],['coal',50,'t'],['logs',20,'']]);
 const CZL={site:{x:3040,y:3040,w:80,h:240},done:{x:3360,y:3040,w:80,h:320}},cLay=()=>crusher.built?CZL.done:CZL.site,cz={...CZL.site};
 const crShort=()=>!crusherOn?'switched off':!power?'no power':crusher.feed>0?'crushing':'no rock',crSt=()=>!crusherOn?'switched off':!power?'idle: power plant is off':crusher.feed>0?'crushing':'waiting for rock';
 const CL0={x:2720,y:3040,w:80,h:320},CLZ={...CL0},CV0={x:3130,y:3130,w:100,h:140},CVZ={...CV0},CGATE={side:'S',a:9*TS,b:10*TS},CRUSHPAY=15;   // CV0: the shop's VEHICLES area, beside the building in the same middle chunk (like the fuel station's)
@@ -235,35 +251,35 @@ function reqSync(b){for(const r of b.reqs){if(r.need-r.got<.05)r.got=r.need;else
  b.got=b.reqs.reduce((a,r)=>a+Math.min(r.got,r.need),0);if(!b.built&&b.reqs.every(r=>r.got>=r.need-1e-6)){b.built=true;flash(b.name+' built!');return true}return false}
 function sweepLeft(cg,b){   /* the site is finished and its yard has moved: what is still on the truck goes in at once, paid as usual */
  if(!(cg.amt>0))return;if(cg.type==='coal'){const q=Math.min(cg.amt,plant.cap-plant.stock);if(q>0){cg.amt-=q;plant.stock+=q;cash+=q*SITEPAY.coal}}else if(cg.type==='logs'&&sawmill.built){const q=Math.min(cg.amt,sawmill.cap-sawmill.stock);if(q>0){cg.amt-=q;sawmill.stock+=q;cash+=q*SITEPAY.logs}}}
-const SITEPAY={coal:10,logs:20,rock:10,iron:10,planks:60};   // what the player is paid per unit delivered to a construction site
+const SITEPAY={coal:10,logs:20,rock:10,iron:10,planks:60,sand:15,gravel:15};   // what the player is paid per unit delivered to a construction site
 function siteDeliver(b,cg,room){const r=cg.amt>0?reqOf(b,cg.type):null;if(!r)return b.name+' site needs: '+reqNeeds(b)+'.';if(r.got>=r.need-1e-6){if(r.k==='coal'){sweepLeft(cg);return 'The site has all the coal it needs. The rest goes to the power plant store.'}return 'The site has all the '+r.k+' it needs.'}const q=Math.min(room,cg.amt,r.need-r.got);cg.amt-=q;r.got+=q;cash+=q*(SITEPAY[r.k]||0);reqSync(b);return 'Delivering '+r.k+' to the site…'}
-function siteAbsorb(){for(const b of[quarry,iron]){if(b.built)continue;const z=b===quarry?qz:iz,inz=(x,y)=>Math.abs(x-z.x)<z.w/2&&Math.abs(y-z.y)<z.h/2,rl=reqOf(b,'logs'),rp=reqOf(b,'planks');
+function siteAbsorb(){for(const b of[quarry,iron,factory,foundry]){if(b.built)continue;const z=b===quarry?qz:b===factory?fz:b===foundry?fnz:iz,inz=(x,y)=>Math.abs(x-z.x)<z.w/2&&Math.abs(y-z.y)<z.h/2,rl=reqOf(b,'logs'),rp=reqOf(b,'planks');
  if(rl)for(let i=LG.length-1;i>=0;i--){const l=LG[i];if(!l.st&&!l.fk&&inz(l.x,l.y)&&rl.got<rl.need-1e-6){LG.splice(i,1);rl.got+=1;cash+=SITEPAY.logs}}
  if(rp)for(let i=PALS.length-1;i>=0;i--){const p=PALS[i];if(p.planks&&!p.fk&&!p.on&&inz(p.x,p.y)&&rp.got<rp.need-1e-6){PALS.splice(i,1);rp.got+=1;cash+=SITEPAY.planks}}
  reqSync(b)}}
 function applyIron(gate){Object.assign(iz,uRect(IRS,LYI.pad));Object.assign(IVZ,uRect(IRS,IV0));if(gate)LOTS[8].gate=uGate(IRS,LOTS[8],LYI.gate)}
 const BOARDS=[[1940,2260,'fuel',280,120,FS]];   // every readout board [x,y,name,w,h,unit]: boardsBuild lists them from what is built. A built building has two 7 x 7 boards on the map (upright, they always read facing south); a site has one board in its unit's frame (turned half a turn on itself when its unit faces west or north: boardFlip)
-const SBU={'power plant':PS,lumberyard:LS,sawmill:SWS,quarry:QS,'iron mine':IRS};
-const BLD={mine,'power plant':plant,lumberyard:lumber,sawmill,quarry,'iron mine':iron,crusher};
+const SBU={'power plant':PS,lumberyard:LS,sawmill:SWS,factory:FCS,foundry:FNS,quarry:QS,'iron mine':IRS};
+const BLD={mine,'power plant':plant,lumberyard:lumber,sawmill,quarry,'iron mine':iron,crusher,factory,foundry};
 function boardsBuild(){BOARDS.length=1;for(const n in T2){const b=BLD[n];
   if(b.built!==false){for(const i of[0,1]){const[x,y]=T2b(n,i);BOARDS.push([x,y,n,140,140])}}
   else{const l=siteLay(n).board;if(l)BOARDS.push([l[0],l[1],n,l[2],l[3],SBU[n]])}}}
 boardsBuild();
 // offices: the building of each place that you walk into (the upgrade panel is inside), one per big site
-const OFFICES=[{X:LYM.done.X,Y:LYM.done.Y,w:280,rh:70,get b(){return mine},get doors(){return DOORS(mine)},n:'mine',inw:1,get site(){return MS}},{get X(){return siteLay('power plant').X},get Y(){return siteLay('power plant').Y},get w(){return siteLay('power plant').w},rh:70,get b(){return plant},get doors(){return DOORS(plant)},n:'power plant',inw:1,get site(){return PS}},{X:1940,Y:2400,w:160,rh:70,n:'fuel',inw:1,get site(){return FS}},{get X(){return siteLay('lumberyard').X},get Y(){return siteLay('lumberyard').Y},get w(){return siteLay('lumberyard').w},get rh(){return siteLay('lumberyard').rh},get b(){return lumber},get doors(){return DOORS(lumber)},n:'lumberyard',inw:1,get site(){return LT}},{get X(){return siteLay('sawmill').X},get Y(){return siteLay('sawmill').Y},get w(){return siteLay('sawmill').w},get rh(){return siteLay('sawmill').rh},get b(){return sawmill},get doors(){return DOORS(sawmill)},n:'sawmill',inw:1,get site(){return SWT}},{X:3540,Y:660,w:280,eh:280,label:'SHOP',n:'shop',inw:1,get site(){return SSO}},{X:1660,Y:1140,w:160,rooms:3,eh:140,sl:60,label:'HOME',n:'garage',inw:1,get site(){return GS}},{get X(){return siteLay('quarry').X},get Y(){return siteLay('quarry').Y},get w(){return siteLay('quarry').w},get rh(){return siteLay('quarry').rh},get b(){return quarry},get doors(){return DOORS(quarry)},n:'quarry',inw:1,get site(){return QS}},{get X(){return siteLay('iron mine').X},get Y(){return siteLay('iron mine').Y},get w(){return siteLay('iron mine').w},get rh(){return siteLay('iron mine').rh},get b(){return iron},get doors(){return DOORS(iron)},n:'iron mine',inw:1,get site(){return IRS}},{get X(){return siteLay('crusher').X},get Y(){return siteLay('crusher').Y},get w(){return siteLay('crusher').w},get rh(){return siteLay('crusher').rh},get b(){return crusher},get doors(){return DOORS(crusher)},n:'crusher',inw:1,get site(){return CRS}}];
+const OFFICES=[{X:LYM.done.X,Y:LYM.done.Y,w:280,rh:70,get b(){return mine},get doors(){return DOORS(mine)},n:'mine',inw:1,get site(){return MS}},{get X(){return siteLay('power plant').X},get Y(){return siteLay('power plant').Y},get w(){return siteLay('power plant').w},rh:70,get b(){return plant},get doors(){return DOORS(plant)},n:'power plant',inw:1,get site(){return PS}},{X:1940,Y:2400,w:160,rh:70,n:'fuel',inw:1,get site(){return FS}},{get X(){return siteLay('lumberyard').X},get Y(){return siteLay('lumberyard').Y},get w(){return siteLay('lumberyard').w},get rh(){return siteLay('lumberyard').rh},get b(){return lumber},get doors(){return DOORS(lumber)},n:'lumberyard',inw:1,get site(){return LT}},{get X(){return siteLay('sawmill').X},get Y(){return siteLay('sawmill').Y},get w(){return siteLay('sawmill').w},get rh(){return siteLay('sawmill').rh},get b(){return sawmill},get doors(){return DOORS(sawmill)},n:'sawmill',inw:1,get site(){return SWT}},{X:3540,Y:980,w:280,eh:280,label:'SHOP',n:'shop',inw:1,get site(){return SS}},{X:1660,Y:1140,w:160,rooms:3,eh:140,sl:60,label:'HOME',n:'garage',inw:1,get site(){return GS}},{get X(){return siteLay('quarry').X},get Y(){return siteLay('quarry').Y},get w(){return siteLay('quarry').w},get rh(){return siteLay('quarry').rh},get b(){return quarry},get doors(){return DOORS(quarry)},n:'quarry',inw:1,get site(){return QS}},{get X(){return siteLay('iron mine').X},get Y(){return siteLay('iron mine').Y},get w(){return siteLay('iron mine').w},get rh(){return siteLay('iron mine').rh},get b(){return iron},get doors(){return DOORS(iron)},n:'iron mine',inw:1,get site(){return IRS}},{get X(){return siteLay('crusher').X},get Y(){return siteLay('crusher').Y},get w(){return siteLay('crusher').w},get rh(){return siteLay('crusher').rh},get b(){return crusher},get doors(){return DOORS(crusher)},n:'crusher',inw:1,get site(){return CRS}},{get X(){return siteLay('factory').X},get Y(){return siteLay('factory').Y},get w(){return siteLay('factory').w},get rh(){return siteLay('factory').rh},get b(){return factory},get doors(){return DOORS(factory)},n:'factory',inw:1,get site(){return FCT}},{get X(){return siteLay('foundry').X},get Y(){return siteLay('foundry').Y},get w(){return siteLay('foundry').w},get rh(){return siteLay('foundry').rh},get b(){return foundry},get doors(){return DOORS(foundry)},n:'foundry',inw:1,get site(){return FNT}}];
 // one colour per building: roofs and trim, lot walls, signs, entering panels and the minimap all use it (the same colours as the loading zones)
-const BCOL={mine:'#f2b134','power plant':'#7fd1ff',lumberyard:'#ff8a3d',sawmill:'#d9b27c',quarry:'#9aa6b5','iron mine':'#c9694a',crusher:'#7fb3a4',shop:'#ff7ab6',garage:'#a98bff',fuel:'#ff5a3d'};
-const LOTK=['mine','power plant','garage','lumberyard','sawmill','shop','fuel','quarry','iron mine','crusher'];
+const BCOL={mine:'#f2b134','power plant':'#7fd1ff',lumberyard:'#ff8a3d',sawmill:'#d9b27c',quarry:'#9aa6b5','iron mine':'#c9694a',crusher:'#7fb3a4',factory:'#8fa3b8',foundry:'#c98a4b',shop:'#ff7ab6',garage:'#a98bff',fuel:'#ff5a3d'};
+const LOTK=['mine','power plant','garage','lumberyard','sawmill','shop','fuel','quarry','iron mine','crusher','factory','foundry'];
 // ---------- construction sites: a building that is not built yet is a dirt lot with a half-built shell and an unloading yard. Deliver what it needs and it is finished ----------
 // one entry per building that starts as a site: b = its state ({built,got,need}), lot = index in LOTS, off = its office, zone = the unloading yard, mat = what is delivered
 function applySaw(gate){Object.assign(swz,uRect(...swU()));Object.assign(PLZ,uRect(SWS,PL0));Object.assign(SVZ,uRect(SWS,SV0));if(gate)LOTS[4].gate=uGate(SWS,LOTS[4],SGATE)}
-const SITES=[{b:plant,lot:1,off:'power plant',zone:dump,mat:'coal',unit:'t',what:'coal'},{b:lumber,lot:3,off:'lumberyard',zone:lz,mat:'coal',unit:'t',what:'coal'},{b:sawmill,lot:4,off:'sawmill',zone:swz,mat:'coal',unit:'t',what:'coal'},{b:quarry,lot:7,off:'quarry',zone:qz,mat:'coal',unit:'t',what:'coal'},{b:iron,lot:8,off:'iron mine',zone:iz,mat:'coal',unit:'t',what:'coal'},{b:crusher,lot:9,off:'crusher',zone:cz,mat:'rock',unit:'t',what:'rock'}];
+const SITES=[{b:plant,lot:1,off:'power plant',zone:dump,mat:'coal',unit:'t',what:'coal'},{b:lumber,lot:3,off:'lumberyard',zone:lz,mat:'coal',unit:'t',what:'coal'},{b:sawmill,lot:4,off:'sawmill',zone:swz,mat:'coal',unit:'t',what:'coal'},{b:quarry,lot:7,off:'quarry',zone:qz,mat:'coal',unit:'t',what:'coal'},{b:iron,lot:8,off:'iron mine',zone:iz,mat:'coal',unit:'t',what:'coal'},{b:crusher,lot:9,off:'crusher',zone:cz,mat:'rock',unit:'t',what:'rock'},{b:factory,lot:10,off:'factory',zone:fz,mat:'coal',unit:'t',what:'coal'},{b:foundry,lot:11,off:'foundry',zone:fnz,mat:'coal',unit:'t',what:'coal'}];
 const siteOfLot=l=>SITES.find(q=>LOTS[q.lot]===l&&!q.b.built),siteOfOff=o=>SITES.find(q=>q.off===o.n&&!q.b.built);
 const hsh=(a,b)=>{let h=(a*73856093)^(b*19349663);h=(h^(h>>>13))*1274126177;return((h^(h>>>16))>>>0)/4294967296};   // the six lots, in LOTS order
 const hx=h=>parseInt(h.slice(1),16),rgb=h=>[hx(h)>>16&255,hx(h)>>8&255,hx(h)&255],hex=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
 const shd=(h,f)=>hex(rgb(h).map(v=>v*f)),mixc=(a,b,t)=>{const p=rgb(a),q=rgb(b);return hex(p.map((v,i)=>v+(q[i]-v)*t))},lumo=h=>{const c=rgb(h);return(c[0]*.3+c[1]*.59+c[2]*.11)/255};
 LOTS.forEach((l,i)=>{const c=BCOL[LOTK[i]];l.col=c;l.f1=mixc('#3b3b3f',c,.08);l.f2=mixc('#3e3e43',c,.08);l.wc=mixc('#c9c9c0',c,.75)});
-const pads=[{x:-4060,y:-4060,w:40,h:40,enter:1,own:'garage'},{x:-4060,y:-4000,w:40,h:40,gup:1,own:'garage'},{x:-4000,y:-4100,w:40,h:40,shop:1,own:'shop'},{x:-4000,y:-4060,w:40,h:40,fshop:1,own:'fuel'},{x:-4000,y:-4048,w:110,h:80,b:mine,inside:1,up:1},{x:-4000,y:-3890,w:110,h:40,exit:1,inside:1},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'lumberyard'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'sawmill'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'quarry'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'mine'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'iron mine'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'crusher'}];
+const pads=[{x:-4060,y:-4060,w:40,h:40,enter:1,own:'garage'},{x:-4060,y:-4000,w:40,h:40,gup:1,own:'garage'},{x:-4000,y:-4100,w:40,h:40,shop:1,own:'shop'},{x:-4000,y:-4060,w:40,h:40,fshop:1,own:'fuel'},{x:-4000,y:-4048,w:110,h:80,b:mine,inside:1,up:1},{x:-4000,y:-3890,w:110,h:40,exit:1,inside:1},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'lumberyard'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'sawmill'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'quarry'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'mine'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'iron mine'},{x:-4120,y:-4080,w:40,h:40,lshop:1,own:'crusher'},{x:-4120,y:-4080,w:40,h:40,fctl:1,own:'factory',inside:1},{x:-4120,y:-4080,w:40,h:40,fctl:1,own:'foundry',inside:1}];
 const MAXLVL=19,STEP=50,upCost=b=>125*(b.lvl+1);
 // ---------- collision: kerbs (vehicles stay on tarmac), lot walls, gate posts and buildings. The Test panel can switch it off ----------
 let COLL=true;const JOY={on:false,a:0,g:1};
@@ -273,9 +289,9 @@ function lotFit(li,U){U.h0??=[U.c0,U.r0];const ok=l=>{if(l.c0<0||l.r0<0||l.c1>WW
  for(const[dc,dr]of[[0,0],[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[1,-1],[-1,1],[1,1]]){U.c0=U.h0[0]+dc;U.r0=U.h0[1]+dr;lotFit0(li,U);if(ok(LOTS[li]))return}U.c0=U.h0[0];U.r0=U.h0[1];lotFit0(li,U)}
 function lotFit0(li,U){const B={x0:U.bc*TS,y0:U.br*TS,x1:(U.bc+3)*TS,y1:(U.br+3)*TS},a=uBox(U,B),b=uBox(U,{x0:B.x1,y0:B.y0,x1:B.x1+TS,y1:B.y1}),l=LOTS[li];
  l.x0=Math.min(a.x0,b.x0);l.y0=Math.min(a.y0,b.y0);l.x1=Math.max(a.x1,b.x1);l.y1=Math.max(a.y1,b.y1);l.c0=Math.round(l.x0/TS);l.r0=Math.round(l.y0/TS);l.c1=Math.round(l.x1/TS);l.r1=Math.round(l.y1/TS)}
-function lotsFit(){{const b=uBox(SS,S0.lot),l=LOTS[5];Object.assign(l,b);l.c0=Math.round(b.x0/TS);l.r0=Math.round(b.y0/TS);l.c1=Math.round(b.x1/TS);l.r1=Math.round(b.y1/TS)}lotFit(3,LS);lotFit(4,SWS);LOTT.clear();for(const l of LOTS)for(let c=l.c0;c<l.c1;c++)for(let r=l.r0;r<l.r1;r++)LOTT.add(ck(c,r))}
+function lotsFit(){{const b=uBox(SS,S0.lot),l=LOTS[5];Object.assign(l,b);l.c0=Math.round(b.x0/TS);l.r0=Math.round(b.y0/TS);l.c1=Math.round(b.x1/TS);l.r1=Math.round(b.y1/TS)}lotFit(3,LS);lotFit(4,SWS);lotFit(10,FCS);lotFit(11,FNS);LOTT.clear();for(const l of LOTS)for(let c=l.c0;c<l.c1;c++)for(let r=l.r0;r<l.r1;r++)LOTT.add(ck(c,r))}
 function applyUnits(){lotsFit();garage=gRect(G0.garage);gUnl=gRect(G0.gUnl);gPanel=gRect(G0.gPanel);gLoad=gRect(G0.gLoad);LOTS[2].gate=uGate(GS,LOTS[2],G0.gate);
- load=uRect(MS,LYM.pad);applyPlant(1);LOTS[0].gate=uGate(MS,LOTS[0],LYM.gate);FZS=F0.fzs.map(z=>uRect(FS,z));fsz=uRect(FS,F0.fsz);sellZ=uRect(SS,S0.zone);LOTS[5].gates=S0.gates.map(q=>uGate(SS,LOTS[5],q));LOTS[5].gate=LOTS[5].gates[0];const lf=LOTS[6];lf.gates=F0.gates.map(q=>uGate(FS,lf,q));lf.gate=lf.gates[0];applyLumber(1);applySaw(1);applyQuarry(1);applyIron(1);applyCrusher(1);applyMineV();snapGates();
+ load=uRect(MS,LYM.pad);applyPlant(1);LOTS[0].gate=uGate(MS,LOTS[0],LYM.gate);FZS=F0.fzs.map(z=>uRect(FS,z));fsz=uRect(FS,F0.fsz);sellZ=uRect(SS,S0.sell);spawnZ=uRect(SS,S0.spawn);LOTS[5].gates=S0.gates.map(q=>uGate(SS,LOTS[5],q));LOTS[5].gate=LOTS[5].gates[0];const lf=LOTS[6];lf.gates=F0.gates.map(q=>uGate(FS,lf,q));lf.gate=lf.gates[0];applyLumber(1);applySaw(1);applyFactory(1);applyFoundry(1);applyQuarry(1);applyIron(1);applyCrusher(1);applyMineV();snapGates();
  if(typeof WALLS!=='undefined'){buildWalls();boardsBuild();buildBlds();if(typeof GCH!=='undefined')GCH.clear()}}
 const applyGarage=applyUnits;
 function buildWalls(){WALLS.length=0;const add=(x0,y0,x1,y1)=>WALLS.push({x0:Math.min(x0,x1)-4,y0:Math.min(y0,y1)-4,x1:Math.max(x0,x1)+4,y1:Math.max(y0,y1)+4});
@@ -319,8 +335,8 @@ const padOn=q=>q.exit||q.minein?false:q.own?!!(IN&&IN.o.n===q.own):q.up?!!(IN&&q
 // ---------- input ----------
 const K={};
 const keys={w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
-addEventListener('keydown',e=>{if(e.target&&e.target.tagName=='INPUT'){if(e.key=='Enter')$('tset').click();return}const k=e.key.toLowerCase();if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){mapPiece=(mapPiece+1)%PIECES.length;return}const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k==' '){spaceKey();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
-addEventListener('keyup',e=>{{const m=MKEYS[e.key.toLowerCase()];if(m)MK[m]=0}const k=keys[e.key.toLowerCase()];if(k)K[k]=0});
+addEventListener('keydown',e=>{if(e.target&&e.target.tagName=='INPUT'){if(e.key=='Enter')$('tset').click();return}const k=e.key.toLowerCase();if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){mapPiece=(mapPiece+1)%PIECES.length;return}const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
+addEventListener('keyup',e=>{if(e.key==' ')spaceUp();{const m=MKEYS[e.key.toLowerCase()];if(m)MK[m]=0}const k=keys[e.key.toLowerCase()];if(k)K[k]=0});
 document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();K[k]=1;b.classList.add('dn');b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>{K[k]=0;b.classList.remove('dn')}));b.addEventListener('contextmenu',e=>e.preventDefault())});
 {const st=$('stick'),kn=$('knob');let pid=null;JOY.g=1;
  const setK=(l,rt,u,d)=>{K.left=l?1:0;K.right=rt?1:0;K.up=u?1:0;K.down=d?1:0};
@@ -331,7 +347,7 @@ document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset
  st.addEventListener('pointerdown',e=>{if(pid!==null)return;e.preventDefault();pid=e.pointerId;try{st.setPointerCapture(pid)}catch(_){}st.classList.add('on');move(e)});
  st.addEventListener('pointermove',e=>{if(e.pointerId===pid)move(e)});
  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>st.addEventListener(t,end));st.addEventListener('contextmenu',e=>e.preventDefault())}
-$('hb').addEventListener('pointerdown',()=>spaceKey());$('cb').addEventListener('pointerdown',()=>couple());$('vb').addEventListener('pointerdown',()=>cycleTrailer());$('gb').addEventListener('pointerdown',()=>dumpCargo());
+$('hb').addEventListener('pointerdown',()=>spaceDown());['pointerup','pointercancel','pointerleave'].forEach(t=>$('hb').addEventListener(t,()=>spaceUp()));addEventListener('blur',()=>{SPK.down=false});$('cb').addEventListener('pointerdown',()=>couple());$('vb').addEventListener('pointerdown',()=>cycleTrailer());$('gb').addEventListener('pointerdown',()=>dumpCargo());
 
 // ---------- fleet: several tractors and trailers can be out at once (Roundhaul physics, units of S px) ----------
 const TKINDS={
@@ -543,8 +559,8 @@ function pushOut(o,ox,oy,oa,x0,x1,h,r){
  const w=wld(lx,ly,ox,oy,oa);o.x=w[0];o.y=w[1]}
 // ----- cargo carriers -----
 function rigCs(){const o=[];if(!T.out)return o;
- for(const t of chain()){const tr=TRL[t.kind];if(tr.cap>0)o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>Math.abs(T.v)<1.2})}
- if(KD.cap>0&&T.bed!=='items'&&T.bed!=='flat')o.push({cg:T.cargo,cap:T.bed==='fuel'?KD.cap*20:T.bed==='logs'?(T.kind==='pickup'?3:T.kind==='dump'?6:KD.cap):KD.cap,cargo:T.bed||'any',fm:20,ox:T.x,oy:T.y,a:T.a,e0:KD.b0,e1:KD.b1,slow:()=>Math.abs(T.v)<1.2});
+ for(const t of chain()){const tr=TRL[t.kind];if(tr.cap>0)o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,ent:t,slow:()=>Math.abs(T.v)<1.2})}
+ if(KD.cap>0&&T.bed!=='items'&&T.bed!=='flat')o.push({cg:T.cargo,cap:T.bed==='fuel'?KD.cap*20:T.bed==='logs'?(T.kind==='pickup'?3:T.kind==='dump'?6:KD.cap):KD.cap,cargo:T.bed||'any',fm:20,ox:T.x,oy:T.y,a:T.a,e0:KD.b0,e1:KD.b1,ent:T,slow:()=>Math.abs(T.v)<1.2});
  return o}
 function carriers(){const o=P.driving?rigCs():[];
  for(const t of Object.values(trl)){const k=t.kind;if(t.out&&TRL[k].cap>0&&!chainOf(T).includes(t)&&(!t.coupled||'b' in t.host)){const tr=TRL[k];o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>true})}}
@@ -591,7 +607,7 @@ $('tbed').onchange=()=>{bedCust=$('tbed').checked;$('tmsg').textContent='Bed typ
 {const sel=$('ttp');sel.innerHTML=OFFICES.map((o,i)=>'<option value="'+i+'">'+o.n.charAt(0).toUpperCase()+o.n.slice(1)+'</option>').join('');   /* the player appears just outside the building's door */
  $('ttpgo').onclick=()=>{const o=OFFICES[+sel.value];if(!o)return;if(IN){IN=null;Z=Zsave}P.driving=false;if(o.rot){P.x=o.X-28;P.y=o.Y+75;P.a=Math.PI}else[P.x,P.y,P.a]=doorOut(o);cam.x=P.x;cam.y=P.y;$('tmsg').textContent='Player moved to the '+o.n+'.'}}
 $('tbtn').onclick=()=>{const o=$('tp').style.display!=='block';$('tp').style.display=o?'block':'none';if(o){$('tcash').value=Math.floor(cash);$('tmsg').textContent=''}};
-{const UN=[['Mine',MS,'mine',0],['Power plant',PS,'power plant',1],['Garage',GS,'garage',2],['Lumberyard',LS,'lumberyard',3],['Sawmill',SWS,'sawmill',4],['Quarry',QS,'quarry',7],['Iron mine',IRS,'iron mine',8],['Crusher',CRS,'crusher',9],['Shop',SS,'shop',5],['Fuel station',FS,'fuel',6]];$('ttu').innerHTML=UN.map((u,i)=>'<option value="'+i+'">'+u[0]+'</option>').join('');$('ttugo').onclick=()=>{const u=UN[+$('ttu').value];turnUnit(u[1],u[2],u[3],u[0])}}
+{const UN=[['Mine',MS,'mine',0],['Power plant',PS,'power plant',1],['Garage',GS,'garage',2],['Lumberyard',LS,'lumberyard',3],['Sawmill',SWS,'sawmill',4],['Quarry',QS,'quarry',7],['Iron mine',IRS,'iron mine',8],['Crusher',CRS,'crusher',9],['Factory',FCS,'factory',10],['Foundry',FNS,'foundry',11],['Shop',SS,'shop',5],['Fuel station',FS,'fuel',6]];$('ttu').innerHTML=UN.map((u,i)=>'<option value="'+i+'">'+u[0]+'</option>').join('');$('ttugo').onclick=()=>{const u=UN[+$('ttu').value];turnUnit(u[1],u[2],u[3],u[0])}}
 $('tbuild').onclick=()=>{const todo=SITES.filter(q=>!q.b.built);for(const q of todo){q.b.got=q.b.need;if(q.b.reqs)q.b.reqs.forEach(r=>r.got=r.need);q.b.built=true}$('tmsg').textContent=todo.length?'Built: '+todo.map(q=>q.off).join(' and ')+'.':'Nothing is under construction.';if(todo.length)flash(todo.map(q=>q.off).join(' and ')+(todo.length>1?' are':' is')+' built.')};   // finish every building that is still a site: what delivering the materials would do
 $('tset').onclick=()=>{const v=parseFloat($('tcash').value);if(isNaN(v))return $('tmsg').textContent='Enter a number.';cash=v;$('tmsg').textContent='Cash set to $'+Math.floor(v)+'.'};
 
@@ -612,12 +628,14 @@ cv.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,[e.clientX,e.clientY]
 cv.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,[e.clientX,e.clientY]);if(ptrs.size==2){const d=pinch();if(pd>0)Z=clampZ(Z*d/pd);pd=d}});
 ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,e=>{ptrs.delete(e.pointerId);pd=0}));
 const padAt=()=>pads.find(q=>padOn(q)&&Math.abs(P.x-q.x)<q.w/2&&Math.abs(P.y-q.y)<q.h/2)||null;
-const upText=q=>q.minein?'Press Space to go inside the mine office (upgrades).':q.exit?'Press Space to leave the office.':q.enter?'Press Space to enter the garage.':q.gup?'Press Space to upgrade the garage (vehicle and trailer slots).':q.shop?'Press Space to open the shop.':q.fshop?'Press Space to open the fuel station shop.':q.lshop?'Press Space to open the '+q.own+' shop.':q.b===crusher?'Press Space to upgrade the crusher storage (rock and sand).':q.b.lvl>=MAXLVL?q.b.name+' storage is at max level.':'Upgrade '+q.b.name+' storage to '+(q.b.cap+STEP)+' '+q.b.unit+' for $'+upCost(q.b)+' (press Space)';
-let yupB=null;   // whose upgrade window is open: the lumberyard's or the sawmill's
+const upText=q=>q.fctl&&q.own==='foundry'?'Press Space to open the foundry control panel (iron and steel jobs).':q.b===foundry?'Press Space to upgrade the foundry (ore and coal storage, bigger items pad).':q.fctl?'Press Space to open the factory control panel (what to make and how many).':q.b===factory?'Press Space to upgrade the factory (bigger items pad).':q.minein?'Press Space to go inside the mine office (upgrades).':q.exit?'Press Space to leave the office.':q.enter?'Press Space to enter the garage.':q.gup?'Press Space to upgrade the garage (vehicle and trailer slots).':q.shop?'Press Space to open the shop.':q.fshop?'Press Space to open the fuel station shop.':q.lshop?'Press Space to open the '+q.own+' shop.':q.b===crusher?'Press Space to upgrade the crusher storage (rock and sand).':q.b.lvl>=MAXLVL?q.b.name+' storage is at max level.':'Upgrade '+q.b.name+' storage to '+(q.b.cap+STEP)+' '+q.b.unit+' for $'+upCost(q.b)+' (press Space)';
+const FQ=()=>panelMode=='fnd'?foundry.q:factory.q;
+const UPX={ore:{cap:'cap',lvl:'lvl',step:STEP,base:125},coal:{cap:'ccap',lvl:'clvl',step:STEP,base:125},sand:{cap:'sacap',lvl:'salvl',step:STEP,base:125},steel:{cap:'scap',lvl:'slvl',step:50,base:100},firon:{cap:'icap',lvl:'ilvl',step:50,base:100},planks:{cap:'cap',lvl:'lvl',step:STEP,base:125},pall:{cap:'pcap',lvl:'plvl',step:10,base:100},crat:{cap:'kcap',lvl:'klvl',step:50,base:100}};   // storage upgrades of the factory and the foundry: how the capacity grows and what it costs (base x (level + 1))
+let fndSel='i',facView='ctl',facTab='job',facSel='p',facAmt=9,yupB=null;   // whose upgrade window is open: the lumberyard's or the sawmill's
 function upgrade(q){
  if(q.exit)return exitMine();
- const an=aroundZ(q,24);if(q.enter)return openGarage(an);if(q.gup)return openGarageUp(an);if(q.shop)return openShop('veh',an);if(q.fshop){ftab='veh';return openP('fuel',an)}if(q.lshop){ftab='veh';return openP(q.own==='sawmill'?'saw':q.own==='quarry'?'quarry':q.own==='mine'?'mine':q.own==='iron mine'?'iron':q.own==='crusher'?'crush':'lumber',an)}
- const b=q.b;if(b===crusher)return openP('crup',an);if(b===lumber||b===sawmill){yupB=b;return openP('yup',an)}if(b.lvl>=MAXLVL)return flash(b.name+' is fully upgraded.');
+ const an=aroundZ(q,24);if(q.enter)return openGarage(an);if(q.gup)return openGarageUp(an);if(q.shop)return openShop('veh',an);if(q.fshop){ftab='veh';return openP('fuel',an)}if(q.fctl){facView='ctl';return openP(q.own==='foundry'?'fnd':'fac',an)}if(q.lshop){ftab='veh';return openP(q.own==='sawmill'?'saw':q.own==='quarry'?'quarry':q.own==='mine'?'mine':q.own==='iron mine'?'iron':q.own==='crusher'?'crush':'lumber',an)}
+ const b=q.b;if(b===crusher)return openP('crup',an);if(b===factory){facView='up';return openP('fac',an)}if(b===foundry){facView='up';return openP('fnd',an)}if(b===lumber||b===sawmill){yupB=b;return openP('yup',an)}if(b.lvl>=MAXLVL)return flash(b.name+' is fully upgraded.');
  const c=upCost(b);if(cash<c)return flash('Not enough cash: need $'+c);
  cash-=c;b.lvl++;b.cap+=STEP;flash(b.name+' storage upgraded to '+b.cap+' '+b.unit+'.')}
 
@@ -640,10 +658,10 @@ const slotCost=()=>150*SLOTS.n,vCount=()=>Object.keys(veh).length,tCount=()=>Obj
 const bedTxt=(d,b)=>!d.cap?'No bed':b==='logs'?'Log bed'+(d.n==='Pickup'?' · 3 logs':''):b==='fuel'?'Fuel tank · '+d.cap*20+' L':b==='items'?'Item bed · 4 slots':b==='flat'?'Flatbed · '+d.flat+(d.flat>1?' places':' place')+' (a pallet, or 4 crates / items each)':'Cargo bed · '+d.cap+' t',tlTxt=d=>'tows '+d.tl.map(c=>c==='dolly'?'a dolly':c+' trailers').join(', ');   // what the shop and garage say about a vehicle
 const trInfo=d=>d.cap?(d.cargo==='logs'?'Log bed · '+d.cap+' logs':d.cargo==='fuel'?'Fuel tank · '+d.cap+' L':'Cargo bed · '+d.cap+' t')+' · '+d.cls+' trailer':d.cargo==='flat'?'Flatbed · '+d.places+(d.places>1?' places':' place')+': a pallet, or 4 crates / items each · '+d.cls+' trailer':d.cargo==='items'?'Item bed · 4 slots for items carried by hand · '+d.cls+' trailer':d.cargo==='ramp'?'Flat deck with a fold-down rear ramp (click the ramp) · '+d.cls+' trailer':'Converter dolly: lets a pickup or dump truck tow a semi trailer';
 const stat=e=>e.out?' · <i>out</i>':' · in garage';
-const sellVal=k=>Math.round((TKINDS[k]||TRL[k]).cost*.5);
-// loose items and pallets lying in the shop lot sell too, for half price; whatever is inside a crate or on a pallet counts (a canister's fuel at half the pump price)
-const itemVal=it=>Math.round(ITEMSHOP[it.type].cost*.5)+(it.items?it.items.reduce((a,x)=>a+(x?itemVal(x):0),0):0)+(it.type==='canister'?Math.round((it.fuel||0)*FUELP*.5):0);
-const palVal=p=>(p.planks?SITEPAY.planks:Math.round(ITEMSHOP.pallet.cost*.5))+p.crates.reduce((a,c)=>a+(c?itemVal(c):0),0);
+const sellVal=k=>Math.round((TKINDS[k]||TRL[k]).cost*.5),sellOf=e=>sellVal(e.kind)+(e.hitch?Math.round(ITEMSHOP.hitch.cost*.5):0),sellNote=e=>e.hitch?' (incl. hitch $'+Math.round(ITEMSHOP.hitch.cost*.5)+')':'';   // a mounted hitch is sold with its vehicle or trailer, for half its price
+// loose items and pallets lying on the SELL / UNLOAD pad sell too, for half price; whatever is inside a crate or on a pallet counts (a canister's fuel at half the pump price)
+const IV={ironbar:5,steelbar:15,glass:8},itemVal=it=>(IV[it.type]!=null?IV[it.type]:Math.round(ITEMSHOP[it.type].cost*.5))+(it.items?it.items.reduce((a,x)=>a+(x?itemVal(x):0),0):0)+(it.type==='canister'?Math.round((it.fuel||0)*FUELP*.5):0);
+const palVal=p=>(p.planks?SITEPAY.planks:Math.round(ITEMSHOP.pallet.cost*.5)*(p.st||1))+p.crates.reduce((a,c)=>a+(c?itemVal(c):0),0);
 const itemInS=it=>inZ2([[it.x,it.y]],sellZ),palInS=p=>{const z=sellZ,h=PALW/2*S;return!p.planks&&!p.fk&&!p.on&&p.x-h>=z.x-z.w/2&&p.x+h<=z.x+z.w/2&&p.y-h>=z.y-z.h/2&&p.y+h<=z.y+z.h/2};   // a pallet spawns flush with the lot's edge: it only has to be inside it
 const itemName=it=>ITEMS[it.type].n+(it.type==='crate'?' ('+cn(it)+'/9 items)':it.type==='canister'?' ('+(it.fuel||0).toFixed(1)+' L)':'');
 const inZ2=(ps,z)=>ps.every(p=>Math.abs(p[0]-z.x)<z.w/2-6&&Math.abs(p[1]-z.y)<z.h/2-14);
@@ -653,8 +671,8 @@ function sellTrl(t){unloadAll(t);t.ld=null;if(t.tr){t.tr.coupled=false;t.tr.host
 // vehicles appear at the west end of the bay (facing west, away from the home), trailers at the east end, tip toward the truck
 function placeVeh(v,ln=0){const kd=KOF(v);v.out=true;v.a=Math.PI;v.v=0;v.st=0;v.tr=null;v.y=LANES[ln];v.x=G0.garage.x-(G0.garage.w/2-14)+kd.b1*S;gPlace(v)}
 function placeTrl(t,ln=0){const tr=TRL[t.kind];t.out=true;t.coupled=false;t.host=null;t.b=Math.PI;t.y=LANES[ln];t.x=G0.garage.x+(G0.garage.w/2-14)+(tr.co-tr.hw)*S;t.hx=t.x;t.hy=t.y;gPlace(t)}
-const shopA=()=>doorOut(OFFICES.find(o=>o.n==='shop'))[2]-Math.PI/2-SS.rot*Math.PI/2;   // at the shop, new vehicles face to the left of the player walking out of its door (in the shop's frame)
-function spawnShop(o,isT,z=sellZ,U=null,A=Math.PI/2){let x0,x1;   // A: the way they face in the zone's frame (default south, toward the gate)
+const shopA=()=>Math.PI/2;   // at the shop, new vehicles face to the left of the player walking out of its door (in the shop's frame)
+function spawnShop(o,isT,z=spawnZ,U=null,A=Math.PI/2){let x0,x1;   // A: the way they face in the zone's frame (default south, toward the gate)
  if(isT){const d=TRL[o.kind];x0=d.co-d.hw;x1=Math.max(d.co+d.hw,d.bar)}else{const d=KOF(o);x0=d.b0;x1=d.b1}
  const hx=Math.round(Math.cos(A)),hy=Math.round(Math.sin(A)),L=(hx?z.w:z.h)/2,w=(x1-x0)*S,M=Math.max(4,Math.min(18,L-w/2)),front=L-M-x1*S,back=-(L-M)-x0*S;   // M: the margin at each end, smaller for a long one so that it still fits   // vehicles appear at the front end of the zone, trailers at the back
  const W2=(hx?z.h:z.w)/2,lanes=[0,-70,70,-105,105].filter(q=>Math.abs(q)+30<=W2);   // side by side across the zone when it is wide enough
@@ -679,7 +697,7 @@ function cfgView(){const isT=cfg.t=='t',d=isT?TRL[cfg.k]:TKINDS[cfg.k],bt=(a,k,t
  if(!(isT&&cfg.g=='dolly')){const sw=(a,cur)=>`<div class='sw'>${PAL.map(c=>bt(a,c,'',0,'background:'+c+';border:2px solid '+((cur||PAL[0])==c?'#ffd166':'#fff4'))).join('')}</div>`;   /* red first: it is the standard colour */
   h+=`<div class='r'><span><b>${isT?'Colour':'Truck colour'}</b></span></div>`+sw('ccol',cfg.col);
   if((!cfg.fs||cfg.fs>=2)&&!isT&&d.cap)h+=`<div class='r'><span><b>Bed colour</b><small>${cfg.bed=='fuel'?'The tank':cfg.bed=='items'?'The item bed':'The bed'}</small></span></div>`+sw('cbcol',cfg.bcol)}
- return h+`<div class='r'><span><b>Price</b><small>${cfg.fs>=2?'Appears outside, in front of the doors of the building, ready to drive':cfg.fs?'Appears in the VEHICLES area outside, ready to drive':'Appears in the shop lot, ready to drive'}</small></span><button data-a='buycfg'${cash<(isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank))?' disabled':''}>Buy $${isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank)}</button></div>`}
+ return h+`<div class='r'><span><b>Price</b><small>${cfg.fs>=2?'Appears outside, in front of the doors of the building, ready to drive':cfg.fs?'Appears in the VEHICLES area outside, ready to drive':'Appears on the NEW PURCHASES pad, ready to drive'}</small></span><button data-a='buycfg'${cash<(isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank))?' disabled':''}>Buy $${isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank)}</button></div>`}
 function custView(o){const isT=!(o.kind in TKINDS),d=isT?TRL[o.kind]:KOF(o),bt=(a,k,t,on,st)=>`<button data-a='${a}' data-k='${k}'${on?" class='on'":''}${st?" style='"+st+"'":''}>${t}</button>`,
   sw=(a,cur)=>`<div class='sw'>${PAL.map(c=>bt(a,c,'',0,'background:'+c+';border:2px solid '+((cur||PAL[0])==c?'#ffd166':'#fff4'))).join('')}</div>`;
  let h=`<div class='tabs'>${bt('cback2','','‹ Back to the list')}</div>`;
@@ -693,7 +711,7 @@ function renderGarage(){
  const btn=(a,k,t,dis,cls)=>`<button data-a="${a}" data-k="${k||''}"${dis?' disabled':''}${cls?' class="'+cls+'"':''}>${t}</button>`;
  const tabs=(list,cur)=>`<div class="tabs">${list.map(([k,n])=>btn('tab',k,n,false,cur===k?'on':'')).join('')}</div>`;
  const row=(img,name,sub,right,dim)=>`<div class="r${dim?' dim':''}">${img?`<img src="${img}" alt="">`:''}<span><b>${name}</b><small>${sub}</small></span>${right||''}</div>`;
- const title=panelMode=='shop'?'Shop':panelMode=='fuel'?'Fuel station':panelMode=='lumber'?'Lumberyard shop':panelMode=='saw'?'Sawmill shop':panelMode=='quarry'?'Quarry shop':panelMode=='mine'?'Coal mine shop':panelMode=='iron'?'Iron mine shop':panelMode=='crush'?'Crusher shop':panelMode=='crup'?'Crusher upgrades':panelMode=='yup'?(yupB===lumber?'Lumberyard upgrades':'Sawmill upgrades'):panelMode=='gup'?'Garage upgrades':'Garage',pcol=panelMode=='shop'?BCOL.shop:panelMode=='fuel'?BCOL.fuel:panelMode=='lumber'?BCOL.lumberyard:panelMode=='saw'?BCOL.sawmill:panelMode=='quarry'?BCOL.quarry:panelMode=='mine'?BCOL.mine:panelMode=='iron'?BCOL['iron mine']:(panelMode=='crush'||panelMode=='crup')?BCOL.crusher:panelMode=='yup'?(yupB===lumber?BCOL.lumberyard:BCOL.sawmill):BCOL.garage;$('gp').style.borderColor=pcol;
+ const title=panelMode=='shop'?'Shop':panelMode=='fuel'?'Fuel station':panelMode=='lumber'?'Lumberyard shop':panelMode=='fac'?(facView==='ctl'?'Factory control panel':'Factory upgrades'):panelMode=='fnd'?(facView==='ctl'?'Foundry control panel':'Foundry upgrades'):panelMode=='saw'?'Sawmill shop':panelMode=='quarry'?'Quarry shop':panelMode=='mine'?'Coal mine shop':panelMode=='iron'?'Iron mine shop':panelMode=='crush'?'Crusher shop':panelMode=='crup'?'Crusher upgrades':panelMode=='yup'?(yupB===lumber?'Lumberyard upgrades':'Sawmill upgrades'):panelMode=='gup'?'Garage upgrades':'Garage',pcol=panelMode=='shop'?BCOL.shop:panelMode=='fuel'?BCOL.fuel:panelMode=='lumber'?BCOL.lumberyard:panelMode=='fac'?BCOL.factory:panelMode=='fnd'?BCOL.foundry:panelMode=='saw'?BCOL.sawmill:panelMode=='quarry'?BCOL.quarry:panelMode=='mine'?BCOL.mine:panelMode=='iron'?BCOL['iron mine']:(panelMode=='crush'||panelMode=='crup')?BCOL.crusher:panelMode=='yup'?(yupB===lumber?BCOL.lumberyard:BCOL.sawmill):BCOL.garage;$('gp').style.borderColor=pcol;
  let h=`<div class="gh"><b style="color:${pcol}">${title}</b><span>Cash <b>$${money(cash)}</b></span>${btn('close','','✕')}</div>`;
 
  const SH5=({lumber:LSHELF,saw:SSHELF,quarry:QSHELF,mine:MSHELF,iron:ISHELF,crush:CSHELF})[panelMode];   // the shelf in the room of a site's shop: its Items tab sells a hitch, which lands there
@@ -734,6 +752,59 @@ function renderGarage(){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Small cargo vehicles for hauling rock are sold here. They appear on the sand loading pad outside.</small></div>';
    h+=row(icon('pickup',0,PAL[0],null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from $'+priceOf('pickup',0,0),btn('qcfg','pickup','Configure'));
    h+=row(icon('pc',1,PAL[0]),TRL.pc.n,trInfo(TRL.pc)+' · from $'+TRL.pc.cost,btn('qcfg','pc','Configure'))}
+ }else if(panelMode=='fac'){
+  const f=factory,L=f.ylvl|0,ctl=facView==='ctl',IS='padding:6px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit';
+  const ur=(o,w,key,name,info)=>{const d=UPX[key],lv=o[d.lvl],c=d.base*(lv+1);return row(key==='pall'?itemIcon('pallet'):key==='crat'?itemIcon('crate'):key==='steel'?itemIcon('steelbar'):key==='firon'?itemIcon('ironbar'):'',name,info,lv>=MAXLVL?btn('','','Fully upgraded',true):btn('upx',w+'.'+key,'Upgrade '+c+'$',cash<c))};
+  if(!ctl){h+='<div class="r"><small>Make the ITEMS pad (where made pallets and crates lie) and the storages bigger.</small></div>';
+   h+=row('','Items pad',(FIL0.h/S)+' x 14 tiles · '+Math.floor(FIL0.h/40)*Math.floor(FIL0.w/40)+' places',L>=2?btn('','','Fully grown',true):btn('fyu','','Grow '+YARDC[L+1]+'$',cash<YARDC[L+1]));
+   h+=ur(f,'f','planks','Planks storage',Math.floor(f.stock)+' / '+f.cap+' planks · +'+UPX.planks.step+' per upgrade');
+   h+=ur(f,'f','steel','Steel bars storage',Math.floor(f.steel)+' / '+f.scap+' bars · +'+UPX.steel.step+' per upgrade');
+   h+=ur(f,'f','firon','Iron bars storage',Math.floor(f.iron)+' / '+f.icap+' bars · +'+UPX.firon.step+' per upgrade');
+   h+=ur(f,'f','pall','Pallets storage',f.pall+' / '+f.pcap+' pallets · +'+UPX.pall.step+' per upgrade');
+   h+=ur(f,'f','crat','Crates storage',f.crat+' / '+f.kcap+' crates · +'+UPX.crat.step+' per upgrade')}
+  else{
+   h+=`<div class="tabs">${btn('tab','job','Job',false,facTab!=='sto'?'on':'')}${btn('tab','sto','Storage',false,facTab==='sto'?'on':'')}</div>`;
+   if(facTab==='sto'){
+    const np=PALS.filter(q=>!q.planks&&!q.fk&&!q.on&&facCells().some(([x,y])=>Math.hypot(q.x-x,q.y-y)<38)).length,nc=GI.filter(it=>it.type==='crate'&&facCells().some(([x,y])=>Math.abs(it.x-x)<=20&&Math.abs(it.y-y)<=20)).length;
+    h+='<div class="r"><small>Set a pallet of planks, steel bars, iron bars (loose, or in crates on pallets), empty pallets and empty crates down on the CARGO IN pad and the factory takes them in; bars are paid, the crates and pallets are reused. Crates it makes land on pallets (it takes pallets from its stock when none on the items pad has room) and any item it makes goes in crates on pallets: it stops and says what is missing. Each pallet or crate burns 1 kg of the power plant\'s coal.</small></div>';
+    h+=row('','Planks','Stock '+Math.floor(f.stock)+' / '+f.cap+' · a pallet or a crate takes 1 plank and 1 kg of the plant\'s coal','');
+    h+=row(itemIcon('steelbar'),'Steel bars',Math.floor(f.steel)+' / '+f.scap+' · a hitch takes 1 (set them down on the CARGO IN pad: paid $'+IV.steelbar+' each)','');
+    h+=row(itemIcon('ironbar'),'Iron bars',Math.floor(f.iron)+' / '+f.icap+' · a canister takes 1 (same pad: paid $'+IV.ironbar+' each)','');
+    h+=row(itemIcon('pallet'),'Empty pallets',f.pall+' / '+f.pcap+' (set them down on the CARGO IN pad)','');
+    h+=row(itemIcon('crate'),'Empty crates',f.crat+' / '+f.kcap+' (same pad)','');
+    h+=row('','On the items pad',np+' pallets · '+nc+' crates · '+facFree().length+' free places','')}
+   else{
+    const kn=k=>({p:'Pallet',c:'Crate',h:'Hitch',k:'Canister'})[k],FIC={p:'pallet',c:'crate',h:'hitch',k:'canister'},ql=[];
+    for(let i=0;i<Math.max(3,f.q.length);i++){const j=f.q[i];ql.push(j?`<div class="r fqr" data-fi="${i}" style="cursor:grab;margin:2px 0;touch-action:none;user-select:none;position:relative"><div style="position:relative;flex:none"><img src="${itemIcon(FIC[j.k])}" alt="" draggable="false"><b style="position:absolute;right:16px;bottom:1px;background:#000c;color:#fff;border-radius:6px;padding:0 6px;font-size:14px;line-height:20px">${j.n}</b></div><span><b>${i+1}. ${kn(j.k)}${i===0?' · '+(factoryOn&&power?(f.why||'making'):'waiting'):''}</b><small>${j.k==='c'?'1 plank + 1 kg coal each, lands on a pallet':j.k==='h'?'1 steel bar + 1 kg coal each, in a crate':j.k==='k'?'1 iron bar + 1 kg coal each, in a crate':'1 plank + 1 kg coal each'}</small></span><span style="display:flex;gap:4px;align-items:center"><span style="opacity:.5;font-size:18px;padding:0 6px">⠿</span>${btn('frm',i,'✕')}</span></div>`:`<div class="r dim" style="margin:2px 0"><span><small>${i+1}. empty</small></span></div>`)}
+    h+='<div style="display:flex;gap:12px;align-items:flex-start"><div style="flex:1.1;min-width:0"><div class="r"><small><b>Queue</b>: the first line is made first.</small></div>'+ql.join('')+'</div>'
+     +'<div style="flex:1;min-width:0"><div style="padding:6px 0">'+btn('fcancel','','Clear queue',!f.q.length)+'</div><div class="r"><small><b>Add a job</b></small></div><div style="display:flex;flex-direction:column;gap:8px;padding:6px 0">'+['p','c','h','k'].map(k=>row(itemIcon(FIC[k]),kn(k),k==='h'?'1 steel bar · 1 kg coal':k==='k'?'1 iron bar · 1 kg coal':'1 plank · 1 kg coal','<span style="flex:none!important;display:flex;gap:6px;align-items:center"><input type="number" class="fq" min="1" max="99" step="1" value="'+facAmt+'" style="width:50px;min-width:0;'+IS+'">'+btn('fadd',k,'Add')+'</span>')).join('')+'</div></div></div>'}}
+ }else if(panelMode=='fnd'){
+  const f=foundry,L=f.ylvl|0,ctl=facView==='ctl',IS='padding:6px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit';
+  const ur=(o,w,key,name,info)=>{const d=UPX[key],lv=o[d.lvl],c=d.base*(lv+1);return row(key==='pall'?itemIcon('pallet'):key==='crat'?itemIcon('crate'):key==='steel'?itemIcon('steelbar'):key==='firon'?itemIcon('ironbar'):'',name,info,lv>=MAXLVL?btn('','','Fully upgraded',true):btn('upx',w+'.'+key,'Upgrade '+c+'$',cash<c))};
+  if(!ctl){h+='<div class="r"><small>Make the ITEMS pad (where pallets of crates of iron and steel lie) and the storages bigger.</small></div>';
+   h+=row('','Items pad',(FNIL0.h/S)+' x 14 tiles · '+Math.floor(FNIL0.h/40)*Math.floor(FNIL0.w/40)+' places',L>=2?btn('','','Fully grown',true):btn('nyu','','Grow '+YARDC[L+1]+'$',cash<YARDC[L+1]));
+   h+=ur(f,'n','ore','Iron ore storage',f.ore.toFixed(1)+' / '+f.cap+' t · +'+UPX.ore.step+' t per upgrade');
+   h+=ur(f,'n','coal','Coal storage',f.carb.toFixed(2)+' / '+f.ccap+' t · +'+UPX.coal.step+' t per upgrade');
+   h+=ur(f,'n','sand','Sand storage',f.sand.toFixed(2)+' / '+f.sacap+' t · +'+UPX.sand.step+' t per upgrade');
+   h+=ur(f,'n','pall','Pallets storage',f.pall+' / '+f.pcap+' pallets · +'+UPX.pall.step+' per upgrade');
+   h+=ur(f,'n','crat','Crates storage',f.crat+' / '+f.kcap+' crates · +'+UPX.crat.step+' per upgrade')}
+  else{
+   h+=`<div class="tabs">${btn('tab','job','Job',false,facTab!=='sto'?'on':'')}${btn('tab','sto','Storage',false,facTab==='sto'?'on':'')}</div>`;
+   if(facTab==='sto'){
+    const pp=fnPals(),np=pp.length,nc=pp.reduce((a,q)=>a+q.crates.filter(Boolean).length,0),ni=pp.reduce((a,q)=>a+q.crates.reduce((b,c)=>b+(c?c.items.filter(x=>x&&x.type==='ironbar').length:0),0),0),ns=pp.reduce((a,q)=>a+q.crates.reduce((b,c)=>b+(c?c.items.filter(x=>x&&x.type==='steelbar').length:0),0),0);
+    h+='<div class="r"><small>Unload iron ore, coal and sand on the CARGO IN pad (hold Space). Everything delivered is paid except pallets and crates, which are reusable: ore and coal $10 a ton, sand $15 a ton, iron $5 each. Set empty pallets, empty crates and iron (loose, or in crates on pallets) down on it too: the foundry takes them in and reuses the crates and pallets. Every item burns 1 kg of the power plant\'s coal.</small></div>';
+    h+=row('','Iron ore',f.ore.toFixed(1)+' / '+f.cap+' t · an iron takes 0.1 t','');
+    h+=row('','Coal (for steel)',f.carb.toFixed(3)+' / '+f.ccap+' t · a steel takes 1 kg','');
+    h+=row('','Sand (for glass)',f.sand.toFixed(3)+' / '+f.sacap+' t · a glass takes 1 kg','');
+    h+=row(itemIcon('ironbar'),'Iron',Math.floor(f.iron)+' / '+FNIR+' ready for steel','');
+    h+=row(itemIcon('pallet'),'Pallets',f.pall+' / '+f.pcap,'');
+    h+=row(itemIcon('crate'),'Crates',f.crat+' / '+f.kcap,'');
+    h+=row('','On the items pad',np+' pallets · '+nc+' crates · '+ni+' iron · '+ns+' steel · '+fnFree().length+' free places','')}
+   else{
+    const kn=k=>k==='s'?'Steel':k==='g'?'Glass':'Iron',FNI={i:'ironbar',s:'steelbar',g:'glass'},ql=[];
+    for(let i=0;i<Math.max(3,f.q.length);i++){const j=f.q[i];ql.push(j?`<div class="r fqr" data-fi="${i}" style="cursor:grab;margin:2px 0;touch-action:none;user-select:none;position:relative"><div style="position:relative;flex:none"><img src="${itemIcon(FNI[j.k])}" alt="" draggable="false"><b style="position:absolute;right:16px;bottom:1px;background:#000c;color:#fff;border-radius:6px;padding:0 6px;font-size:14px;line-height:20px">${j.n}</b></div><span><b>${i+1}. ${kn(j.k)}${i===0?' · '+(foundryOn&&power?(f.why||'making'):'waiting'):''}</b><small>${j.k==='s'?'1 iron + 1 kg coal':j.k==='g'?'1 kg sand':'0.1 t iron ore'} each</small></span><span style="display:flex;gap:4px;align-items:center"><span style="opacity:.5;font-size:18px;padding:0 6px">⠿</span>${btn('frm',i,'✕')}</span></div>`:`<div class="r dim" style="margin:2px 0"><span><small>${i+1}. empty</small></span></div>`)}
+    h+='<div style="display:flex;gap:12px;align-items:flex-start"><div style="flex:1.1;min-width:0"><div class="r"><small><b>Queue</b>: the first line is made first.</small></div>'+ql.join('')+'</div>'
+     +'<div style="flex:1;min-width:0"><div style="padding:6px 0">'+btn('fcancel','','Clear queue',!f.q.length)+'</div><div class="r"><small><b>Add a job</b></small></div><div style="display:flex;flex-direction:column;gap:8px;padding:6px 0">'+['i','s','g'].map(k=>row(itemIcon(FNI[k]),kn(k),k==='s'?'1 iron + 1 kg coal':k==='g'?'1 kg sand':'0.1 t iron ore','<span style="flex:none!important;display:flex;gap:6px;align-items:center"><input type="number" class="fq" min="1" max="999" step="1" value="'+facAmt+'" style="width:50px;min-width:0;'+IS+'">'+btn('nadd',k,'Add')+'</span>')).join('')+'</div></div></div>'}}
  }else if(panelMode=='saw'){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Flatbed vehicles, trailers and forklifts are sold here. They appear outside, in front of the doors of this building.</small></div>';
    h+=row(icon('pickup',0,PAL[0],'flat'),'Pickup (flatbed)',bedTxt(TKINDS.pickup,'flat')+' · from $'+priceOf('pickup',0,0),btn('scfg','pickup','Configure'));
@@ -741,17 +812,23 @@ function renderGarage(){
    h+=row(icon('forklift',0,PAL[0]),'Forklift (pallet forks or log claw)','Pallet forks lift pallets; the log claw grips one log at a time and loads a vehicle from the side · from $'+TKINDS.forklift.cost,btn('scfg','forklift','Configure'))}
  }else if(panelMode=='shop'){
   const sv=Object.values(veh).filter(vInS),st=Object.values(trl).filter(tInS),si=GI.map((x,i)=>[x,i]).filter(q=>itemInS(q[0])),sp=PALS.map((x,i)=>[x,i]).filter(q=>palInS(q[0])),nSell=sv.length+st.length+si.length+sp.length;
-  if(cfg)h+=cfgView();else h+=tabs([['veh','Vehicles'],['trl','Trailers'],['itm','Items'],['sell','Sell ('+nSell+')']],stab);
-  if(cfg){}else if(stab=='sell'){
-   h+='<div class="r"><small>Sells whatever is fully inside the pink SHOP LOT: vehicles, trailers, pallets and loose items, for half their price (what is in a crate or on a pallet is paid too). A sold truck leaves its trailer behind.</small></div>';
-   h+=sv.map(x=>row(icon(x.kind,0,x.color,x.bed,x.bedColor),x.name,'Sell value $'+sellVal(x.kind),btn('sellv',x.id,'Sell $'+sellVal(x.kind)))).join('')+st.map(x=>row(icon(x.kind,1,x.color),x.name,'Sell value $'+sellVal(x.kind),btn('sellt',x.id,'Sell $'+sellVal(x.kind)))).join('')+sp.map(q=>row(itemIcon('pallet'),'Pallet ('+q[0].crates.filter(Boolean).length+'/9 crates)','Sell value $'+palVal(q[0]),btn('sellp',q[1],'Sell $'+palVal(q[0])))).join('')+si.map(q=>row(itemIcon(q[0].type),itemName(q[0]),'Sell value $'+itemVal(q[0]),btn('selli',q[1],'Sell $'+itemVal(q[0])))).join('');
-   if(!nSell)h+='<div class="r"><small>Nothing is fully inside the shop lot. Drive a vehicle or trailer, or set a pallet or an item, inside the pink rectangle.</small></div>';
+  if(cfg)h+=cfgView();else h+=`<div class="tabs">${btn('tab','veh','Shop',false,stab!=='sto'?'on':'')}${btn('tab','sto','Storage',false,stab==='sto'?'on':'')}</div>`+(stab==='sto'?'':tabs([['veh','Vehicles'],['trl','Trailers'],['itm','Items'],['sell','Sell ('+nSell+')']],stab));
+  if(cfg){}else if(stab=='sto'){
+   h+='<div class="r"><small>Cargo unloaded on the SELL / UNLOAD pad (park on it and hold Space) is kept here. A pallet of planks set down on the pad goes in too, and so do iron bars, steel bars, glass, hitches and canisters (a canister is stored empty: its fuel is lost) and empty crates and pallets. Loose, or in crates on pallets: once emptied, the crates and pallets go in too. Each kind starts at 50 and can be upgraded in steps of 50. Type how much to sell: more than is stored sells everything.</small></div>';
+   let tot=0;for(const k in SHST){const v=SHST[k],q=shQty(k),mx=shMax(k),up=SHCAP[k]*2;tot+=shVal(k,v);
+    h+=row(ITEMS[k]?itemIcon(ITEMS[k].n&&k):'',SHN[k],shFmt(k,v)+' / '+SHCAP[k]+SHU[k]+' stored · $'+shPrice(k)+(k==='logs'||ITEMS[k]?' each':k==='fuel'?' per litre':k==='planks'?' per pallet':' per ton'),
+     '<span style="display:flex;gap:6px;align-items:center"><input type="number" class="shq" data-sh="'+k+'" min="0" max="'+mx+'" step="'+(SHINT.has(k)?1:.1)+'" value="'+(SHINT.has(k)?Math.floor(q+1e-6):Math.round(q*10)/10)+'" style="width:62px;padding:6px 4px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit"'+(v<.05?' disabled':'')+'>'+btn('shsell',k,'Sell $'+Math.round(shVal(k,q)),v<.05)+btn('shup',k,SHCAP[k]>=SHMAX?'Max':'Upgrade '+up+'$',SHCAP[k]>=SHMAX||cash<up)+'</span>')}
+   h+=row('','Everything','All the stored cargo',btn('shsell','all','Sell all $'+Math.round(tot),tot<=0),0)
+  }else if(stab=='sell'){
+   h+='<div class="r"><small>Sells whatever is fully on the pink SELL / UNLOAD pad (the first pad counterclockwise from the gate): vehicles, trailers, pallets and loose items, for half their price (what is in a crate or on a pallet is paid too). A sold truck leaves its trailer behind. Whatever stands on the blue NEW PURCHASES pad cannot be sold. To sell cargo, park a trailer on the pink pad, hold Space to unload it into the Storage of the shop menu, and sell it there.</small></div>';
+   h+=sv.map(x=>row(icon(x.kind,0,x.color,x.bed,x.bedColor),x.name,'Sell value $'+sellOf(x)+sellNote(x),btn('sellv',x.id,'Sell $'+sellOf(x)))).join('')+st.map(x=>row(icon(x.kind,1,x.color),x.name,'Sell value $'+sellOf(x)+sellNote(x),btn('sellt',x.id,'Sell $'+sellOf(x)))).join('')+sp.map(q=>row(itemIcon('pallet'),'Pallet ('+q[0].crates.filter(Boolean).length+'/9 crates)','Sell value $'+palVal(q[0]),btn('sellp',q[1],'Sell $'+palVal(q[0])))).join('')+si.map(q=>row(itemIcon(q[0].type),itemName(q[0]),'Sell value $'+itemVal(q[0]),btn('selli',q[1],'Sell $'+itemVal(q[0])))).join('');
+   if(!nSell)h+='<div class="r"><small>Nothing is fully on the SELL / UNLOAD pad. Drive a vehicle or trailer, or set a pallet or an item, inside the pink rectangle.</small></div>';
   }else if(stab=='itm'){
    h+='<div class="r"><small>Items appear in a free slot of the shelf inside the shop (right side, front room). Take them with a click, then mount them on a truck outside.</small></div>';
    const fr=PALLET.slots.filter(x=>!x).length;
    h+=Object.entries(ITEMSHOP).map(([k,d])=>row(itemIcon(k),d.n,d.info+(d.lot?'':' · shelf slots free: '+fr+'/10'),btn('buyi',k,'Buy $'+d.cost))).join('');
   }else{
-   h+=`<div class="r"><small>New purchases appear in the shop lot (pink rectangle) in front of the shop, ready to drive. They take no garage slot until you park them (parked: ${used()}/${SLOTS.n}).</small></div>`;
+   h+=`<div class="r"><small>New purchases appear on the NEW PURCHASES pad (blue rectangle) on the far side of the shop, ready to drive. They take no garage slot until you park them (parked: ${used()}/${SLOTS.n}).</small></div>`;
    if(stab=='veh')h+=Object.entries(TKINDS).map(([k,d])=>row(icon(k,0,PAL[0],k=='dump'?'coal':null,'#d8a21c'),d.n,bedTxt(d,null)+' · '+tlTxt(d)+' · from $'+d.cost,btn('cfgv',k,'Configure'))).join('');
    else h+=Object.entries(TGROUPS).map(([g,ks])=>row(icon(ks[0],1,g=='dolly'?null:PAL[0]),g=='dolly'?'Dolly':g[0].toUpperCase()+g.slice(1)+' trailer',(g=='semi'?'Long / short · ':'')+(ks.length>1?[...new Set(ks.map(x=>VARN[x]))].join(' / ')+' · ':'')+'from $'+Math.min(...ks.map(x=>TRL[x].cost)),btn('cfgt',ks[0],'Configure'))).join('');
   }
@@ -792,18 +869,32 @@ const openP=(m,an)=>{cfg=null;panelOpen=true;panelMode=m;pmsg='';panelAnchor=an|
 function openGarage(an){gtab='veh';openP('garage',an)}
 function openGarageUp(an){openP('gup',an)}
 function openShop(tab,an){stab=tab||'veh';openP('shop',an)}
+$('gp').addEventListener('change',e=>{const el=e.target;if(el.classList&&el.classList.contains('fk'))facSel=el.value==='c'?'c':'p';if(el.classList&&el.classList.contains('fq'))facAmt=Math.max(1,Math.min(99,Math.floor(+el.value)||9))});
+// drag a job in the queue by pressing on it (mouse or touch): the others make room, let go to drop it between two others or at the front
+{let D=null;const rows=()=>[...$('gp').querySelectorAll('.fqr')],slot=y=>{const rs=rows().filter(r=>r!==D.el);let k=0;for(const r of rs){const b=r.getBoundingClientRect();if(y>b.top+b.height/2)k++}return k};
+ $('gp').addEventListener('pointerdown',e=>{const r=e.target.closest&&e.target.closest('.fqr');if(!r||panelMode!='fac'||e.target.closest('button'))return;D={el:r,i:+r.dataset.fi,y0:e.clientY,moved:false,id:e.pointerId};try{r.setPointerCapture(e.pointerId)}catch(_){}});
+ $('gp').addEventListener('pointermove',e=>{if(!D||e.pointerId!==D.id)return;const dy=e.clientY-D.y0;if(!D.moved&&Math.abs(dy)<5)return;D.moved=true;D.el.style.transform='translateY('+dy+'px)';D.el.style.opacity='.75';D.el.style.zIndex=5;D.el.style.cursor='grabbing';const k=slot(e.clientY),rs=rows().filter(r=>r!==D.el);rs.forEach((r,n)=>{r.style.boxShadow=n===k?'0 -3px 0 #ffe27a':n===k-1&&k===rs.length?'0 3px 0 #ffe27a':''});});
+ const end=e=>{if(!D||e.pointerId!==D.id)return;const d=D;if(!d.moved){D=null;return}const to=slot(e.clientY);D=null;if(d.i<FQ().length){const t=FQ().splice(d.i,1)[0];FQ().splice(Math.min(to,FQ().length),0,t)}renderGarage()};
+ $('gp').addEventListener('pointerup',end);$('gp').addEventListener('pointercancel',e=>{if(D&&e.pointerId===D.id){D=null;renderGarage()}})}
+$('gp').addEventListener('input',e=>{const el=e.target,k=el.dataset&&el.dataset.sh;if(!k||!(k in SHST))return;const mx=shMax(k);let v=parseFloat(el.value);if(el.value!==''&&v>mx){v=mx;el.value=mx}if(!(v>=0))v=0;SHQ[k]=v;const b=el.parentNode.querySelector('button[data-a="shsell"]');if(b)b.textContent='Sell $'+Math.round(shVal(k,shQty(k)))});
 function closeGarage(){panelOpen=false;$('gp').style.display='none'}
 $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const a=b.dataset.a,k=b.dataset.k;
  if(a=='close')return closeGarage();
- if(a=='tab'){if(panelMode=='fuel'||panelMode=='lumber'||panelMode=='saw'||panelMode=='quarry'||panelMode=='mine'||panelMode=='iron'||panelMode=='crush')ftab=k;else if(panelMode=='shop')stab=k;else if(panelMode=='gup')utab=k;else gtab=k;pmsg=''}
+ if(a=='tab'&&(panelMode=='fac'||panelMode=='fnd')){facTab=k;pmsg=''}else if(a=='tab'){if(panelMode=='fuel'||panelMode=='lumber'||panelMode=='saw'||panelMode=='quarry'||panelMode=='mine'||panelMode=='iron'||panelMode=='crush')ftab=k;else if(panelMode=='shop')stab=k;else if(panelMode=='gup')utab=k;else gtab=k;pmsg=''}
  else if(a=='fveh'){const isT=k==='pf',cost=isT?TRL.pf.cost:priceOf('pickup',0,0);if(cash<cost)pmsg='Not enough cash.';else{const o=isT?addTrl('pf'):addVeh('pickup',{bed:'fuel'});if(spawnShop(o,isT,F0.fsz,FS)){cash-=cost;pmsg='Bought: '+o.name+'. It is in the VEHICLES area outside, east of this building.'}else{delete (isT?trl:veh)[o.id];cnt[o.kind]--;pmsg='The VEHICLES area is taken. Move what is in it first.'}}}
  else if(a=='lcfg'){cfg=k==='pl'?{t:'t',k,g:'small',col:PAL[0],fs:2}:{t:'v',k,bed:'logs',col:PAL[0],bcol:'#d8a21c',eng:0,fs:2};pmsg=''}
- else if(a=='yu'){const b=yupB,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg=(b===lumber?'Log station':'Plank area')+' grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
+ else if(a=='fcancel'){FQ().length=0;pmsg='Queue cleared.'}else if(a=='fadd'){const q=b.closest('.r').querySelector('input.fq'),n=Math.max(0,Math.min(99,Math.floor(+(q&&q.value)||0))),k2=k==='c'?'c':k==='h'?'h':k==='k'?'k':'p';facAmt=n||9;if(!n)pmsg='Enter an amount.';else{if(k2==='c'){for(let r=n;r>0;r-=9){factory.q.push({k:'p',n:1});factory.q.push({k:'c',n:Math.min(9,r)})}pmsg='Added '+n+' crates to the queue, with a pallet before every 9.'}else{factory.q.push({k:k2,n});pmsg='Added '+n+(k2==='h'?' hitches':k2==='k'?' canisters':' pallets')+' to the queue.'}}}
+ else if(a=='frm'){FQ().splice(+k,1)}else if(a=='fup'&&+k>0){const t=FQ().splice(+k,1)[0];FQ().splice(+k-1,0,t)}else if(a=='fdn'&&+k<FQ().length-1){const t=FQ().splice(+k,1)[0];FQ().splice(+k+1,0,t)}
+ else if(a=='nadd'){const q=b.closest('.r').querySelector('input.fq'),n=Math.max(0,Math.min(999,Math.floor(+(q&&q.value)||0))),k2=k==='s'?'s':k==='g'?'g':'i';facAmt=n||9;if(!n)pmsg='Enter an amount.';else{foundry.q.push({k:k2,n});pmsg='Added '+n+(k2==='s'?' steel':k2==='g'?' glass':' iron')+' to the queue.'}}
+ else if(a=='ncap'){const b=foundry,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Ore and coal storage upgraded to '+b.cap+' t each.'}}
+ else if(a=='nyu'){const b=foundry,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
+ else if(a=='upx'){const[w,key]=k.split('.'),o=w==='n'?foundry:factory,d=UPX[key];if(!d)return;const lv=o[d.lvl],c=d.base*(lv+1);if(lv>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;o[d.lvl]=lv+1;o[d.cap]+=d.step;pmsg='Upgraded to '+o[d.cap]+'.'}}
+ else if(a=='fcap'){const b=factory,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Planks storage upgraded to '+b.cap+'.'}}else if(a=='fyu'){const b=factory,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}else if(a=='yu'){const b=yupB,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg=(b===lumber?'Log station':'Plank area')+' grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
  else if(a=='su'){const b=sawmill;if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else{const c=upCost(b);if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Log storage upgraded to '+b.cap+' logs.'}}}
  else if(a=='cup'){const rock=k==='rock',L=rock?crusher.flvl:crusher.lvl,c=upCost({lvl:L});if(L>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;if(rock){crusher.flvl++;crusher.fcap+=STEP}else{crusher.lvl++;crusher.cap+=STEP}pmsg=(rock?'Rock':'Sand')+' storage upgraded to '+(rock?crusher.fcap:crusher.cap)+' t.'}}
  else if(a=='hbuy'){const SH=({lumber:LSHELF,saw:SSHELF,quarry:QSHELF,mine:MSHELF,iron:ISHELF,crush:CSHELF})[panelMode],d=ITEMSHOP.hitch;if(cash<d.cost)pmsg='Not enough cash.';else if(!SH||!SH.slots.includes(null))pmsg='The shelves are full. Take something off them first.';else{cash-=d.cost;STORY.hitch=1;SH.slots[SH.slots.indexOf(null)]=mkItem('hitch');pmsg='Hitch bought: it is on a shelf in this room.'}}
  else if(a=='fbuy'){const d=ITEMSHOP[k];if(cash<d.cost)pmsg='Not enough cash.';else if(!FSHELF.slots.includes(null))pmsg='The shelves are full. Take something off them first.';else{cash-=d.cost;FSHELF.slots[FSHELF.slots.indexOf(null)]=mkItem(k);pmsg=d.n+' bought: it is on a shelf in this room.'}}
- else if(a=='buyi'&&ITEMSHOP[k].lot){const d=ITEMSHOP[k];if(cash<d.cost)pmsg='Not enough cash.';else if(!spawnPallet())pmsg='The shop lot is full. Move something out of the pink rectangle first.';else{cash-=d.cost;pmsg='Pallet bought: it is in the shop lot (pink rectangle) outside.'}}
+ else if(a=='buyi'&&ITEMSHOP[k].lot){const d=ITEMSHOP[k];if(cash<d.cost)pmsg='Not enough cash.';else if(!spawnPallet())pmsg='The NEW PURCHASES pad is full. Move something off it first.';else{cash-=d.cost;pmsg='Pallet bought: it is on the NEW PURCHASES pad (blue rectangle) outside.'}}
  else if(a=='buyi'){const d=ITEMSHOP[k],i=PALLET.slots.findIndex(x=>!x);if(cash<d.cost)pmsg='Not enough cash.';else if(i<0)pmsg='The shop shelf is full. Take something off it first.';else{cash-=d.cost;PALLET.slots[i]=mkItem(k);pmsg=d.n+' bought: it is on the shelf inside the shop.'}}
  else if(a=='cfgv'){cfg={t:'v',k,bed:k=='dump'?'coal':null,col:PAL[0],bcol:'#d8a21c'};pmsg=''}
  else if(a=='cfgt'){cfg={t:'t',k,g:Object.keys(TGROUPS).find(x=>TGROUPS[x].includes(k)),col:PAL[0]};pmsg=''}
@@ -829,13 +920,16 @@ $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
  else if(a=='ccol')cfg.col=k||null;
  else if(a=='ceng')cfg.eng=+k;else if(a=='ctank')cfg.tank=+k;else if(a=='cnose')cfg.nose=k=='1';
  else if(a=='cbcol')cfg.bcol=k||null;
- else if(a=='buycfg'){const isT=cfg.t=='t',cost=isT?TRL[cfg.k].cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank);if(cash>=cost){const o=isT?addTrl(cfg.k,cfg.col):addVeh(cfg.k,{bed:cfg.k==='forklift'?null:cfg.bed,forks:cfg.k==='forklift'&&cfg.bed==='logs'?'logs':null,color:cfg.col,bedColor:cfg.bcol,eng:cfg.eng,tank:cfg.tank,nose:hasNose(cfg.k)&&cfg.nose});if(spawnShop(o,isT,cfg.fs===7?CV0:cfg.fs===6?IV0:cfg.fs===5?MV0:cfg.fs===4?QV0:cfg.fs===3?SV0:cfg.fs===2?LV0:cfg.fs?F0.fsz:S0.zone,cfg.fs===7?CRS:cfg.fs===6?IRS:cfg.fs===5?MS:cfg.fs===4?QS:cfg.fs===3?SWT:cfg.fs===2?LT:cfg.fs?FS:SS,cfg.fs?Math.PI/2:shopA())){cash-=cost;if(isT)STORY.trl=1;pmsg='Bought: '+o.name+'. It is '+(cfg.fs>=2?'outside, in front of this building\'s doors':cfg.fs?'in the VEHICLES area outside, east of this building':'in the shop lot (pink rectangle)')+'. Walk to it and click a seat, or hitch it.'}else{delete (isT?trl:veh)[o.id];cnt[cfg.k]--;pmsg=cfg.fs?'The VEHICLES area is taken. Move what is in it first.':'The shop lot is full. Move something out of the pink rectangle first.'}}}
+ else if(a=='buycfg'){const isT=cfg.t=='t',cost=isT?TRL[cfg.k].cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank);if(cash>=cost){const o=isT?addTrl(cfg.k,cfg.col):addVeh(cfg.k,{bed:cfg.k==='forklift'?null:cfg.bed,forks:cfg.k==='forklift'&&cfg.bed==='logs'?'logs':null,color:cfg.col,bedColor:cfg.bcol,eng:cfg.eng,tank:cfg.tank,nose:hasNose(cfg.k)&&cfg.nose});if(spawnShop(o,isT,cfg.fs===7?CV0:cfg.fs===6?IV0:cfg.fs===5?MV0:cfg.fs===4?QV0:cfg.fs===3?SV0:cfg.fs===2?LV0:cfg.fs?F0.fsz:S0.spawn,cfg.fs===7?CRS:cfg.fs===6?IRS:cfg.fs===5?MS:cfg.fs===4?QS:cfg.fs===3?SWT:cfg.fs===2?LT:cfg.fs?FS:SS,cfg.fs?Math.PI/2:shopA())){cash-=cost;if(isT)STORY.trl=1;pmsg='Bought: '+o.name+'. It is '+(cfg.fs>=2?'outside, in front of this building\'s doors':cfg.fs?'in the VEHICLES area outside, east of this building':'on the NEW PURCHASES pad (blue rectangle)')+'. Walk to it and click a seat, or hitch it.'}else{delete (isT?trl:veh)[o.id];cnt[cfg.k]--;pmsg=cfg.fs?'The VEHICLES area is taken. Move what is in it first.':'The NEW PURCHASES pad is full. Move something off it first.'}}}
  else if(a=='buyv'){const d=TKINDS[k];if(used()>=SLOTS.n)pmsg='The garage is full ('+used()+'/'+SLOTS.n+' slots). Upgrade it at the garage upgrade pad first.';else if(cash>=d.cost){cash-=d.cost;pmsg='Bought: '+addVeh(k).name+'. It is waiting in your garage.'}}
  else if(a=='buyt'){const d=TRL[k];if(used()>=SLOTS.n)pmsg='The garage is full ('+used()+'/'+SLOTS.n+' slots). Upgrade it at the garage upgrade pad first.';else if(cash>=d.cost){cash-=d.cost;pmsg='Bought: '+addTrl(k).name+'. It is waiting in your garage.'}}
- else if(a=='sellv'){const v=veh[k];if(v&&vInS(v)){cash+=sellVal(v.kind);pmsg='Sold: '+v.name+' for $'+sellVal(v.kind)+'.';sellVeh(v)}}
+ else if(a=='shsell'){let g2=0,what='everything';if(k==='all'){for(const q of Object.keys(SHST)){const v=SHST[q]||0;if(v<.05)continue;g2+=shVal(q,v);SHST[q]=0;SHQ[q]=null}}else{const q=shQty(k);what=SHN[k].toLowerCase();if(q>=.05){g2=shVal(k,q);SHST[k]=Math.max(0,SHST[k]-q);if(SHST[k]<.05)SHST[k]=0;SHQ[k]=null}}
+  if(g2<=0)pmsg='Nothing to sell.';else{cash+=g2;pmsg='Sold '+what+' for $'+Math.round(g2)+'.'}}
+ else if(a=='shup'){const up=SHCAP[k]*2;if(SHCAP[k]>=SHMAX)pmsg=SHN[k]+' storage is at its maximum.';else if(cash<up)pmsg='Not enough cash: need $'+up+'.';else{cash-=up;SHCAP[k]+=50;pmsg=SHN[k]+' storage upgraded to '+SHCAP[k]+'.'}}
+ else if(a=='sellv'){const v=veh[k];if(v&&vInS(v)){cash+=sellOf(v);pmsg='Sold: '+v.name+' for $'+sellOf(v)+'.';sellVeh(v)}}
  else if(a=='sellp'){const q=PALS[+k];if(q&&palInS(q)){const v=palVal(q);cash+=v;PALS.splice(+k,1);pmsg='Sold: a pallet for $'+v+'.'}}
  else if(a=='selli'){const q=GI[+k];if(q&&itemInS(q)){const v=itemVal(q);cash+=v;GI.splice(+k,1);pmsg='Sold: '+itemName(q)+' for $'+v+'.'}}
- else if(a=='sellt'){const t=trl[k];if(t&&tInS(t)){cash+=sellVal(t.kind);pmsg='Sold: '+t.name+' for $'+sellVal(t.kind)+'.';sellTrl(t)}}
+ else if(a=='sellt'){const t=trl[k];if(t&&tInS(t)){cash+=sellOf(t);pmsg='Sold: '+t.name+' for $'+sellOf(t)+'.';sellTrl(t)}}
  else if(a=='slot'){if(cash>=slotCost()&&SLOTS.n<MAXSLOTS){cash-=slotCost();SLOTS.n++;pmsg='Garage upgraded to '+SLOTS.n+' slots.'}}
  else if(a=='spawnv'){const v=veh[k];let ok=false;for(let ln=0;ln<2&&!ok;ln++){placeVeh(v,ln);ok=!spawnBlocked(vBody(v),v,SPAWNGAP)}if(!ok){v.out=false;pmsg='The spawn spot is occupied. Move or park what is at the west end of the bay.'}else{setActive(v);P.driving=false;pmsg=v.name+' is in the bay. Walk to the cab and click a seat.'}}
  else if(a=='spawnt'){const t=trl[k];let ok=false;for(let ln=0;ln<2&&!ok;ln++){placeTrl(t,ln);ok=!spawnBlocked(tBody(t),t,SPAWNGAP)}if(!ok){t.out=false;pmsg='The spawn spot is occupied. Move or park what is at the east end of the bay.'}else pmsg=t.name+' is in the bay. Get in a truck and back the hitch circle over its tip, then press C.'}
@@ -931,10 +1025,12 @@ function getInOut(){
   else{P.pass=v;P.seatSd=1;P.a=v.a;flash('You ride as a passenger. Double-click off the vehicle to get out, or click the driver seat to drive.')}
  }}
 // ---------- items: carried by hand (one per hand, some need two); the hitch on the back of a truck is the first item ----------
-const ITEMS={hitch:{n:'Hitch',hands:1},crate:{n:'Crate',hands:2},canister:{n:'Canister',hands:1}};
+const ITEMS={hitch:{n:'Hitch',hands:1},crate:{n:'Crate',hands:2},canister:{n:'Canister',hands:1},pallet:{n:'Pallet',hands:2},ironbar:{n:'Iron',hands:1},steelbar:{n:'Steel',hands:1},glass:{n:'Glass',hands:1}};   // a pallet is carried with both hands (one at a time, taken off a stack from the top)
 const CRATECAP=9,CANCAP=5,mkItem=k=>k==='crate'?{type:'crate',items:Array(9).fill(null)}:k==='canister'?{type:k,fuel:0}:{type:k},cn=c=>c.items.filter(Boolean).length,putIn=(c,it)=>{c.items[c.items.indexOf(null)]=it};   // a crate has 9 cells (3 x 3), each empty or holding one item   // a crate holds 9 items (anything but another crate)
-// pallets: lie on the ground (bought ones appear in the shop lot), hold 9 crates in a 3x3 grid, and are lifted by a forklift's forks (C)
-const PALS=[],PALW=1.8;   // PALW: a pallet is PALW x PALW units
+// pallets: lie on the ground (bought ones appear on the NEW PURCHASES pad), hold 9 crates in a 3x3 grid, and are lifted by a forklift's forks (C)
+const PALS=[],PALW=1.8,PSTK=5;
+const canStack=(a,b)=>!a.planks&&!b.planks&&!a.crates.some(Boolean)&&!b.crates.some(Boolean)&&(a.st||1)+(b.st||1)<=PSTK;   // empty pallets stack, up to 5 high (an entry with st = how many)
+const stackInto=(a,b)=>{a.st=(a.st||1)+(b.st||1);const i=PALS.indexOf(b);if(i>=0)PALS.splice(i,1);b.fk=null;b.on=null};   // PALW: a pallet is PALW x PALW units
 const palCell=(p,x,y)=>{const l=loc(x,y,p.x,p.y,p.a),h=PALW/2*S;if(Math.abs(l[0])>h||Math.abs(l[1])>h)return -1;return Math.min(2,Math.floor((l[1]+h)/(PALW/3*S)))*3+Math.min(2,Math.floor((l[0]+h)/(PALW/3*S)))};
 const palCellPt=(p,i)=>wld(((i%3)-1)*PALW/3*S,(Math.floor(i/3)-1)*PALW/3*S,p.x,p.y,p.a);
 const forkPt=v=>wld(1.25*S,0,v.x,v.y,v.a);   // where a pallet sits on the forks
@@ -945,17 +1041,18 @@ const flatbeds=()=>[...Object.values(veh).filter(v=>v.out&&v.pals),...Object.val
 function forkFirst(){if(!P.driving||!T.out||T.kind!=='forklift')return false;if(T.forks==='logs')return logOp();if(PALS.some(p=>p.fk===T))return forkOp(),true;const f=forkPt(T);if(PALS.some(p=>!p.fk&&Math.hypot(p.x-f[0],p.y-f[1])<.8*S))return forkOp(),true;return false}
 function forkOp(){if(!P.driving||!T.out||T.kind!=='forklift')return flash('Drive a forklift to lift pallets (C).');
  const c=PALS.find(p=>p.fk===T);if(c){const f=forkPt(T);   // set down: onto a free flatbed place under the forks, else on the ground
-  for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){const q=placePt(e,i);if(Math.hypot(q[0]-f[0],q[1]-f[1])<.9*S){if(!placeFree(e,i))return flash('That place on the flatbed is taken.');
+  for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){const q=placePt(e,i);if(Math.hypot(q[0]-f[0],q[1]-f[1])<.9*S){if(!placeFree(e,i)){const ex=e.pals[i];if(ex&&canStack(ex,c)){stackInto(ex,c);return flash('Pallet stacked on the '+entName(e)+' ('+ex.st+'/'+PSTK+').')}return flash('That place on the flatbed is taken.')}
    c.fk=null;c.on={e,p:i};e.pals[i]=c;c.da=Math.round(ang(c.a-('b' in e?e.b:e.a))/(Math.PI/2))*Math.PI/2;return flash('Pallet loaded on the '+entName(e)+'.')}}
+  {const ex=PALS.find(o=>o!==c&&!o.fk&&!o.on&&Math.hypot(o.x-f[0],o.y-f[1])<.9*S);if(ex&&canStack(ex,c)){stackInto(ex,c);return flash('Pallet stacked ('+ex.st+'/'+PSTK+').')}}
   const q=palSpot(f);if(q.why)return flash(q.why==='road'?'You cannot leave a pallet on the road.':'No room here: the pallet needs 4 free squares.');
   c.fk=null;c.x=q.x;c.y=q.y;c.da=0;c.a=Math.round(T.a/(Math.PI/2))*Math.PI/2;return flash('Pallet set down.')}
  if(Math.abs(T.v)>.8)return flash('Stop the forklift first.');
  const f=forkPt(T);let b=null,bd=.8*S;for(const p of PALS){const d=Math.hypot(p.x-f[0],p.y-f[1]);if(d<bd){bd=d;b=p}}
  if(!b)return flash('No pallet on the forks. Drive the forks under a pallet, then press C.');
- if(b.on){b.on.e.pals[b.on.p]=null;b.on=null}b.fk=T;b.da=Math.round(ang(b.a-T.a)/(Math.PI/2))*Math.PI/2;return flash(b.planks?'Planks lifted.':'Pallet lifted ('+b.crates.filter(Boolean).length+'/9 crates).')}
+ if(b.on){b.on.e.pals[b.on.p]=null;b.on=null}b.fk=T;b.da=Math.round(ang(b.a-T.a)/(Math.PI/2))*Math.PI/2;return flash(b.planks?'Planks lifted.':(b.st||1)>1?'Stack of '+b.st+' pallets lifted.':'Pallet lifted ('+b.crates.filter(Boolean).length+'/9 crates).')}
 function spawnFuelItem(k){const z=fsz,i0=Math.round((z.x-z.w/2)/S),j0=Math.round((z.y-z.h/2)/S);   // the first free square of the fuel station's ITEMS area, row by row
  for(let j=j0;j<j0+z.h/S;j++)for(let i=i0;i<i0+z.w/S;i++){if(cellUsed(i,j))continue;const it=mkItem(k);it.x=(i+.5)*S;it.y=(j+.5)*S;GI.push(it);return true}return false}
-function spawnPallet(){const z=sellZ;for(let r=0;r<Math.floor(z.h/40);r++)for(let c=0;c<Math.floor(z.w/40);c++){const x=Math.round((z.x-z.w/2+20+c*40)/S)*S,y=Math.round((z.y-z.h/2+20+r*40)/S)*S;
+function spawnPallet(){const z=spawnZ;for(let r=0;r<Math.floor(z.h/40);r++)for(let c=0;c<Math.floor(z.w/40);c++){const x=Math.round((z.x-z.w/2+20+c*40)/S)*S,y=Math.round((z.y-z.h/2+20+r*40)/S)*S;
   if(PALS.some(p=>Math.hypot(p.x-x,p.y-y)<40)||[[-1,-1],[0,-1],[-1,0],[0,0]].some(([a,b])=>cellUsed(x/S+a,y/S+b)))continue;const box={ox:x,oy:y,a:0,x0:-PALW/2,x1:PALW/2,h:PALW/2};
   if(Object.values(veh).some(v=>v.out&&boxHit(vBody(v),box))||Object.values(trl).some(t=>t.out&&boxHit(tBody(t),box)))continue;
   PALS.push({x,y,a:0,crates:Array(9).fill(null),fk:null,da:0});return true}return false}
@@ -974,7 +1071,7 @@ function shelfTarget(){const held=heldList(),m=MX==null?null:s2w(MX,MY),sh=SHELF
  if(idx<0)return null;let k;const hi=held[held.length-1];if(held.length&&sl[idx]&&sl[idx].type==='crate'&&hi.type!=='crate'){const hp=cen(idx);return{k:cn(sl[idx])<CRATECAP?'incrate':'cfull',crate:sl[idx],it:hi,c:{e:sh.e},si:idx,hp,d:()=>Math.hypot(P.x-hp[0],P.y-hp[1]),far:Math.hypot(P.x-hp[0],P.y-hp[1])>RCH()}}
  if(held.length)k=sl[idx]?'taken':'put';else if(sl[idx])k=freeHands()>=ITEMS[sl[idx].type].hands?'slot':'full';else return null;
  const hp=cen(idx);return{k,c:{e:sh.e},si:idx,it:held[held.length-1],hp,d:()=>Math.hypot(P.x-hp[0],P.y-hp[1]),far:Math.hypot(P.x-hp[0],P.y-hp[1])>RCH()}}
-const ITEMSHOP={hitch:{n:'Hitch',cost:80,info:'Mounts on the back of a truck or any trailer except the ramp trailer so it can tow.'},crate:{n:'Crate',cost:30,info:'Holds 9 items. Carried with both hands; fits a shelf, an item slot or a pallet.'},canister:{n:'Canister',cost:25,info:'A 5 L fuel can. Carried in one hand; fits a crate, a shelf or an item slot.'},pallet:{n:'Pallet',cost:60,lot:1,info:'Holds 9 crates. Appears in the shop lot outside; a forklift lifts it (C).'}};
+const ITEMSHOP={hitch:{n:'Hitch',cost:80,info:'Mounts on the back of a truck or any trailer except the ramp trailer so it can tow.'},crate:{n:'Crate',cost:30,info:'Holds 9 items. Carried with both hands; fits a shelf, an item slot or a pallet.'},canister:{n:'Canister',cost:25,info:'A 5 L fuel can. Carried in one hand; fits a crate, a shelf or an item slot.'},pallet:{n:'Pallet',cost:60,lot:1,info:'Holds 9 crates. Appears on the NEW PURCHASES pad outside; a forklift lifts it (C).'}};
 const heldList=()=>[...new Set(P.hands.filter(Boolean))];
 const freeHands=()=>P.hands.filter(h=>!h).length;
 function giveItem(it){const need=ITEMS[it.type].hands;if(freeHands()<need)return false;let n=0;for(let i=0;i<2&&n<need;i++)if(!P.hands[i]){P.hands[i]=it;n++}return true}
@@ -1004,7 +1101,9 @@ function itemTarget(){
    cs.push({k:'mount',e,it:hh,hp:mp,d:()=>dP(mp),hov:(x,y)=>{const l=loc(x,y,e.x,e.y,a);return l[0]>x0*S&&l[0]<x1*S&&Math.abs(l[1])<h*S},pri:1})}}
  const hi=held[held.length-1],intoC=cr=>cr&&cr.type==='crate'&&hi&&hi.type!=='crate';
  for(const it of GI){const p=[it.x,it.y],into=intoC(it);cs.push({k:into?(cn(it)<CRATECAP?'incrate':'cfull'):freeHands()>=ITEMS[it.type].hands?'ground':'full',it:into?hi:it,crate:it.type==='crate'?it:null,hp:p,d:()=>dP(p),hov:(x,y)=>Math.hypot(x-it.x,y-it.y)<.9*S,pri:0})}
- for(const pl of PALS){if(pl.planks||pl.on&&!pl.on.e.out)continue;const cr=pl.crates,hovP=(x,y)=>palCell(pl,x,y)>=0;let i=m&&hovP(m[0],m[1])?palCell(pl,m[0],m[1]):-1,k=null;
+ for(const pl of PALS){if(pl.planks||pl.fk||pl.crates.some(Boolean)||pl.on&&!pl.on.e.out)continue;if(held.length&&!(hi&&hi.type==='pallet'))continue;const hovP2=(x,y)=>palCell(pl,x,y)>=0;   // an empty pallet: pick one up with both hands, or stack the one in your hands on it
+  cs.push({k:hi?((pl.st||1)>=PSTK?'pstackfull':'palstack'):freeHands()>=2?'palpick':'full',pl,hp:[pl.x,pl.y],d:()=>dP([pl.x,pl.y]),hov:hovP2,pri:1})}
+ for(const pl of PALS){if(pl.planks||(pl.st||1)>1||pl.on&&!pl.on.e.out)continue;const cr=pl.crates,hovP=(x,y)=>palCell(pl,x,y)>=0;let i=m&&hovP(m[0],m[1])?palCell(pl,m[0],m[1]):-1,k=null;
   if(i<0){if(hi&&hi.type==='crate')i=cr.findIndex(x=>!x);else i=cr.map(Boolean).lastIndexOf(true)}
   if(i>=0){const c=cr[i];if(hi)k=hi.type==='crate'?(c?'taken':'onpal'):c?(cn(c)<CRATECAP?'incrate':'cfull'):null;else if(c)k=freeHands()>=2?'palcrate':'full'}
   if(k){const hp=palCellPt(pl,i);cs.push({k,pl,ci:i,crate:cr[i]||null,it:hi,hp,d:()=>dP([pl.x,pl.y]),hov:hovP,pri:1})}}
@@ -1030,6 +1129,9 @@ function itemAction(){const t=itemTarget();if(!t)return false;
  if(t.k==='busy'){flash('Unhitch the trailer (C) before taking the hitch off.');return true}
  if(t.k==='cfull'){flash('That crate is full (9/9).');return true}
  if(t.k==='incrate'){putIn(t.crate,t.it);dropFromHands(t.it);flash(ITEMS[t.it.type].n+' put in the crate ('+cn(t.crate)+'/9).');return true}
+ if(t.k==='pstackfull'){flash('That stack is full ('+PSTK+' pallets).');return true}
+ if(t.k==='palstack'){const h=heldList().find(i=>i.type==='pallet');t.pl.st=(t.pl.st||1)+1;dropFromHands(h);flash('Pallet stacked ('+t.pl.st+'/'+PSTK+').');return true}
+ if(t.k==='palpick'){const pl=t.pl;if((pl.st||1)>1)pl.st--;else{if(pl.on){pl.on.e.pals[pl.on.p]=null;pl.on=null}const i=PALS.indexOf(pl);if(i>=0)PALS.splice(i,1)}giveItem({type:'pallet'});flash('You hold a pallet in both hands'+((pl.st||1)>1?' ('+pl.st+' left in the stack)':'')+'.');return true}
  if(t.k==='onpal'){t.pl.crates[t.ci]=t.it;dropFromHands(t.it);flash('Crate put on the pallet ('+t.pl.crates.filter(Boolean).length+'/9).');return true}
  if(t.k==='palcrate'){const c=t.pl.crates[t.ci];t.pl.crates[t.ci]=null;giveItem(c);flash('Took a crate off the pallet ('+cn(c)+'/9 items in it).');return true}
  if(t.k==='mount'){t.e.hitch=true;dropFromHands(t.it);flash('Hitch mounted on the '+entName(t.e)+'.');return true}
@@ -1040,7 +1142,7 @@ function itemAction(){const t=itemTarget();if(!t)return false;
  const i=t.si,it=sl[i];sl[i]=null;giveItem(it);flash('Took: '+ITEMS[it.type].n+' out of the slots.');return true}
 const IK=()=>'Click';
 function itemHint(){const t=itemTarget();if(!t){const h=heldList();if(!h.length||P.driving||P.pass)return null;const c=dropCell();return c.why?'Holding the '+ITEMS[h[h.length-1].type].n+': point at a free square in reach (not on the road) and click to put it down.':'Click to put the '+ITEMS[h[h.length-1].type].n+' down on the square.'}if(t.far)return'Too far to reach: step closer (the circle around you is your reach).';const R='';
- if(t.k==='incrate')return'Click to put the '+ITEMS[t.it.type].n+' in the crate ('+cn(t.crate)+'/9).';if(t.k==='cfull')return'That crate is full (9/9).';if(t.k==='onpal')return'Click to put the crate on the pallet.';if(t.k==='palcrate')return'Click to take the crate off the pallet'+R+'.';
+ if(t.k==='incrate')return'Click to put the '+ITEMS[t.it.type].n+' in the crate ('+cn(t.crate)+'/9).';if(t.k==='cfull')return'That crate is full (9/9).';if(t.k==='palpick')return'Click to pick the pallet up with both hands'+((t.pl.st||1)>1?' (takes the top one of '+t.pl.st+')':'')+'.';if(t.k==='palstack')return'Click to stack the pallet on this one ('+(t.pl.st||1)+'/'+PSTK+').';if(t.k==='pstackfull')return'That stack is full ('+PSTK+' pallets).';if(t.k==='onpal')return'Click to put the crate on the pallet.';if(t.k==='palcrate')return'Click to take the crate off the pallet'+R+'.';
  return (t.k==='taken'?'That slot is taken: hover an empty one.':t.k==='full'?'Your hands are full.':t.k==='busy'?'Unhitch the trailer (C) before taking the hitch off.':t.k==='mount'?'Click to mount the hitch on the '+entName(t.e)+'.':t.k==='take'?'Click to take the hitch off the '+entName(t.e)+'.':t.k==='ground'?'Click to pick up the '+ITEMS[t.it.type].n+'.':t.k==='put'?'Click to put the '+ITEMS[t.it.type].n+' into the slots.':'Click to take an item out of the slots.')+R}
 // the reach circle around the player on foot, and a ring on what the mouse is over (yellow = in reach, red = too far)
 function drawReach(){if(P.driving||P.pass)return;
@@ -1105,7 +1207,13 @@ function dropCell(){const m=mouseWorld();if(m){const i=Math.floor(m[0]/S),j=Math
  const fx=P.x+Math.cos(P.a)*1.5*S,fy=P.y+Math.sin(P.a)*1.5*S;let b=null,bd=1e9;
  for(let j=Math.floor((P.y-RCH())/S);j<=Math.floor((P.y+RCH())/S);j++)for(let i=Math.floor((P.x-RCH())/S);i<=Math.floor((P.x+RCH())/S);i++){if(cellWhy(i,j))continue;const d=Math.hypot((i+.5)*S-fx,(j+.5)*S-fy);if(d<bd){bd=d;b={i,j,why:null}}}
  return b||{why:'none'}}
-function dropItem(){const h=heldList();if(!h.length)return flash('Your hands are empty.');const it=h[h.length-1],c=dropCell();
+function dropPallet(it){const m=mouseWorld(),ref=m||[P.x+Math.cos(P.a)*1.8*S,P.y+Math.sin(P.a)*1.8*S];   // set the carried pallet on a free place of a flatbed under the mouse, else on 4 free squares of the ground
+ for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){const q=placePt(e,i);if(Math.hypot(q[0]-ref[0],q[1]-ref[1])<.9*S){if(Math.hypot(q[0]-P.x,q[1]-P.y)>RCH())return flash('Too far away. Step closer: you can only reach inside the circle around you.');if(!placeFree(e,i))return flash('That place on the flatbed is taken.');
+  const pl={x:q[0],y:q[1],a:'b' in e?e.b:e.a,crates:Array(9).fill(null),fk:null,da:0,on:{e,p:i}};PALS.push(pl);e.pals[i]=pl;dropFromHands(it);return flash('Pallet put on the '+entName(e)+'.')}}
+ const i=Math.round(ref[0]/S),j=Math.round(ref[1]/S);if(Math.hypot(i*S-P.x,j*S-P.y)>RCH()+S)return flash('Too far away. Point at a square inside your reach.');
+ for(const[a,b]of[[i-1,j-1],[i,j-1],[i-1,j],[i,j]]){const w=cellWhy(a,b);if(w&&w!=='far')return flash(w==='nostore'?'Not here: put things in the storage room or on a shelf.':w==='road'?'You cannot leave a pallet on the road.':'No room here: the pallet needs 4 free squares.')}
+ PALS.push({x:i*S,y:j*S,a:0,crates:Array(9).fill(null),fk:null,da:0});dropFromHands(it);flash('Pallet set down.')}
+function dropItem(){const h=heldList();if(!h.length)return flash('Your hands are empty.');const it=h[h.length-1];if(it.type==='pallet')return dropPallet(it);const c=dropCell();
  if(c.why)return flash(c.why==='nostore'?'Not here: put things in the storage room or on a shelf.':c.why==='road'?'You cannot leave things on the road.':c.why==='taken'?'That square is taken: one thing per square.':c.why==='far'?'Too far away. Point at a square inside your reach.':'No free square in reach.');
  it.x=(c.i+.5)*S;it.y=(c.j+.5)*S;GI.push(it);dropFromHands(it);flash('Dropped: '+ITEMS[it.type].n+'.')}
 // a pallet set down on the ground goes onto the square corner nearest the forks, squared to the grid
@@ -1122,6 +1230,10 @@ function itemSprite(type,x,y,r){const m=g.getTransform(),a=Math.atan2(m.b,m.a);i
 // on a vehicle's bed an item turns with the vehicle, its bottom toward the vehicle's back (drawn in the vehicle's own frame, x forward)
 function itemSpriteV(type,x,y,r){g.save();g.translate(x,y);g.rotate(Math.PI/2);try{itemSprite0(type,0,0,r)}finally{g.restore()}}
 function itemSprite0(type,x,y,r){const o=typeof type==='string'?{type}:type;if(o.type==='crate')return crateSprite(o,x,y,r);
+ if(o.type==='ironbar'||o.type==='steelbar'){const st=o.type==='steelbar',w=r*1.7,h=r*.95,c0=st?'#8fb4e8':'#8a7a6c',c1=st?'#e4f1ff':'#b9a998',c2=st?'#4f78b4':'#5a4d43';   // an ingot: its top face lit, the end faces darker; steel is bluer and brighter than iron
+  g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.ellipse(x+1.5,y+h*.7,w*.55,h*.45,0,0,7);g.fill();g.beginPath();g.moveTo(x-w*.38,y-h*.5);g.lineTo(x+w*.38,y-h*.5);g.lineTo(x+w*.5,y+h*.5);g.lineTo(x-w*.5,y+h*.5);g.closePath();inked(c0,1);g.fillStyle=c1;g.beginPath();g.moveTo(x-w*.3,y-h*.38);g.lineTo(x+w*.3,y-h*.38);g.lineTo(x+w*.38,y-h*.05);g.lineTo(x-w*.38,y-h*.05);g.closePath();g.fill();g.fillStyle=c2;g.fillRect(x-w*.5,y+h*.32,w,h*.18);return}
+ if(o.type==='glass'){const w=r*1.5;g.fillStyle='rgba(8,12,20,.3)';g.fillRect(x-w/2+1.5,y-w/2+2,w,w);g.beginPath();g.rect(x-w/2,y-w/2,w,w);inked('rgba(150,214,236,.85)',1);g.fillStyle='rgba(235,250,255,.75)';g.beginPath();g.moveTo(x-w*.38,y+w*.1);g.lineTo(x-w*.02,y-w*.38);g.lineTo(x+w*.12,y-w*.38);g.lineTo(x-w*.26,y+w*.1);g.closePath();g.fill();g.beginPath();g.moveTo(x+w*.02,y+w*.38);g.lineTo(x+w*.38,y-w*.1);g.lineTo(x+w*.38,y+w*.1);g.lineTo(x+w*.2,y+w*.38);g.closePath();g.fill();return}
+ if(o.type==='pallet'){const w=r*1.9;g.fillStyle='rgba(8,12,20,.3)';g.fillRect(x-w/2+1.5,y-w/2+1.5,w,w);g.fillStyle='#6f5232';for(const q of[-.5,-.04,.42])g.fillRect(x-w/2,y+q*w,w,w*.1);for(let k=0;k<5;k++){g.beginPath();g.rect(x-w/2+k*w/5+.5,y-w/2,w/5-1,w);inked(k%2?'#c49a62':'#b48a55',.7)}return}
  if(o.type==='canister'){const w=r*1.6,h=r*2,f=Math.min(1,(o.fuel||0)/CANCAP),full=f>=.999;g.beginPath();g.roundRect(x-w/2,y-h/2,w,h,r*.2);inked('#d23b2a',1.1);   // a red jerrycan: handle and cap on top, its litres on its side, a gauge under them
   g.fillStyle='#2a2c30';g.fillRect(x-w*.34,y-h*.44,w*.44,h*.13);g.fillStyle='#f0c63a';g.beginPath();g.arc(x+w*.24,y-h*.37,r*.16,0,7);g.fill();g.fillStyle='rgba(255,255,255,.35)';g.fillRect(x-w*.44,y-h*.24,w*.08,h*.6);
   if(r>=5){const fs=Math.max(3,r*.52),bw=w*.76,bh=Math.max(1.2,r*.24),by=y+h*.26;g.fillStyle=full?'#57e389':'#fff';g.font='bold '+fs.toFixed(1)+'px sans-serif';g.textAlign='center';g.fillText(String(Math.floor(o.fuel||0)),x,y+h*.1);
@@ -1135,9 +1247,13 @@ function drawPallet(p){const u=S,h=PALW/2*u;g.save();g.translate(p.x,p.y);g.rota
  g.fillStyle='rgba(8,12,20,.3)';g.fillRect(-h+SUN[0]*2,-h+SUN[1]*2,2*h,2*h);
  if(p.planks){for(let k=0;k<6;k++){const y=-h+k*(2*h/6);g.beginPath();g.rect(-h,y+.5,2*h,2*h/6-1);inked(k%2?'#d8b57a':'#cfa869',.8);g.fillStyle='rgba(255,255,255,.22)';g.fillRect(-h+1,y+1,2*h-2,1.2);g.strokeStyle='rgba(90,60,25,.35)';g.lineWidth=.6;g.beginPath();g.moveTo(-h+h*.55+k*3,y+1);g.lineTo(-h+h*.55+k*3,y+2*h/6-1);g.stroke()}
   g.fillStyle='#3d3a36';for(const x of[-h*.45,h*.45])g.fillRect(x-1.2,-h,2.4,2*h);g.restore();return}
- g.fillStyle='#6f5232';for(const y of[-h,-h*.08,h*.84])g.fillRect(-h,y,2*h,h*.16);   // stringers (seen between the boards)
- for(let k=0;k<5;k++){const x=-h+k*(2*h/5);g.beginPath();g.rect(x+1,-h,2*h/5-2,2*h);inked(k%2?'#c49a62':'#b48a55',.8);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(x+1,-h,2,2*h)}
+ const ns=Math.max(1,Math.min(PSTK,p.st||1));
+ for(let L=0;L<ns;L++){g.save();g.translate((L-(ns-1))*1.3,(L-(ns-1))*1.3);
+  g.fillStyle='#6f5232';for(const y of[-h,-h*.08,h*.84])g.fillRect(-h,y,2*h,h*.16);   // stringers (seen between the boards)
+  for(let k=0;k<5;k++){const x=-h+k*(2*h/5);g.beginPath();g.rect(x+1,-h,2*h/5-2,2*h);inked(k%2?'#c49a62':'#b48a55',.8);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(x+1,-h,2,2*h)}
+  g.restore()}
  g.restore();
+ if(ns>1){g.save();g.translate(p.x,p.y);g.fillStyle='rgba(18,22,28,.88)';g.beginPath();g.arc(0,0,9,0,7);g.fill();g.strokeStyle='#ffe27a';g.lineWidth=1.2;g.stroke();g.fillStyle='#fff';g.font='bold 13px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(ns,0,.5);g.restore()}   // the number of pallets in the stack, on top
  p.crates.forEach((c,i)=>{if(c){const q=palCellPt(p,i);crateSprite(c,q[0],q[1],PALW/6*u*.9)}})}
 function rampTarget(){const m=mouseWorld();let best=null,bd=1e9;   // the ramp under the mouse (or, with no mouse, the closest one in reach)
  for(const t of Object.values(trl)){if(!t.out||t.ld||!TRL[t.kind].ramp)continue;const tr=TRL[t.kind],x0=(tr.co-tr.hw)*S,x1=x0-tr.rl*S,lp=loc(P.x,P.y,t.x,t.y,t.b),
@@ -1145,6 +1261,13 @@ function rampTarget(){const m=mouseWorld();let best=null,bd=1e9;   // the ramp u
   if(m){const l=loc(m[0],m[1],t.x,t.y,t.b);if(l[0]>x1-.3*S&&l[0]<x0+.3*S&&Math.abs(l[1])<1.1*S&&dd<bd){bd=dd;best={t,far:dd>RCH()}}}
   else if(dd<=RCH()&&dd<bd){bd=dd;best={t,far:false}}}
  return best}
+// Space in the cab: a tap puts the ramp of the selected trailer out or takes it in; holding it loads / unloads the selected trailer (V picks it)
+const SPK={down:false,t:0},spaceHeld=()=>SPK.down&&P.driving&&performance.now()-SPK.t>=250;
+function toggleRamp(t){if(t.ramp&&loadsOn(t).some(l=>l.ld.go))return flash('Wait for the load to finish moving.');if(t.ramp&&vehsOn(t).some(v=>v.tr&&v.on.f>0&&rigRear(v)+v.on.lx<(TRL[t.kind].co-TRL[t.kind].hw)*S-2))return flash('Pull the whole rig onto the deck first.');t.ramp=!t.ramp;return flash(t.ramp?'Ramp down. The trailer cannot move until it is raised.':'Ramp up.')}
+function spaceDown(){if(!panelOpen&&P.driving&&T.out&&T.kind!=='forklift'){SPK.down=true;SPK.t=performance.now();return}spaceKey()}
+function spaceUp(){if(!SPK.down)return;SPK.down=false;if(performance.now()-SPK.t>=250||!P.driving||!T.out)return;
+ const t=curSel();if(t&&TRL[t.kind].ramp)return toggleRamp(t);
+ flash(t?'Hold Space to load or unload the '+t.name+' (V selects the trailer).':'Hold Space to load or unload the truck bed (V selects a trailer).')}
 function spaceKey(){   // Space: closes a panel, works the pad you stand on, opens the crate under the mouse; on a forklift it lifts / sets down
  if(panelOpen)return closeGarage();
  if(P.driving){if(T.out&&T.kind==='forklift'&&!forkFirst())flash(T.forks==='logs'?'Nothing at the claw: drive it up to a log, or hold a log over a bed, the sawmill yard or the ground.':'Nothing at the forks: drive them under a pallet, or hold a pallet over a free place.');return}   // on a forklift Space lifts and sets down (as C does); it is no brake
@@ -1162,7 +1285,7 @@ function pour(t){const{c,v}=t,k=KOF(v);if(t.far)return flash('Too far away. Step
  flash('Poured '+q.toFixed(1)+' L into the '+entName(v)+' ('+v.fuel.toFixed(1)+' / '+k.fuel+' L). '+c.fuel.toFixed(1)+' L left in the canister.')}
 function pourHint(){const t=pourTarget();if(!t)return null;const k=KOF(t.v);return t.far?'Too far to reach the '+entName(t.v)+': step closer.':!(t.c.fuel>0)?'The canister is empty.':t.v.fuel>=k.fuel-.05?'The tank of the '+entName(t.v)+' is full.':'Click to pour the canister into the '+entName(t.v)+' ('+Math.round(t.v.fuel)+' / '+k.fuel+' L).'}
 const LEVER={get x(){return IN&&IN.o.doors?-4020:-3940},y:-4100,get w(){return IN&&IN.o.doors?40:20},h:20};   // 2 tiles wide in a built building (centred on the north wall)   // the lever of the power plant and of the lumberyard: 1 tile in the back corner of the building, east of the board
-const hasLever=()=>!!IN&&(IN.o.n==='power plant'||IN.o.n==='lumberyard'||IN.o.n==='sawmill'||IN.o.n==='quarry'||IN.o.n==='iron mine'||IN.o.n==='crusher'),leverOn=()=>IN.o.n==='crusher'?crusherOn:IN.o.n==='lumberyard'?lumberOn:IN.o.n==='sawmill'?sawOn:IN.o.n==='quarry'?quarryOn:IN.o.n==='iron mine'?ironOn:plantOn;   // the plant's lever switches the plant (no coal burnt, no power); the lumberyard's stops and starts its production, so it burns none of the plant's coal
+const hasLever=()=>!!IN&&(IN.o.n==='power plant'||IN.o.n==='lumberyard'||IN.o.n==='sawmill'||IN.o.n==='factory'||IN.o.n==='foundry'||IN.o.n==='quarry'||IN.o.n==='iron mine'||IN.o.n==='crusher'),leverOn=()=>IN.o.n==='crusher'?crusherOn:IN.o.n==='foundry'?foundryOn:IN.o.n==='factory'?factoryOn:IN.o.n==='lumberyard'?lumberOn:IN.o.n==='sawmill'?sawOn:IN.o.n==='quarry'?quarryOn:IN.o.n==='iron mine'?ironOn:plantOn;   // the plant's lever switches the plant (no coal burnt, no power); the lumberyard's stops and starts its production, so it burns none of the plant's coal
 // the crusher's lever outside: on the ground behind its boards, where the two meet; it chooses what the loading pad loads (sand or gravel). Drawn upright, like the boards
 const CRLR=()=>{const t=T2.crusher;return uBox(CRS,{x0:t.ox+460,y0:t.oy+320,x1:t.ox+500,y1:t.oy+340})},CRLV=()=>{const r=CRLR();return[(r.x0+r.x1)/2,(r.y0+r.y1)/2]};   // 2 x 1 tiles, against the back edge of the boards where the two meet
 function crLeverT(){if(IN||P.driving||!crusher.built)return null;const m=mouseWorld(),r=CRLR();if(!m||m[0]<r.x0||m[0]>r.x1||m[1]<r.y0||m[1]>r.y1)return null;const[x,y]=CRLV();return{far:Math.hypot(P.x-x,P.y-y)>RCH()}}
@@ -1172,16 +1295,16 @@ function drawCrLever(){if(!crusher.built)return;const r=CRLR(),w=r.x1-r.x0,h=r.y
  const k=gv?1:-1,ex=x+ax*k*7,ey=y+ay*k*7;g.fillStyle='#22252a';g.beginPath();g.arc(x,y,2.2,0,7);g.fill();g.strokeStyle='#cfd3d8';g.lineWidth=2.4;g.lineCap='round';g.beginPath();g.moveTo(x,y);g.lineTo(ex,ey);g.stroke();g.lineCap='butt';
  g.fillStyle=gv?'#b5bac2':'#e3c37f';g.beginPath();g.arc(ex,ey,2.8,0,7);g.fill();g.strokeStyle=INK;g.lineWidth=1;g.stroke()}
 function leverTarget(){if(!hasLever()||P.driving)return null;const m=mouseWorld();if(!m||m[0]<LEVER.x||m[0]>LEVER.x+LEVER.w||m[1]<LEVER.y||m[1]>LEVER.y+LEVER.h)return null;return{far:Math.hypot(P.x-(LEVER.x+LEVER.w/2),P.y-(LEVER.y+10))>RCH()}}
-const leverHint=()=>{const c=crLeverT();if(c)return c.far?'Too far to reach the lever.':'Click to load '+(crusher.gsel?'sand':'gravel')+' on the crusher\'s loading pad instead.';const t=leverTarget();return t?(t.far?'Too far to reach the lever.':IN.o.n==='lumberyard'?'Click to switch the lumberyard '+(lumberOn?'off: it stops making logs, so no coal is burnt for it.':'on.'):IN.o.n==='crusher'?'Click to switch the crusher '+(crusherOn?'off: it stops crushing, so no coal is burnt for it.':'on.'):IN.o.n==='iron mine'?'Click to switch the iron mine '+(ironOn?'off: it stops making iron ore, so no coal is burnt for it.':'on.'):IN.o.n==='quarry'?'Click to switch the quarry '+(quarryOn?'off: it stops making rock, so no coal is burnt for it.':'on.'):IN.o.n==='sawmill'?'Click to switch the sawmill '+(sawOn?'off: it stops sawing, so no planks are made.':'on.'):'Click to switch the power plant '+(plantOn?'off: it stops burning coal and giving power.':'on.')):null};
+const leverHint=()=>{const c=crLeverT();if(c)return c.far?'Too far to reach the lever.':'Click to load '+(crusher.gsel?'sand':'gravel')+' on the crusher\'s loading pad instead.';const t=leverTarget();return t?(t.far?'Too far to reach the lever.':IN.o.n==='lumberyard'?'Click to switch the lumberyard '+(lumberOn?'off: it stops making logs, so no coal is burnt for it.':'on.'):IN.o.n==='crusher'?'Click to switch the crusher '+(crusherOn?'off: it stops crushing, so no coal is burnt for it.':'on.'):IN.o.n==='iron mine'?'Click to switch the iron mine '+(ironOn?'off: it stops making iron ore, so no coal is burnt for it.':'on.'):IN.o.n==='quarry'?'Click to switch the quarry '+(quarryOn?'off: it stops making rock, so no coal is burnt for it.':'on.'):IN.o.n==='foundry'?'Click to switch the foundry '+(foundryOn?'off: it makes nothing and burns none of the plant\'s coal.':'on.'):IN.o.n==='factory'?'Click to switch the factory '+(factoryOn?'off: it makes nothing and burns none of the plant\'s coal.':'on.'):IN.o.n==='sawmill'?'Click to switch the sawmill '+(sawOn?'off: it stops sawing, so no planks are made.':'on.'):'Click to switch the power plant '+(plantOn?'off: it stops burning coal and giving power.':'on.')):null};
 let EXC=0;const dblOff=()=>{const t=performance.now(),ok=t-EXC<450;EXC=ok?0:t;return ok};   // two clicks in a row off the vehicle
 function clickAct(){   // a left click: everything done with the mouse in the world
  if(panelOpen)return;
  const h=hoverSeat(),m=mouseWorld();
  {const cl=crLeverT();if(cl){if(cl.far)return flash('Too far away. Step closer to the lever.');crusher.gsel=crusher.gsel?0:1;return flash('The crusher\'s loading pad now loads '+(crusher.gsel?'gravel.':'sand.'))}}
- {const lt=leverTarget();if(lt){if(lt.far)return flash('Too far away. Step closer to the lever.');if(IN.o.n==='crusher'){crusherOn=!crusherOn;return flash('Crusher switched '+(crusherOn?'on.':'off: it crushes nothing and burns none of the plant\'s coal.'))}if(IN.o.n==='iron mine'){ironOn=!ironOn;return flash('Iron mine switched '+(ironOn?'on.':'off: it makes no iron ore and burns none of the plant\'s coal.'))}if(IN.o.n==='quarry'){quarryOn=!quarryOn;return flash('Quarry switched '+(quarryOn?'on.':'off: it makes no rock and burns none of the plant\'s coal.'))}if(IN.o.n==='sawmill'){sawOn=!sawOn;return flash('Sawmill switched '+(sawOn?'on.':'off: it saws no planks.'))}if(IN.o.n==='lumberyard'){lumberOn=!lumberOn;return flash('Lumberyard switched '+(lumberOn?'on.':'off: it makes no logs and burns none of the plant\'s coal.'))}plantOn=!plantOn;return flash('Power plant switched '+(plantOn?'on.':'off: no coal is burnt and no power is given.'))}}
+ {const lt=leverTarget();if(lt){if(lt.far)return flash('Too far away. Step closer to the lever.');if(IN.o.n==='crusher'){crusherOn=!crusherOn;return flash('Crusher switched '+(crusherOn?'on.':'off: it crushes nothing and burns none of the plant\'s coal.'))}if(IN.o.n==='iron mine'){ironOn=!ironOn;return flash('Iron mine switched '+(ironOn?'on.':'off: it makes no iron ore and burns none of the plant\'s coal.'))}if(IN.o.n==='quarry'){quarryOn=!quarryOn;return flash('Quarry switched '+(quarryOn?'on.':'off: it makes no rock and burns none of the plant\'s coal.'))}if(IN.o.n==='foundry'){foundryOn=!foundryOn;return flash('Foundry switched '+(foundryOn?'on.':'off: it makes nothing and burns none of the plant\'s coal.'))}if(IN.o.n==='factory'){factoryOn=!factoryOn;return flash('Factory switched '+(factoryOn?'on.':'off: it makes nothing and burns none of the plant\'s coal.'))}if(IN.o.n==='sawmill'){sawOn=!sawOn;return flash('Sawmill switched '+(sawOn?'on.':'off: it saws no planks.'))}if(IN.o.n==='lumberyard'){lumberOn=!lumberOn;return flash('Lumberyard switched '+(lumberOn?'on.':'off: it makes no logs and burns none of the plant\'s coal.'))}plantOn=!plantOn;return flash('Power plant switched '+(plantOn?'on.':'off: no coal is burnt and no power is given.'))}}
  if(P.pass){const v=P.pass;if(h&&h.v===v)return h.sd===-1?getInOut():undefined;if(m&&onVeh(v,m))return;if(!dblOff())return flash('Double-click off the vehicle to get out.');if(Math.abs(v.v)>1.2)return flash('Wait until the vehicle stops.');return getInOut()}   // the driver seat: drive (one click); anywhere off the vehicle: get out (a double click)
  if(P.driving){if(!T.out)return;if(h&&h.v===T)return h.sd===1?getInOut():undefined;if(m&&onVeh(T,m))return;if(!dblOff())return flash('Double-click off the vehicle to get out.');return getInOut()}   // a double click off the vehicle gets out (getInOut refuses while moving)
- const fh=fuelHover();if(fh){if(fh.far)return flash('Too far away. Step closer to reach the fuel container.');const e=fh.c.e;e.nz=!e.nz;return flash(e.nz?'Refuel zone out. Park a vehicle in the red rectangle to fill it from '+e.name+'.':'Refuel zone picked up.')}{const rt=IN?null:rampTarget();if(rt){if(rt.far)return flash('Too far away. Step closer to reach the ramp.');const t=rt.t;if(t.ramp&&loadsOn(t).some(l=>l.ld.go))return flash('Wait for the load to finish moving.');if(t.ramp&&vehsOn(t).some(v=>v.tr&&v.on.f>0&&rigRear(v)+v.on.lx<(TRL[t.kind].co-TRL[t.kind].hw)*S-2))return flash('Pull the whole rig onto the deck first.');t.ramp=!t.ramp;return flash(t.ramp?'Ramp down. The trailer cannot move until it is raised.':'Ramp up.')}}{const pt=pourTarget();if(pt)return pour(pt)}   // a canister in hand: a click on a vehicle fuels it
+ const fh=fuelHover();if(fh){if(fh.far)return flash('Too far away. Step closer to reach the fuel container.');const e=fh.c.e;e.nz=!e.nz;return flash(e.nz?'Refuel zone out. Park a vehicle in the red rectangle to fill it from '+e.name+'.':'Refuel zone picked up.')}{const rt=IN?null:rampTarget();if(rt){if(rt.far)return flash('Too far away. Step closer to reach the ramp.');const t=rt.t;return toggleRamp(t)}}{const pt=pourTarget();if(pt)return pour(pt)}   // a canister in hand: a click on a vehicle fuels it
  if(h){if(heldList().length)return flash('Put down what you are holding before getting in (click a free square).');return getInOut()}
  if(itemAction())return;if(heldList().length)return dropItem()}
 
@@ -1197,7 +1320,7 @@ function step(dt){
  if(P.driving&&T.out&&T.on){deckDrive(dt,thr)}
  else if(P.driving&&T.out){
   const v=T,ch0=chain(),o=[T.x,T.y,T.a,ch0.map(t=>[t.x,t.y,t.b,t.hx,t.hy])],pz=()=>chain().map(t=>[t.x,t.y,t.b]),was=badPose(T.x,T.y,T.a,pz()),wasE=!COLL||envBad(T.x,T.y,T.a,pz());
-  const pin=ch0.some(t=>TRL[t.kind].ramp&&(t.ramp||t.rp>.02));if(pin&&thr)flash('Raise the ramp before moving the trailer: walk up to it and click it.');   // a lowered ramp pins the rig
+  const pin=ch0.some(t=>TRL[t.kind].ramp&&(t.ramp||t.rp>.02));if(pin&&thr)flash('Raise the ramp before moving the trailer: tap Space (V selects the ramp trailer).');   // a lowered ramp pins the rig
   v.v+=thr*(thr*v.v<0?KD.acc*2:KD.acc)*dt;if(!thr)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v),5*dt);
   if(K.brake)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v),10*dt);
   v.v=Math.max(-3,Math.min(KD.vmax,v.v));
@@ -1221,14 +1344,23 @@ function step(dt){
   for(const t of Object.values(trl)){const k=t.kind;if(t.out){if(!t.ld&&!t.coupled&&!t.tr&&!IN)pushTrl(t,px0,py0);const d=TRL[k];pushOut(P,t.x,t.y,t.b,(d.co-d.hw)*S,(d.co+d.hw)*S,d.hh*S,.38*S)}}
  }
  syncLoaded(dt);syncLoadedT(dt);syncPallets();
+ {const z=sellZ;for(let i=PALS.length-1;i>=0;i--){const p=PALS[i];if(p.planks&&!p.fk&&!p.on&&Math.abs(p.x-z.x)<z.w/2&&Math.abs(p.y-z.y)<z.h/2&&SHST.planks<SHCAP.planks-.001){PALS.splice(i,1);SHST.planks+=1;flash('A pallet of planks went into the shop storage ('+SHST.planks+' / '+SHCAP.planks+').')}}
+  {const z=sellZ,on=o=>Math.abs(o.x-z.x)<z.w/2&&Math.abs(o.y-z.y)<z.h/2,room=k=>SHST[k]<SHCAP[k]-.001,take=c=>{for(let i=0;i<9;i++){const x=c.items[i];if(x&&x.type!=='crate'&&x.type!=='pallet'&&SHST[x.type]!==undefined&&room(x.type)){c.items[i]=null;SHST[x.type]++}}};   // items set down on the SELL pad (even in crates, on pallets) go into the shop storage; a canister is stored empty (its fuel is lost); emptied crates and empty pallets go in too
+   for(let i=GI.length-1;i>=0;i--){const it=GI[i];if(!on(it))continue;if(it.type==='crate'){take(it);if(!it.items.some(Boolean)&&room('crate')){GI.splice(i,1);SHST.crate++}}else if(it.type!=='pallet'&&SHST[it.type]!==undefined&&room(it.type)){GI.splice(i,1);SHST[it.type]++}}
+   for(let i=PALS.length-1;i>=0;i--){const q=PALS[i];if(q.planks||q.fk||q.on||!on(q))continue;for(let k=0;k<9;k++){const c=q.crates[k];if(!c)continue;take(c);if(!c.items.some(Boolean)&&room('crate')){q.crates[k]=null;SHST.crate++}}
+    const st=q.st||1;if(!q.crates.some(Boolean)&&SHST.pallet+st<=SHCAP.pallet+.001){PALS.splice(i,1);SHST.pallet+=st}}}}
  for(const t of Object.values(trl)){const k=t.kind;if(t.out){const p=tipPt(t);t.kx=p.x;t.ky=p.y}}
  // ----- cargo -----
  let m=null;const cs=carriers();
  for(const c of cs){
-  const cg=c.cg,amt0=cg.amt,cap=c.cap,slow=c.slow(),lr=cap*.3,ur=cap*.4,takes=t=>c.cargo==='any'?t!=='fuel':c.cargo===t||(c.cargo==='coal'&&(t==='rock'||t==='iron'||t==='sand'||t==='gravel'));let mm=null;
+  const cg=c.cg,amt0=cg.amt,cap=c.cap,slow=c.slow(),act=!c.ent||(c.ent===(curSel()||T)&&spaceHeld()),lr=act?cap*.3:0,ur=act?cap*.4:0,takes=t=>c.cargo==='any'?t!=='fuel':c.cargo===t||(c.cargo==='coal'&&(t==='rock'||t==='iron'||t==='sand'||t==='gravel'));let mm=null;
   if(inZcU(MS,c,LYM.pad)){
    if(!slow)mm='Slow down to load.';else if(!takes('coal'))mm='This cargo space does not take coal.';else if(cg.type!=='coal'&&cg.amt>0)mm='Dump the other cargo first (G).';else if(cg.amt>=cap-.01)mm='Load full.';else if(mine.stock<=0)mm='The coal mine is empty. It regenerates 0.1 t per second.';
    else{mm='Loading coal…';const q=Math.min(lr*dt,cap-cg.amt,mine.stock);cg.type='coal';cg.amt+=q;mine.stock-=q}
+  }else if(inZcU(SS,c,S0.sell)){
+   if(!slow)mm='Slow down to unload.';else if(cg.amt<=0||!cg.type)mm='SELL / UNLOAD pad: park here and hold Space to unload any cargo into the shop storage.';
+   else if(SHST[cg.type]===undefined)mm='The shop storage does not take '+cg.type+'.';else if(SHST[cg.type]>=SHCAP[cg.type]-.001)mm='Shop storage for '+SHN[cg.type].toLowerCase()+' is full ('+SHCAP[cg.type]+' max). Sell some or upgrade it in the shop (Storage).';
+   else{mm='Unloading into the shop storage…';const q=Math.min(ur*dt,cg.amt,SHCAP[cg.type]-SHST[cg.type]);SHST[cg.type]+=q;cg.amt-=q}
   }else if(inZcG(c,G0.gUnl)){
    if(!slow)mm='Slow down to unload.';else if(cg.amt<=0||!cg.type)mm='Garage storage: park here to unload your cargo into it.';
    else if(STORE[cg.type]===undefined)mm='Garage storage does not take '+cg.type+' yet.';else if(STORE[cg.type]>=STCAP[cg.type]-.001)mm='Garage '+cg.type+' storage is full ('+STCAP[cg.type]+' max). Upgrade it at the garage upgrade pad.';
@@ -1281,9 +1413,21 @@ function step(dt){
    else if(sawmill.stock>=sawmill.cap)mm='Sawmill storage is full. It only saws while the power plant runs.';
    else{mm='Unloading logs at the sawmill…';const q=Math.min(ur*dt,cg.amt,sawmill.cap-sawmill.stock);cg.amt-=q;sawmill.stock+=q;cash+=q*SITEPAY.logs}
   }
+  if(inZs(c,fcU())){
+   if(!slow)mm='Slow down to unload.';else if(!factory.built){mm=siteDeliver(factory,cg,ur*dt);if(factory.built)sweepLeft(cg)}
+   else mm='The factory takes pallets of planks set down on this pad with a forklift, not cargo.';
+  }
+  if(inZs(c,fnU())){
+   if(!slow)mm='Slow down to unload.';else if(!foundry.built){mm=siteDeliver(foundry,cg,ur*dt);if(foundry.built)sweepLeft(cg)}
+   else if(cg.amt<=0)mm='Foundry: bring iron ore, coal and sand ($'+SITEPAY.iron+' a ton, sand $'+SITEPAY.sand+'). Set pallets, crates and iron in crates down on this pad by hand or with a forklift.';
+   else if(cg.type==='iron'||cg.type==='coal'||cg.type==='sand'){const k=cg.type==='iron'?'ore':cg.type==='sand'?'sand':'carb',kc=foundry[k==='ore'?'cap':k==='sand'?'sacap':'ccap'],nm=cg.type==='iron'?'iron ore':cg.type;if(foundry[k]>=kc-.01)mm='The foundry\'s '+nm+' store is full.';
+    else{mm='Unloading '+nm+' into the foundry…';const q=Math.min(ur*dt,cg.amt,kc-foundry[k]);cg.amt-=q;foundry[k]+=q;cash+=q*(SITEPAY[cg.type]||0)}}
+   else mm='The foundry only takes iron ore, coal and sand.';
+  }
   if(takes('fuel')&&FZS.some(z=>satHit(zoneBox(z),{ox:c.ox,oy:c.oy,a:c.a,x0:c.e0,x1:c.e1,h:1}))){const cf=c.cargo==='fuel'?c.cap:c.cap*(c.fm||1);
    if(!slow)mm='Slow down to load fuel.';else if(cg.type&&cg.type!=='fuel'&&cg.amt>0)mm='Empty the other cargo first (G).';else if(cg.amt>=cf-.01)mm='Fuel cargo full.';else if(cash<=0)mm='No cash for fuel.';
-   else{mm='Loading fuel… $'+FUELP.toFixed(1)+' per litre.';const q=Math.min(cf*.3*dt,cf-cg.amt,cash/FUELP);cg.type='fuel';cg.amt+=q;cash-=q*FUELP}}
+   else{mm='Loading fuel… $'+FUELP.toFixed(1)+' per litre.';const q=Math.min(act?cf*.3*dt:0,cf-cg.amt,cash/FUELP);cg.type='fuel';cg.amt+=q;cash-=q*FUELP}}
+  if(!act&&mm)mm=c.ent===(curSel()||T)?'Hold Space to load or unload the '+(c.ent===T?'truck bed':c.ent.name)+'.':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.';
   if(cg.amt<=.001){cg.amt=0;cg.type=null;if(amt0>.001)cash=Math.round(cash*1e4)/1e4}   // a cargo just emptied: clear float dust from the payment
   if(mm&&!m)m=mm}
  for(const it of GI)if(it.type==='canister'&&(it.fuel||0)<CANCAP&&cash>0&&FZS.some(z=>Math.abs(it.x-z.x)<z.w/2&&Math.abs(it.y-z.y)<z.h/2)){   // a canister set down on a FUEL square fills up, paid by the litre
@@ -1312,6 +1456,8 @@ function step(dt){
  siteAbsorb();
  if(netProd()&&plantOn&&sawOn&&sawmill.built&&plankFree().length){const sb=Math.min(sawmill.stock,sawmill.burn*dt,plant.stock);if(sb>0){sawmill.stock-=sb;planks+=sb;plant.stock-=sb;plantRun=true;   // 1 log and 1 coal make 1 plank
   while(planks>=1&&plankMake())planks-=1}}
+ if(factory.built)factoryTick(dt,netProd());
+ if(foundry.built)foundryTick(dt,netProd());
  power=plantOn&&plant.stock>0?100+50*plant.lvl:0;syncLogs();
  // ----- messages / HUD -----
  const rc=rigCs(),c0=rc[0],st=selTr();
@@ -1458,7 +1604,7 @@ function drawGround(){
  g.lineJoin='round';g.lineCap='butt';
  drawRoads();
  // the building's name painted on the asphalt just inside its gate
- LOTS.forEach((l,i)=>{const nm=['COAL MINE','POWER PLANT','GARAGE','LUMBERYARD','SAWMILL','SHOP','FUEL STATION','QUARRY','IRON MINE','CRUSHER'][i];
+ LOTS.forEach((l,i)=>{const nm=['COAL MINE','POWER PLANT','GARAGE','LUMBERYARD','SAWMILL','SHOP','FUEL STATION','QUARRY','IRON MINE','CRUSHER','FACTORY'][i];
   for(const q of GATES(l)){const S2=q.side==='S'||q.side==='N',px=S2?(q.a+q.b)/2:q.side==='W'?l.x0+36:l.x1-36,py=q.side==='S'?l.y1-24:q.side==='N'?l.y0+24:(q.a+q.b)/2;   // one at every gate
    g.save();g.globalAlpha=.8;g.fillStyle=l.col;g.textAlign='center';g.font='bold 34px sans-serif';g.translate(px,py);g.rotate(q.side==='S'?0:q.side==='N'?Math.PI:q.side==='W'?Math.PI/2:-Math.PI/2);g.fillText(nm,0,12);g.restore()}});   // reads like road lettering: upright for the driver heading in
 }
@@ -1522,7 +1668,7 @@ function paintYard(y,c0,r0,c1,r1,fine){const c2=shade(y.c,.955),w=y.x1-y.x0,hh=y
  g.restore();g.strokeStyle='rgba(0,0,0,.3)';g.lineWidth=3;g.strokeRect(y.x0,y.y0,w,hh)}
 // one of the lots: asphalt (dirt while it is still a building site), a kerb all round and a one-tile entrance. i: its place in LOTS
 function paintLot(l,i,c0,r0,c1,r1,fine){const sq=siteOfLot(l),W=l.x1-l.x0,H=l.y1-l.y0,ca=Math.max(c0-1,l.c0),cb=Math.min(c1,l.c1-1),ra=Math.max(r0-1,l.r0),rb=Math.min(r1,l.r1-1),tiles=f=>{for(let r=ra;r<=rb;r++)for(let c=ca;c<=cb;c++)f(c,r,c*TS,r*TS,k=>hash(c,r,k))},
-  dust=sq?null:i===0?[load,'14,14,18',.4]:i===1?[dump,'14,14,18',.34]:i===3?[lz,'214,180,120',.3]:i===4?[swz,'226,196,140',.34]:i===7?[qz,'170,176,186',.34]:i===8?[iz,'190,110,80',.34]:i===9?[cz,'150,170,164',.34]:null;   // what is handled on a lot leaves its dust around the place where it is handled
+  dust=sq?null:i===0?[load,'14,14,18',.4]:i===1?[dump,'14,14,18',.34]:i===3?[lz,'214,180,120',.3]:i===4?[swz,'226,196,140',.34]:i===7?[qz,'170,176,186',.34]:i===8?[iz,'190,110,80',.34]:i===9?[cz,'150,170,164',.34]:i===10?[fz,'160,170,190',.34]:i===11?[fnz,'200,150,110',.34]:null;   // what is handled on a lot leaves its dust around the place where it is handled
  g.save();g.beginPath();g.rect(l.x0,l.y0,W,H);g.clip();
  tiles((c,r,X,Y)=>{g.fillStyle=sq?((c+r)&1?'#7b6445':'#745d40'):(c+r)&1?l.f1:l.f2;g.fillRect(X,Y,TS,TS)});
  lowres(()=>{tiles((c,r,X,Y,h)=>{for(let k=0;k<4;k++)sq?soft(X+h(600+k)*TS,Y+h(610+k)*TS,60+h(620+k)*70,34+h(630+k)*40,h(640+k)*3,k&1?'182,150,104':'58,42,24',k&1?.2:.3):soft(X+h(600+k)*TS,Y+h(610+k)*TS,70+h(620+k)*80,40+h(630+k)*50,h(640+k)*3,k&1?'255,255,255':'0,0,0',k&1?.045:.11);   // lighter and darker drifts
@@ -1699,7 +1845,7 @@ function porch(x,y,w,h,side,c){const s=side==='S',yb=s?y:y+h-3.6;
 function roofSign(cx,cy,s,c,U){const f='bold 15px sans-serif';g.font=f;const w=Math.ceil(g.measureText(s).width)+18,h=22;rShade(cx-w/2,cy-h/2,w,h,3);
  g.save();g.translate(cx,cy);if(U&&U.rot>=2)g.rotate(Math.PI);g.beginPath();g.roundRect(-w/2,-h/2,w,h,3);inked('#20242b',1.2);g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();g.roundRect(-w/2+2.6,-h/2+2.6,w-5.2,h-5.2,1.6);g.stroke();txt(s,0,5.4,'#f5ecd0',f);g.restore()}
 const PSTACK=[[198,74],[228,74],[258,74]];   // the power plant's stacks on its roof (from the corner of the building): the smoke rises from them. They stand on the side of the doors, so that the smoke drifts off over the roof and not over the boards behind the building
-const ROOFTALL={'power plant':PSTACK.map(([x,y])=>[x-8,y-8,16,16,30]),'iron mine':[[146,10,20,20,26]],mine:[[215,29,42,42,11]],sawmill:[[232,24,28,28,13]],crusher:[[234,84,24,24,13]]};   // what stands tall on a roof (x, y, w, h from the building's corner, and how high above the roof): its shadow reaches the ground
+const ROOFTALL={'power plant':PSTACK.map(([x,y])=>[x-8,y-8,16,16,30]),'iron mine':[[146,10,20,20,26]],mine:[[215,29,42,42,11]],sawmill:[[232,24,28,28,13]],crusher:[[234,84,24,24,13]],factory:[[232,28,24,24,18]],foundry:[[50,38,18,18,30],[100,38,18,18,30]]};   // what stands tall on a roof (x, y, w, h from the building's corner, and how high above the roof): its shadow reaches the ground
 // the buildings, each with a roof of its own. X,Y,W,H: the footprint (what you bump into; nothing is drawn outside it), c: the building's colour. Each returns where its name board goes
 const ROOF={
  // the coal mine: the winding hall under a ridged sheet roof, the lamp room in a lean-to along its front, the headframe over the shaft at the east end
@@ -1731,6 +1877,20 @@ const ROOF={
   flatRoof(X+210,Y,70,H,'#7f7c72','#bdb7a8',5,{gravel:1});onto(X+210,Y,70,H,()=>rShade(X,Y,210,H,8));
   sawRoof(X,Y,210,H,5,shd(c,.76));
   RTH.hopper(X+226,Y+78,40,40,'#8d939c','#d9b877');RTH.duct(X+246,Y+58,X+246,Y+84,6);RTH.duct(X+204,Y+36,X+232,Y+36,7);RTH.cyclone(X+246,Y+38,17);
+  return[X+140,Y+112]},
+ // the foundry: a flat roof over the furnace hall with two chimneys, a saw-tooth hall beside it with a duct, a cyclone and a skylight
+ foundry(X,Y,W,H,c){
+  flatRoof(X,Y,W,H,'#7d777a',shd(c,.72),6);
+  flatRoof(X+8,Y+8,150,H-16,'#625c5f','#a69ea1',4,{gravel:1});
+  sawRoof(X+168,Y+8,104,H-16,3,shd(c,.66));
+  RTH.stack(X+59,Y+47);RTH.stack(X+109,Y+47);RTH.duct(X+20,Y+47,X+150,Y+47,7);RTH.vent(X+40,Y+90);RTH.vent(X+130,Y+90);RTH.sky(X+205,Y+66,34,28);RTH.cyclone(X+244,Y+40,12);
+  return[X+140,Y+112]},
+ // the factory: two saw-tooth halls over the work floor and a flat gravel roof beside them with a duct, a cyclone, vents and a skylight
+ factory(X,Y,W,H,c){
+  flatRoof(X,Y,W,H,'#85898f',shd(c,.78),6);
+  sawRoof(X+8,Y+8,150,H-16,4,shd(c,.7));
+  flatRoof(X+168,Y+8,104,H-16,'#6f747b','#aeb3ba',4,{gravel:1});
+  RTH.vent(X+184,Y+24);RTH.vent(X+214,Y+24);RTH.sky(X+226,Y+66,34,28);RTH.duct(X+200,Y+60,X+200,Y+100,6);RTH.cyclone(X+244,Y+40,12);
   return[X+140,Y+112]},
  // the quarry: a slate roof hipped at both ends, a stone chimney; the weighbridge office under a gravel roof at the west end with the water tank on it
  quarry(X,Y,W,H,c){
@@ -1838,7 +1998,7 @@ function paintBuildings(X0,Y0,X1,Y1){const vis=(x0,y0,x1,y1,m=70)=>x1>X0-m&&x0<X
 // power plant parking: bays like the garage's on the south tile row, wall to wall with two squares to spare each side: x 3240..4120 (11 bays), y 2900..3180
  // garage parking: six bays on the south row, noses to the north, only the sides are marked
  {const b=gBox({x0:1400,y0:1600,x1:1880,y1:1900});if(vis(b.x0,b.y0,b.x1,b.y1))gWrap(()=>{g.strokeStyle='rgba(236,236,228,.9)';g.lineWidth=2.4;g.beginPath();for(let k=0;k<=6;k++){g.moveTo(1400+k*80,1900);g.lineTo(1400+k*80,1620)}g.stroke();for(let k=0;k<6;k++)txt('P',1440+k*80,1770,'#ffffff55','bold 34px sans-serif')})}   // the garage's bays
- const sc=[],SO={cx:170,sx:-190,sy:70,np:1};for(const n of['power plant','lumberyard','sawmill','quarry','iron mine','crusher'])if(!BLD[n].built){const p=T2p(n);sc.push([p.x,p.y,'needs '+reqNeeds(BLD[n]),T2[n].U,SO])}   // every site: the banner centred under its unloading pad in the back yard
+ const sc=[],SO={cx:170,sx:-190,sy:70,np:1};for(const n of['power plant','lumberyard','sawmill','factory','foundry','quarry','iron mine','crusher'])if(!BLD[n].built){const p=T2p(n);sc.push([p.x,p.y,'needs '+reqNeeds(BLD[n]),T2[n].U,SO])}   // every site: the banner centred under its unloading pad in the back yard
  for(const sh of[1,0]){
   for(const o of OFFICES){const r=offRect(o);if(!vis(r.x0-40,r.y0-40,r.x1+90,r.y1+40))continue;const sq=siteOfOff(o);if(sq){const f=()=>paintSite(o,sq,sh);o.site?uWrapS(o.site,f):f()}else if(sh){shadeBox(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0,15);const tl=ROOFTALL[o.n];if(tl){const f=()=>{for(const[x,y,w,h,z]of tl)shadeBox(o.X+x,o.Y+y,w,h,15+z,2)};o.site?uWrapS(o.site,f):f()}}else if(o.site)uWrap(o.site,()=>paintOffice(o));else paintOffice(o)}
   for(const[bx,by,n,w=192,h=96,U]of BOARDS){const r=U?uBox(U,{x0:bx,y0:by,x1:bx+w,y1:by+h}):{x0:bx,y0:by,x1:bx+w,y1:by+h};if(vis(r.x0,r.y0,r.x1,r.y1)){if(sh)shadeBox(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0,9);else{const f=()=>{g.save();g.translate(bx,by);g.scale(h/96,h/96);if(boardFlip(U)){g.translate(w*96/h/2,48);g.rotate(Math.PI);g.translate(-w*96/h/2,-48)}paintBoard(0,0,n,w*96/h);g.restore()};U?uWrap(U,f):f()}}}
@@ -1863,7 +2023,7 @@ function drawBuildings(t){const hw=VW/2/Z,hh=VH/2/Z,seen=(x,y,m)=>Math.abs(x-cam
  T2draw('mine');
  uWrap(FS,()=>face(1940,2260,'FUEL $'+FUELP.toFixed(2)+' / L',1,'#e8583a','diesel · always in stock','#cfd3d8'));
  if(plant.built)T2draw('power plant');   // (a power plant site has no board: what it still needs is on the banner and its unloading pad)
- for(const n of['lumberyard','sawmill','quarry','crusher','iron mine'])if(BLD[n].built){T2draw(n);if(n==='crusher')drawCrLever()}   // a site has no board: what it still needs is on its banner and its unloading pad
+ for(const n of['lumberyard','sawmill','factory','foundry','quarry','crusher','iron mine'])if(BLD[n].built){T2draw(n);if(n==='crusher')drawCrLever()}   // a site has no board: what it still needs is on its banner and its unloading pad
  // smoke drifts off the stacks on the power plant's roof while it burns coal: along the roof and off the end of the building, clear of its doors and of the boards behind it, whichever way the building is turned
  if(plantRun&&Math.random()<.12){const o=OFFICES.find(o=>o.n==='power plant'),k=PSTACK[Math.floor(Math.random()*PSTACK.length)],q=uRot(PS,o.X+k[0],o.Y+k[1]),w=[[1,0],[0,1],[-1,0],[0,-1]][PS.rot&3],v=.5+Math.random()*.2,d=(Math.random()-.5)*.16;puffs.push([q[0]+Math.random()*6-3,q[1]+Math.random()*6-3,0,w[0]*v-w[1]*d,w[1]*v+w[0]*d])}   // each puff: x, y, age 0..1, and the way the wind carries it
  puffs=puffs.filter(p=>p[2]<1);puffs.forEach(p=>{p[2]+=.006;p[0]+=p[3];p[1]+=p[4];const r=14+p[2]*34,a=.5*(1-p[2]);g.fillStyle=`rgba(8,12,20,${a*.22})`;g.beginPath();g.arc(p[0]+SUN[0]*(20+p[2]*40),p[1]+SUN[1]*(20+p[2]*40),r,0,7);g.fill();g.fillStyle=`rgba(236,236,236,${a})`;g.beginPath();g.arc(p[0],p[1],r,0,7);g.fill();g.fillStyle=`rgba(255,255,255,${a*.5})`;g.beginPath();g.arc(p[0]-r*.28,p[1]-r*.3,r*.5,0,7);g.fill()});
@@ -1873,9 +2033,9 @@ const interiorGeo=o=>{const n=(o&&o.rooms)||2;
  if(o&&o.inw&&o.doors)return{n:1,inw:1,X0:-4140,X1:-3860,Y0:-4100,Y1:-3960,PYs:[],xmin:-4132,xmax:-3868,ymin:-4092,ymax:-3966,exitY:-3968,enterY:-3978,doorW:16,solid:[[-4140,-4020,-4080,-3960],[-3920,-4020,-3860,-3960],...(o.n==='power plant'?[]:[[-4040,-3980,-3960,-3960]])],camY:-4030,zh:140,zw:280};   // the crusher: 14 x 7 tiles, the shelves in the two bottom corners
  if(o&&o.inw&&o.n==='shop')return{n:1,inw:1,X0:-4140,X1:-3860,Y0:-4240,Y1:-3960,PYs:[],xmin:-4132,xmax:-3868,ymin:-4232,ymax:-3966,exitY:-3968,enterY:-3978,doorW:16,solid:[[-4140,-4200,-4120,-4000],[-3880,-4200,-3860,-4000]],camY:-4100,zh:280,zw:280};   // the shop: 14 x 14 tiles, its two shelves (1 x 10) on the west and east walls
  if(o&&o.inw&&o.n==='garage')return{n:1,inw:1,X0:-4140,X1:-3860,Y0:-4100,Y1:-3960,PYs:[],xmin:-4132,xmax:-3868,ymin:-4092,ymax:-3966,exitY:-3968,enterY:-3978,exitNY:-4090,enterNY:-4082,doorW:16,solid:[[-3980,-4060,-3960,-4000],[-4140,-4080,-4120,-3980]],camY:-4030,zh:140,zw:280};   // the garage home: 14 x 7 tiles, doors north and south; the standing wall, the shelves on the west wall   // the garage home: 14 x 7 tiles, doors north and south
- if(o&&o.inw)return{n:1,inw:1,X0:-4080,X1:-3920,Y0:-4100,Y1:-3960,PYs:[],xmin:-4072,xmax:-3928,ymin:-4092,ymax:-3966,exitY:-3968,enterY:-3978,doorW:16,solid:o.n==='fuel'||o.n==='shop'?[[-4080,-4080,-4060,-3980],[-3940,-4080,-3920,-3980]]:o.n==='lumberyard'||o.n==='sawmill'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?[[-4060,-4100,-3940,-4060],[-3940,-4100,-3920,-4080],[-4080,-3980,-4020,-3960],[-3980,-3980,-3920,-3960]]:o.n==='power plant'?[[-4060,-4100,-3940,-4060],[-3940,-4100,-3920,-4080]]:[],camY:-4030,zh:140,zw:160};   // an office: one room of 8 x 7 tiles (the fuel station's has its two shelves)   // the fuel station: one room the size of its building (8 x 7 tiles), drawn 1:1 with the world
+ if(o&&o.inw)return{n:1,inw:1,X0:-4080,X1:-3920,Y0:-4100,Y1:-3960,PYs:[],xmin:-4072,xmax:-3928,ymin:-4092,ymax:-3966,exitY:-3968,enterY:-3978,doorW:16,solid:o.n==='fuel'||o.n==='shop'?[[-4080,-4080,-4060,-3980],[-3940,-4080,-3920,-3980]]:o.n==='lumberyard'||o.n==='sawmill'||o.n==='factory'||o.n==='foundry'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?[[-4060,-4100,-3940,-4060],[-3940,-4100,-3920,-4080],[-4080,-3980,-4020,-3960],[-3980,-3980,-3920,-3960]]:o.n==='power plant'?[[-4060,-4100,-3940,-4060],[-3940,-4100,-3920,-4080]]:[],camY:-4030,zh:140,zw:160};   // an office: one room of 8 x 7 tiles (the fuel station's has its two shelves)   // the fuel station: one room the size of its building (8 x 7 tiles), drawn 1:1 with the world
  return n===3?{n,home:1,Y0:-4250,PYs:[-4050],WX:[-4230,-3770],xmin:-4418,xmax:-3582,ymin:-4240,camY:-4050,zh:430,zw:880}:{n,Y0:-4180,PYs:[-4000],ymin:-4170,camY:-4015,zh:340}};
-function enterOffice(o,back){const sq=siteOfOff(o);if(sq&&sq.b.reqs){flash('The '+o.n+' is under construction: '+reqTxt(sq.b)+' delivered. Still needed: '+reqNeeds(sq.b)+'.');return}if(sq){flash('The '+o.n+' is under construction: deliver '+(sq.b.need-sq.b.got).toFixed(1)+sq.unit+' of '+sq.what+' to its yard ('+sq.b.got.toFixed(1)+' / '+sq.b.need+' done).');return}IN={o};{const q=pads.find(q=>q.up);q.b=o.b||null;Object.assign(q,o.inw?{x:o.n==='lumberyard'||o.n==='sawmill'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?-4040:-4000,y:-4020,w:40,h:40}:{x:-4000,y:-4048,w:110,h:80});if(o.doors){q.x=-3880;q.y=-4080}}Zsave=Z;P.x=o.doors&&!back?-4140+(DOORX-o.X):-4000;P.y=back?(interiorGeo(o).enterNY||-4204):(interiorGeo(o).enterY||-3896);P.a=back?Math.PI/2:-Math.PI/2;cam.x=-4000;cam.y=interiorGeo(o).camY;flash('You went inside the '+o.n+(o.rooms===3?' home':' office')+'.')}
+function enterOffice(o,back){const sq=siteOfOff(o);if(sq&&sq.b.reqs){flash('The '+o.n+' is under construction: '+reqTxt(sq.b)+' delivered. Still needed: '+reqNeeds(sq.b)+'.');return}if(sq){flash('The '+o.n+' is under construction: deliver '+(sq.b.need-sq.b.got).toFixed(1)+sq.unit+' of '+sq.what+' to its yard ('+sq.b.got.toFixed(1)+' / '+sq.b.need+' done).');return}IN={o};{const q=pads.find(q=>q.up);q.b=o.b||null;Object.assign(q,o.inw?{x:o.n==='lumberyard'||o.n==='sawmill'||o.n==='factory'||o.n==='foundry'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?-4040:-4000,y:-4020,w:40,h:40}:{x:-4000,y:-4048,w:110,h:80});if(o.doors){q.x=-3880;q.y=-4080}}Zsave=Z;P.x=o.doors&&!back?-4140+(DOORX-o.X):-4000;P.y=back?(interiorGeo(o).enterNY||-4204):(interiorGeo(o).enterY||-3896);P.a=back?Math.PI/2:-Math.PI/2;cam.x=-4000;cam.y=interiorGeo(o).camY;flash('You went inside the '+o.n+(o.rooms===3?' home':' office')+'.')}
 function exitMine(back){const o=IN.o;IN=null;if(o.rot){P.x=o.X-28;P.y=o.Y+75;P.a=Math.PI;cam.x=P.x;cam.y=P.y;return}[P.x,P.y,P.a]=doorOut(o,back);cam.x=P.x;cam.y=P.y}
 // ---------- inside an office: floors and furniture ----------
 // a floor of boards between x0,y0 and x1,y1 (v: the boards run north-south): every board has a tone of its own and a butt joint or two
@@ -1901,7 +2061,7 @@ function boardFace(bx,by,bw,bh,t1,f,col,l3,c3,c1='#fff',flip=false){const k=bh/9
 // the two boards of a built building (i = 0, 1): what each says, drawn the same outside (140 px) and in the room (60 px)
 const powSp=()=>power?['⚡ '+power+' MW','#ffe27a']:plantOn?['⚡ off: no coal','#ff7b66']:['⚡ switched off','#ff7b66'];
 const pwSt=()=>{const w=(b,want)=>!b.built?'#666b73':want?(power>0?'#ffa31a':'#ff4d3d'):'#3fdc6e';   // lights: red needs power and has none, orange is using power, green needs none right now
- return[['LUMBERYARD',w(lumber,lumberOn&&lumber.stock+lumber.prog<lumber.cap)],['SAWMILL',w(sawmill,sawOn&&sawmill.stock>0&&plankFree().length>0)],['QUARRY',w(quarry,quarryOn&&quarry.stock<quarry.cap)],['IRON MINE',w(iron,ironOn&&iron.stock<iron.cap)],['CRUSHER',w(crusher,crusherOn&&crusher.feed>0&&crusher.stock<crusher.cap)]]};
+ return[['LUMBERYARD',w(lumber,lumberOn&&lumber.stock+lumber.prog<lumber.cap)],['SAWMILL',w(sawmill,sawOn&&sawmill.stock>0&&plankFree().length>0)],['FACTORY',w(factory,factoryOn&&factory.q.length>0&&factory.stock>0)],['FOUNDRY',w(foundry,foundryOn&&foundry.q.length>0)],['QUARRY',w(quarry,quarryOn&&quarry.stock<quarry.cap)],['IRON MINE',w(iron,ironOn&&iron.stock<iron.cap)],['CRUSHER',w(crusher,crusherOn&&crusher.feed>0&&crusher.stock<crusher.cap)]]};
 function T2spec(n,i){
  const coal=()=>{const q=powSp();return{k:1,t:'COAL '+plant.stock.toFixed(1)+' t',f:plant.stock/plant.cap,c:'#f2b134',l:q[0],lc:q[1]}};
  if(n==='mine'){if(i){const left=(mine.cap-mine.stock)/mine.rate,m=Math.floor(left/60);return{k:1,t:'GROWS '+mine.rate+' t/s',f:mine.stock<mine.cap?1:0,c:'#f2b134',l:mine.stock>=mine.cap-.01?'store full':'full in '+(m?m+'m ':'')+Math.round(left%60)+'s',lc:'#cfd3d8'}}
@@ -1910,6 +2070,8 @@ function T2spec(n,i){
  if(i)return coal();
  if(n==='lumberyard'){const L=lumberBoard();return{k:1,t:L[0],f:lumber.prog,c:'#a8844f',l:L[1],lc:L[2],c1:L[3]}}
  if(n==='sawmill')return{k:1,t:'LOGS '+Math.floor(sawmill.stock)+' / '+sawmill.cap,f:sawmill.stock/sawmill.cap,c:'#c9a35a',l:plankN()+' planks',lc:'#cfd3d8'};
+ if(n==='foundry')return{k:1,t:'ORE '+foundry.ore.toFixed(1)+' / '+foundry.cap+' t',f:foundry.ore/foundry.cap,c:'#c98a4b',l:fndMsg(),lc:fndLc()};
+ if(n==='factory')return{k:1,t:'PLANKS '+Math.floor(factory.stock)+' / '+factory.cap,f:factory.stock/factory.cap,c:'#d8b57a',l:facMsg(),lc:facLc()};
  if(n==='quarry')return{k:1,t:'ROCK '+quarry.stock.toFixed(1)+' / '+quarry.cap+' t',f:quarry.stock/quarry.cap,c:'#9aa6b5',l:'',lc:''};
  if(n==='iron mine')return{k:1,t:'IRON '+iron.stock.toFixed(1)+' / '+iron.cap+' t',f:iron.stock/iron.cap,c:'#c9694a',l:'',lc:''};
  return{k:2,rows:[['ROCK '+crusher.feed.toFixed(1)+' / '+crusher.fcap+' t',crusher.feed/crusher.fcap,'#9aa6b5'],['SAND '+crusher.stock.toFixed(1)+' / '+crusher.cap+' t',crusher.stock/crusher.cap,'#d6b97a'],['GRAVEL '+crusher.gst.toFixed(1)+' / '+crusher.cap+' t',crusher.gst/crusher.cap,'#8a8f97']],l:'',lc:''}}
@@ -1931,12 +2093,14 @@ function roomBoard(){const dr=!!IN.o.doors,rects=dr?[[-4140,-4020,60,60],[-3920,
  rects.forEach(([x,y,w,h],bi)=>{if(dr){const ts=TXTSIDE;g.save();g.translate(x+w/2,y+h/2);g.rotate(-IROT());g.translate(-x-w/2,-y-h/2);TXTSIDE=true;TXTADJ=0;try{roomBoard0(bi)}finally{TXTSIDE=ts;g.restore()}return}   // a 3 x 3 board is square: it stays upright on the screen whichever way the room is turned
  if(fl){g.save();g.translate(x+w/2,y+h/2);g.rotate(Math.PI);g.translate(-x-w/2,-y-h/2)}   /* a room turned so its board reads upward: the board is turned half a turn on itself */
  TXTADJ=fl&&!TXTSIDE?Math.PI:0;try{roomBoard0(bi)}finally{TXTADJ=0;if(fl)g.restore()}})}
-function roomBoard0(bi){const n=IN.o.n,b=IN.o.b;if(!(n==='mine'||n==='crusher'||n==='power plant'||n==='lumberyard'||n==='sawmill'||n==='quarry'||n==='iron mine')||!b)return;const x=-4060,y=-4100,w=120,h=40;
+function roomBoard0(bi){const n=IN.o.n,b=IN.o.b;if(!(n==='mine'||n==='crusher'||n==='power plant'||n==='lumberyard'||n==='sawmill'||n==='factory'||n==='foundry'||n==='quarry'||n==='iron mine')||!b)return;const x=-4060,y=-4100,w=120,h=40;
  if(IN.o.doors){const i=bi||0,bx=i?-3920:-4140;shadeBox(bx,-4020,60,60,6);g.save();g.translate(bx,-4020);g.scale(60/96,60/96);paintBoard(0,0,n,96);g.restore();drawBd(T2spec(n,i),bx,-4020,60);return}   // two 3 x 3 tile boards, in the corners right by the doors
  shadeBox(x,y,w,h,6);g.save();g.translate(x,y);g.scale(h/96,h/96);paintBoard(0,0,n,w*96/h);g.restore();
  if(n==='iron mine')return boardFace(x,y,w,h,'IRON ORE '+b.stock.toFixed(1)+' / '+b.cap+' t',b.stock/b.cap,'#c9694a',!ironOn?'switched off':power?'mining from power':'idle: power plant is off',ironOn&&power?'#ffe27a':'#ff7b66');
  if(n==='crusher')return boardFace2(x,y,w,h,[['ROCK '+b.feed.toFixed(1)+' / '+b.fcap+' t',b.feed/b.fcap,'#9aa6b5'],['SAND '+b.stock.toFixed(1)+' / '+b.cap+' t',b.stock/b.cap,'#d6b97a'],['GRAVEL '+b.gst.toFixed(1)+' / '+b.cap+' t',b.gst/b.cap,'#8a8f97']],crSt(),crusherOn&&power&&b.feed>0?'#ffe27a':'#ff7b66');
  if(n==='quarry')return boardFace(x,y,w,h,'ROCK '+b.stock.toFixed(1)+' / '+b.cap+' t',b.stock/b.cap,'#9aa6b5',!quarryOn?'switched off':power?'quarrying from power':'idle: power plant is off',quarryOn&&power?'#ffe27a':'#ff7b66');
+ if(n==='foundry')return boardFace(x,y,w,h,'ORE '+b.ore.toFixed(1)+' / '+b.cap+' t',b.ore/b.cap,'#c98a4b',fndMsg(),fndLc());
+ if(n==='factory')return boardFace(x,y,w,h,'PLANKS '+Math.floor(b.stock)+' / '+b.cap,b.stock/b.cap,'#d8b57a',facMsg(),facLc());
  if(n==='sawmill')return boardFace(x,y,w,h,'LOGS '+Math.floor(b.stock)+' / '+b.cap,b.stock/b.cap,'#c9a35a',!sawOn?'switched off':power?'sawing · '+plankN()+' planks':'idle: power plant is off',sawOn&&power?'#ffe27a':'#ff7b66');
  if(n==='lumberyard'){const L=lumberBoard();return boardFace(x,y,w,h,L[0],lumber.prog,'#a8844f',L[1],L[2],L[3])}
  boardFace(x,y,w,h,'COAL '+b.stock.toFixed(1)+' / '+b.cap+' t',b.stock/b.cap,'#f2b134',n==='mine'?'regrows '+mine.rate+' t/s':power?'⚡ '+power+' MW':plantOn?'⚡ off: no coal':'⚡ switched off',n==='mine'||power?(n==='mine'?'#cfd3d8':'#ffe27a'):'#ff7b66')}
@@ -1947,7 +2111,7 @@ const floorFlags=(X0,Y0,X1,Y1,c,seed)=>{g.fillStyle=c;g.fillRect(X0,Y0,X1-X0,Y1-
  for(let y=Y0,j=0;y<Y1;y+=S,j++){let x=X0-(j%2?S:0);for(let i=0;x<X1;i++){const w=hsh(i+j*17,seed)<.4?S:2*S,q=hsh(i*7+j*3,seed+2),xa=Math.max(x,X0),xb=Math.min(x+w,X1);g.fillStyle=q<.5?BLK[Math.round(q*7)]:WHT[Math.round((q-.5)*6)];g.fillRect(xa,y,xb-xa,S);g.strokeRect(xa+.5,y+.5,xb-xa-1,S-1);x+=w}}};
 const floorConc=(X0,Y0,X1,Y1,c,seed)=>{g.fillStyle=c;g.fillRect(X0,Y0,X1-X0,Y1-Y0);onto(X0,Y0,X1-X0,Y1-Y0,()=>{for(let k=0;k<6;k++)soft(X0+hsh(k,seed)*(X1-X0),Y0+hsh(k,seed+1)*(Y1-Y0),40+hsh(k,seed+2)*40,24+hsh(k,seed+3)*20,0,k&1?'255,255,255':'0,0,0',k&1?.05:.12)});   // a concrete floor: worn here, stained there, a joint every four tiles
  for(const[col,o]of[['rgba(0,0,0,.32)',0],['rgba(255,255,255,.07)',1.3]]){g.strokeStyle=col;g.lineWidth=1.2;g.beginPath();for(let x=X0+4*S;x<X1;x+=4*S){g.moveTo(x+o,Y0);g.lineTo(x+o,Y1)}g.moveTo(X0,Y0+3*S+o);g.lineTo(X1,Y0+3*S+o);g.stroke()}};
-const ROOMFLOOR={mine:['conc','#62615c'],'power plant':['conc','#5a5f68'],lumberyard:['boards','#5b5246'],sawmill:['boards','#66573f'],quarry:['flags','#66686c'],'iron mine':['tiles','#77503f','#6b4638'],crusher:['conc','#5d6360'],fuel:['tiles','#6f6c66','#625f58'],shop:['tiles','#74685f','#675b53'],garage:['boards','#6a5238']};
+const ROOMFLOOR={mine:['conc','#62615c'],'power plant':['conc','#5a5f68'],lumberyard:['boards','#5b5246'],sawmill:['boards','#66573f'],quarry:['flags','#66686c'],'iron mine':['tiles','#77503f','#6b4638'],crusher:['conc','#5d6360'],factory:['conc','#5b6068'],foundry:['conc','#5f5a58'],fuel:['tiles','#6f6c66','#625f58'],shop:['tiles','#74685f','#675b53'],garage:['boards','#6a5238']};
 function roomFloor(n,X0,Y0,X1,Y1){const[k,a,b]=ROOMFLOOR[n]||['boards','#5b5246'];if(k==='boards')floorBoards(X0,Y0,X1,Y1,a,0,23);else if(k==='tiles')floorTiles(X0,Y0,X1,Y1,a,b,5);else if(k==='flags')floorFlags(X0,Y0,X1,Y1,a,9);else floorConc(X0,Y0,X1,Y1,a,13)}
 // the windows of a room, by its shape: [side, from, to] along that wall (t2: a built building, 14 x 7 tiles · s: the shop and the fuel station · g: home)
 const ROOMWIN={t2:[['W',-4084,-4036],['E',-4084,-4036],['S',-4020,-3980]],s:[['N',-4052,-4018],['N',-3982,-3948]],sh:[['N',-4100,-4060],['N',-3940,-3900],['W',-4236,-4212],['E',-4236,-4212],['W',-3992,-3968],['E',-3992,-3968]],g:[['N',-4112,-4072],['N',-3928,-3888],['S',-4112,-4072],['S',-3928,-3888],['E',-4052,-4012]]};
@@ -2027,13 +2191,14 @@ function logOp(){const say=m=>(flash(m),true),f=forkPt(T),h=LG.find(l=>l.fk===T)
  if(!b)return false;if(Math.abs(T.v)>.8)return say('Stop the forklift first.');
  if(b.st){lumber.stock=Math.max(0,lumber.stock-1);b.st=false}b.fk=T;return say('Log lifted.')}
 function drawInfo(t){
- ring(load,'#f2b134',t,'COAL LOADING');ring(dump,'#7fd1ff',t,plant.built?'COAL UNLOADING':reqList(plant));ring(lz,'#ff8a3d',t,lumber.built?'LOG STATION':reqList(lumber));ring(garage,'#d0d0d0',t);ring(gUnl,'#f2d21c',t,'UNLOAD VEHICLE');ring(gLoad,'#3fe05a',t,'LOAD VEHICLE');gWrap(drawStore);ring(sellZ,'#ff7ab6',t,'SHOP LOT');for(const z of FZS)ring(z,'#ff5a3d',t,'FUEL');ring(fsz,'#ff5a3d',t,'VEHICLES');if(sawmill.built){ring(PLZ,'#d9b27c',t,'PLANKS')}ring(qz,'#9aa6b5',t,quarry.built?'ROCK LOADING':reqList(quarry));if(crusher.built)ring(iz,'#c9694a',t,iron.built?'IRON ORE LOADING':reqList(iron));ring(swz,'#d9b27c',t,sawmill.built?'LOGS':reqList(sawmill));ring(cz,'#7fb3a4',t,crusher.built?'ROCK UNLOADING':reqList(crusher));if(crusher.built)ring(CLZ,'#7fb3a4',t,(crusher.gsel?'GRAVEL LOADING':'SAND LOADING'));
+ ring(load,'#f2b134',t,'COAL LOADING');ring(dump,'#7fd1ff',t,plant.built?'COAL UNLOADING':reqList(plant));ring(lz,'#ff8a3d',t,lumber.built?'LOG STATION':reqList(lumber));ring(garage,'#d0d0d0',t);ring(gUnl,'#f2d21c',t,'UNLOAD VEHICLE');ring(gLoad,'#3fe05a',t,'LOAD VEHICLE');gWrap(drawStore);ring(sellZ,'#ff7ab6',t,'SELL / UNLOAD');ring(spawnZ,'#8fd3ff',t,'NEW PURCHASES');for(const z of FZS)ring(z,'#ff5a3d',t,'FUEL');ring(fsz,'#ff5a3d',t,'VEHICLES');if(sawmill.built){ring(PLZ,'#d9b27c',t,'PLANKS')}ring(fz,'#8fa3b8',t,factory.built?'CARGO IN':reqList(factory));if(factory.built)ring(FIZ,'#d8b57a',t,'ITEMS');ring(fnz,'#c98a4b',t,foundry.built?'CARGO IN':reqList(foundry));if(foundry.built)ring(FNIZ,'#d8b57a',t,'ITEMS');ring(qz,'#9aa6b5',t,quarry.built?'ROCK LOADING':reqList(quarry));if(crusher.built)ring(iz,'#c9694a',t,iron.built?'IRON ORE LOADING':reqList(iron));ring(swz,'#d9b27c',t,sawmill.built?'LOGS':reqList(sawmill));ring(cz,'#7fb3a4',t,crusher.built?'ROCK UNLOADING':reqList(crusher));if(crusher.built)ring(CLZ,'#7fb3a4',t,(crusher.gsel?'GRAVEL LOADING':'SAND LOADING'));
 }
 function drawPads(t){
  for(const q of pads){if(!padOn(q))continue;
   const pc=q.exit?'#e8e8e0':(IN&&BCOL[IN.o.n])||'#3fae5a';g.fillStyle=pc+'40';g.fillRect(q.x-q.w/2,q.y-q.h/2,q.w,q.h);g.strokeStyle=pc;g.lineWidth=1.5;g.setLineDash([9,7]);g.lineDashOffset=-t/50;g.strokeRect(q.x-q.w/2,q.y-q.h/2,q.w,q.h);g.setLineDash([]);g.lineDashOffset=0;
   const y=q.minein?q.y+q.h/2+22:q.w<=40?q.y+q.h/2+26:q.y-q.h/2-28;
   if(q.exit){txt('EXIT',q.x,q.y+4,'#fff','bold 12px sans-serif');continue}if(q.w<=40&&(q.gup||q.enter)){txt(q.gup?'UPGRADE':'GARAGE',q.x,q.y+3.5,'#fff','bold 8px sans-serif');continue}if(q.gup){txt('UPGRADE',q.x,q.y+4,'#fff','bold 12px sans-serif');(IROT()?txt('Garage upgrades',q.x-q.w/2-14,q.y,'#fff'):txt('Garage upgrades',q.x,y+14,'#fff'));continue}if(q.fshop||q.lshop||q.shop){txt('SHOP',q.x,q.y+3.5,'#fff','bold 10px sans-serif');continue}if(q.shop){txt('ENTER SHOP',q.x,q.y+4,'#fff','bold 12px sans-serif');(IROT()?txt('Shop',q.x-q.w/2-14,q.y,'#fff'):txt('Shop',q.x,y+14,'#fff'));continue}if(q.enter){txt('ENTER GARAGE',q.x,q.y+4,'#fff','bold 12px sans-serif');(IROT()?txt('Garage',q.x-q.w/2-14,q.y,'#fff'):txt('Garage',q.x,y+14,'#fff'));continue}
+  if(q.fctl){g.fillStyle='#252b32';g.fillRect(q.x-17,q.y-18,34,16);g.fillStyle='#3d4650';g.fillRect(q.x-17,q.y-5,34,3);g.fillStyle='#6fd1ff';g.fillRect(q.x-13,q.y-15,13,7);g.fillStyle='#ffd24a';g.fillRect(q.x+3,q.y-15,5,3);g.fillStyle='#7bd88f';g.fillRect(q.x+10,q.y-15,5,3);g.fillStyle='#ff7b66';g.fillRect(q.x+3,q.y-10,5,3);txt('CONTROL',q.x,q.y+10,'#fff','bold 7px sans-serif');continue}   // the factory's control panel in the free corner: a small console, the job menu opens from it
   txt(q.minein?'ENTER':'UPGRADE',q.x,q.y+(q.w<=40?3.5:4),'#fff',q.w<=40?'bold 8px sans-serif':'bold 12px sans-serif');if(q.w<=40&&!q.minein)continue;   // a small pad: the board on the wall shows the rest
   const b=q.b,sm=q.w<=40,w=sm?100:130,bh=sm?6:14;g.fillStyle='#000a';g.fillRect(q.x-w/2,y,w,bh);g.fillStyle=b.stock>=b.cap?'#e0442e':'#f2b134';g.fillRect(q.x-w/2,y,w*b.stock/b.cap,bh);
   txt((b===mine?b.name:b.name+' L'+(b.lvl+1))+' · '+(b===mine?b.stock.toFixed(1):Math.floor(b.stock))+'/'+b.cap+' '+b.unit,q.x,y-(sm?4:5),'#fff',sm?'bold 8px sans-serif':undefined);
@@ -2329,10 +2494,10 @@ function drawMap(mx,my,mw,mh,s,big,full){
     for(let i=0;i<4;i++)if(!f.al[i]){const nx=Math.cos(i*Math.PI/2),ny=Math.sin(i*Math.PI/2),o=[],dd=p=>p[0]*nx+p[1]*ny-Q;   // keep what lies on the near side of the road edge
      for(let a=0;a<pg.length;a++){const A=pg[a],B=pg[(a+1)%pg.length],da=dd(A),db=dd(B);if(da<=0)o.push(A);if(da*db<0){const t=da/(da-db);o.push([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t])}}pg=o}
     g.beginPath();pg.forEach((p,a)=>{const X=(f.cx+p[0])*s,Y=(f.cy+p[1])*s;a?g.lineTo(X,Y):g.moveTo(X,Y)});g.closePath();g.fill()}
-  LOTS.forEach((l,i)=>{const b=i===1?plant:i===3?lumber:i===4?sawmill:i===7?quarry:i===8?iron:i===9?crusher:null,done=!b||b.built;g.fillStyle=l.col+(done?'88':'33');g.fillRect(l.x0*s,l.y0*s,(l.x1-l.x0)*s,(l.y1-l.y0)*s);g.strokeStyle=l.col;g.lineWidth=1;if(!done)g.setLineDash([2,2]);g.strokeRect(l.x0*s+.5,l.y0*s+.5,(l.x1-l.x0)*s-1,(l.y1-l.y0)*s-1);g.setLineDash([])});
+  LOTS.forEach((l,i)=>{const b=i===1?plant:i===3?lumber:i===4?sawmill:i===7?quarry:i===8?iron:i===9?crusher:i===10?factory:i===11?foundry:null,done=!b||b.built;g.fillStyle=l.col+(done?'88':'33');g.fillRect(l.x0*s,l.y0*s,(l.x1-l.x0)*s,(l.y1-l.y0)*s);g.strokeStyle=l.col;g.lineWidth=1;if(!done)g.setLineDash([2,2]);g.strokeRect(l.x0*s+.5,l.y0*s+.5,(l.x1-l.x0)*s-1,(l.y1-l.y0)*s-1);g.setLineDash([])});
   // buildings: a dot in each building's colour, a letter on the bigger map
   const mk=(x,y,c,t,nm)=>{g.fillStyle=c;g.strokeStyle='#0b120c';g.lineWidth=1.2;g.beginPath();g.arc(x*s,y*s,full?10:big?5:3.2,0,7);g.fill();g.stroke();if(big&&t){g.fillStyle='#0b120c';g.font=full?'bold 11px sans-serif':'bold 7px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,x*s,y*s+.5)}if(full&&nm){g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=3;g.font='bold 12px sans-serif';g.textBaseline='alphabetic';g.strokeText(nm,x*s,y*s+25);g.fillText(nm,x*s,y*s+25)}};
-  for(const o of OFFICES){const r=offRect(o);mk((r.x0+r.x1)/2,(r.y0+r.y1)/2,BCOL[o.n],{mine:'M','power plant':'P',lumberyard:'L',sawmill:'S',quarry:'Q','iron mine':'I',crusher:'C',shop:'$',garage:'G',fuel:'F'}[o.n],{mine:'Coal mine','power plant':'Power plant',lumberyard:'Lumberyard',sawmill:'Sawmill',quarry:'Quarry','iron mine':'Iron mine',crusher:'Crusher',shop:'Shop',garage:'Garage',fuel:'Fuel station'}[o.n])}
+  for(const o of OFFICES){const r=offRect(o);mk((r.x0+r.x1)/2,(r.y0+r.y1)/2,BCOL[o.n],{mine:'M','power plant':'P',lumberyard:'L',sawmill:'S',quarry:'Q','iron mine':'I',crusher:'C',factory:'W',foundry:'Y',shop:'$',garage:'G',fuel:'F'}[o.n],{mine:'Coal mine','power plant':'Power plant',lumberyard:'Lumberyard',sawmill:'Sawmill',quarry:'Quarry','iron mine':'Iron mine',crusher:'Crusher',factory:'Factory',foundry:'Foundry',shop:'Shop',garage:'Garage',fuel:'Fuel station'}[o.n])}
   
   // the player's view
   g.strokeStyle='#ffffffaa';g.lineWidth=1;g.strokeRect((cam.x-VW/Z/2)*s,(cam.y-VH/Z/2)*s,VW/Z*s,VH/Z*s);
@@ -2446,14 +2611,80 @@ function mapAct(c,r,paint){const t=mapTool;let e=null;
  if(t==='road')e=placeRoad(c,r);else if(t==='big'){e=makeBig(c,r);if(!e)mapSay('Big junction built.',true)}else if(t==='del'){e=demolish(c,r);if(!e)mapSay('Demolished.',true)}else return;
  if(e&&!(paint&&t==='road'))mapSay(e,false)}
 let siteKey='';
-function syncLumber(){const k=plant.built+','+lumber.built+','+sawmill.built+','+quarry.built+','+iron.built+','+crusher.built;if(siteKey===k)return;siteKey=k;   // a site and the finished building have their own layout (in the unit's frame): the yard, the boards (and their collision boxes) and the offices (getters) follow the built state
- boardsBuild();applyPlant();applySaw();applyQuarry();applyIron();applyCrusher();applyMineV();applyLumber();buildBlds();GCH.clear()}
+function syncLumber(){const k=plant.built+','+lumber.built+','+sawmill.built+','+quarry.built+','+iron.built+','+crusher.built+','+factory.built+','+foundry.built;if(siteKey===k)return;siteKey=k;   // a site and the finished building have their own layout (in the unit's frame): the yard, the boards (and their collision boxes) and the offices (getters) follow the built state
+ boardsBuild();applyPlant();applySaw();applyFactory();applyFoundry();applyQuarry();applyIron();applyCrusher();applyMineV();applyLumber();buildBlds();GCH.clear()}
 // ---- planks: the sawmill makes them into its loading area, one bundle per cell (a pallet-sized 2 x 2 tiles: lift it with the pallet forks, set it on a flatbed place like any pallet)
 const plankCells=()=>{const x0=PL0.x-PL0.w/2,y0=PL0.y-PL0.h/2,out=[];for(let r=0;r<Math.floor(PL0.h/40);r++)for(let c=0;c<Math.floor(PL0.w/40);c++)out.push(uRot(SWS,x0+20+c*40,y0+20+r*40));return out};   // laid out in the unit's frame, then turned with it
 const plankInArea=p=>p.planks&&!p.fk&&!p.on&&Math.abs(p.x-PLZ.x)<PLZ.w/2+S&&Math.abs(p.y-PLZ.y)<PLZ.h/2+S;
 const plankN=()=>PALS.filter(plankInArea).length;
 const plankFree=()=>plankCells().filter(([x,y])=>!PALS.some(p=>!p.fk&&!p.on&&Math.hypot(p.x-x,p.y-y)<38));
 const plankMake=()=>{const c=plankFree()[0];if(!c)return false;PALS.push({x:c[0],y:c[1],a:SWS.rot*Math.PI/2,crates:Array(9).fill(null),fk:null,da:0,planks:true});return true};
+function facMsg(){const f=factory,j=f.q[0];return !factoryOn?'switched off':!power?'idle: power plant is off':j&&f.why?f.why:j?(j.k==='p'?'pallets':'crates')+' · '+j.n+' to go'+(f.q.length>1?' (+'+(f.q.length-1)+' more)':''):'no job'}
+function facLc(){return !factoryOn||!power||factory.why?'#ff7b66':factory.q.length?'#ffe27a':'#cfd3d8'}
+const facCells=()=>{const x0=FIL0.x-FIL0.w/2,y0=FIL0.y-FIL0.h/2,out=[];for(let r=0;r<Math.floor(FIL0.h/40);r++)for(let c=0;c<Math.floor(FIL0.w/40);c++)out.push(uRot(FCS,x0+20+c*40,y0+20+r*40));return out};
+const facFree=()=>facCells().filter(([x,y])=>!PALS.some(p=>!p.fk&&!p.on&&Math.hypot(p.x-x,p.y-y)<38)&&!GI.some(it=>Math.abs(it.x-x)<=20&&Math.abs(it.y-y)<=20));
+function fndMsg(){const f=foundry,j=f.q[0];return !foundryOn?'switched off':!power?'idle: power plant is off':j?(f.why||((j.k==='s'?'steel':j.k==='g'?'glass':'iron')+' · '+j.n+' to go'+(f.q.length>1?' (+'+(f.q.length-1)+' more)':''))):'no job'}
+function fndLc(){return !foundryOn||!power||foundry.why?'#ff7b66':foundry.q.length?'#ffe27a':'#cfd3d8'}
+const fnCells=()=>{const x0=FNIL0.x-FNIL0.w/2,y0=FNIL0.y-FNIL0.h/2,out=[];for(let r=0;r<Math.floor(FNIL0.h/40);r++)for(let c=0;c<Math.floor(FNIL0.w/40);c++)out.push(uRot(FNS,x0+20+c*40,y0+20+r*40));return out};
+const fnFree=()=>fnCells().filter(([x,y])=>!PALS.some(p=>!p.fk&&!p.on&&Math.hypot(p.x-x,p.y-y)<38)&&!GI.some(it=>Math.abs(it.x-x)<=20&&Math.abs(it.y-y)<=20));
+const fnPals=()=>PALS.filter(p=>!p.planks&&!p.fk&&!p.on&&(p.st||1)===1&&Math.abs(p.x-FNIZ.x)<FNIZ.w/2&&Math.abs(p.y-FNIZ.y)<FNIZ.h/2);
+function packSlot(o,pals,free,type){   // where the next item goes: the first crate that has room (any kind), else a new crate on a pallet with a free place, else a new pallet on a free place (the stock o.crat / o.pall)
+ for(const p of pals)for(let k=0;k<9;k++){const c=p.crates[k];if(c&&c.items.filter(Boolean).length<9)return{p,k,c}}
+ if(o.crat>=1){for(const p of pals){const k=p.crates.indexOf(null);if(k>=0)return{p,k,c:null}}
+  if(o.pall>=1){const fr=free[0];if(fr)return{p:null,k:0,c:null,cell:fr}}}
+ return null}
+function packPut(o,sl,type,rot){let c=sl.c,q=sl.p;if(!c){c={type:'crate',items:Array(9).fill(null)};o.crat--}if(!q){o.pall--;q={x:sl.cell[0],y:sl.cell[1],a:rot*Math.PI/2,crates:Array(9).fill(null),fk:null,da:0};PALS.push(q)}q.crates[sl.k]=c;putIn(c,{type})}
+const facStk=()=>{const j=factory.q[1];if(factory.q[0]&&factory.q[0].n===1&&j&&j.k==='c')return null;return PALS.find(p=>!p.planks&&!p.fk&&!p.on&&!p.crates.some(Boolean)&&(p.st||1)<PSTK&&Math.abs(p.x-FIZ.x)<FIZ.w/2&&Math.abs(p.y-FIZ.y)<FIZ.h/2)||null};   // empty pallets the factory makes stack up to 5 on the items pad, except the one a crate job is about to fill
+const facPals=()=>PALS.filter(p=>!p.planks&&!p.fk&&!p.on&&(p.st||1)===1&&Math.abs(p.x-FIZ.x)<FIZ.w/2&&Math.abs(p.y-FIZ.y)<FIZ.h/2);
+function facMakeItem(type){   // an item the factory makes lands only in a crate on a pallet, taken from its stock as they are needed; without them it stops and says why
+ const sl=packSlot(factory,facPals(),facFree(),type);if(!sl){factory.why=factory.crat<1&&!facPals().some(p=>p.crates.includes(null))?'needs crates':factory.pall<1&&!facPals().some(p=>p.crates.includes(null))?'needs pallets':'items pad is full';return false}
+ packPut(factory,sl,type,FCS.rot);return true}
+function facCrateSlot(){const q=facPals().find(p=>p.crates.includes(null));if(q)return{p:q,k:q.crates.indexOf(null)};const fr=facFree()[0];return fr&&factory.pall>=1?{p:null,k:0,cell:fr}:null}   // where a made crate lands: a free place on a pallet of the items pad, else on a new pallet from the stock
+function fnSlot(type){const pals=fnPals();   // where the next bar goes: the first crate that has room (any kind), else a new crate on a pallet with a free place, else a new pallet on a free place
+ for(const p of pals)for(let k=0;k<9;k++){const c=p.crates[k];if(c&&c.items.filter(Boolean).length<9)return{p,k,c}}
+ if(foundry.crat>=1){for(const p of pals){const k=p.crates.indexOf(null);if(k>=0)return{p,k,c:null}}
+  if(foundry.pall>=1){const fr=fnFree()[0];if(fr)return{p:null,k:0,c:null,cell:fr}}}
+ return null}
+function foundryTick(dt,host){const f=foundry,inz=(x,y)=>Math.abs(x-fnz.x)<fnz.w/2&&Math.abs(y-fnz.y)<fnz.h/2,onlyIron=c=>c.items.every(x=>!x||x.type==='ironbar'),nIt=c=>c.items.filter(Boolean).length;
+ // what is set down on the CARGO IN pad is taken in: loose iron, crates of iron (the crate is kept), pallets (kept; a pallet of crates of iron gives its crates and pallet)
+ for(let i=GI.length-1;i>=0;i--){const it=GI[i];if(!inz(it.x,it.y))continue;
+  if(it.type==='crate'){if(onlyIron(it)&&f.crat<f.kcap&&f.iron+nIt(it)<=FNIR){GI.splice(i,1);f.crat++;f.iron+=nIt(it);cash+=nIt(it)*IV.ironbar}}
+  else if(it.type==='ironbar'&&f.iron<FNIR){GI.splice(i,1);f.iron++;cash+=IV.ironbar}}
+ for(let i=PALS.length-1;i>=0;i--){const q=PALS[i];if(q.planks||q.fk||q.on||!inz(q.x,q.y))continue;
+  if(!q.crates.some(Boolean)){const st=q.st||1;if(f.pall+st<=f.pcap){PALS.splice(i,1);f.pall+=st}continue}
+  for(let k=0;k<9;k++){const c=q.crates[k];if(c&&onlyIron(c)&&f.crat<f.kcap&&f.iron+nIt(c)<=FNIR){q.crates[k]=null;f.crat++;f.iron+=nIt(c);cash+=nIt(c)*IV.ironbar}}
+  if(!q.crates.some(Boolean)&&f.pall<f.pcap){PALS.splice(i,1);f.pall++}}
+ if(!host)return;const j=f.q[0];f.why='';if(!j)return;if(!foundryOn||!plantOn||plant.stock<=0)return;
+ const st=j.k==='s',gl=j.k==='g',type=gl?'glass':st?'steelbar':'ironbar';
+ if(gl){if(f.sand<FNSAND-1e-9){f.why='needs sand';return}}else if(st){if(f.iron<1){f.why='needs iron on the cargo pad';return}if(f.carb<FNCARB-1e-9){f.why='needs coal for steel';return}}else if(f.ore<FNORE-1e-9){f.why='needs iron ore';return}
+ const sl=fnSlot(type);if(!sl){f.why=f.crat<1&&!fnPals().some(p=>p.crates.includes(null))?'needs crates':f.pall<1?'needs pallets':'items pad is full';return}
+ f.prog+=dt/FNTIME[j.k];plant.stock=Math.max(0,plant.stock-.001*dt/FNTIME[j.k]);plantRun=true;
+ if(f.prog>=1){f.prog=0;packPut(f,sl,type,FNS.rot);
+  if(st){f.iron--;f.carb-=FNCARB}else if(gl)f.sand-=FNSAND;else f.ore-=FNORE;
+  if(--j.n<=0)f.q.shift()}}
+function factoryTick(dt,host){const f=factory;
+ for(let i=PALS.length-1;i>=0;i--){const q=PALS[i];if(q.planks&&!q.fk&&!q.on&&Math.abs(q.x-fz.x)<fz.w/2&&Math.abs(q.y-fz.y)<fz.h/2&&f.stock<f.cap-1e-6){PALS.splice(i,1);f.stock+=1;cash+=SITEPAY.planks}}   // a pallet of planks set on the unloading pad is taken in
+ const inz=o=>Math.abs(o.x-fz.x)<fz.w/2&&Math.abs(o.y-fz.y)<fz.h/2,isb=x=>!x||x.type==='steelbar'||x.type==='ironbar',cnt=(c,t)=>c.items.filter(x=>x&&x.type===t).length,okc=c=>c.items.every(isb)&&f.crat<f.kcap&&f.steel+cnt(c,'steelbar')<=f.scap&&f.iron+cnt(c,'ironbar')<=f.icap,tk=c=>{const a=cnt(c,'steelbar'),b=cnt(c,'ironbar');f.steel+=a;f.iron+=b;cash+=a*IV.steelbar+b*IV.ironbar};
+ // set down on the pad: empty pallets and crates are kept for packing, steel and iron bars (loose, or in crates on pallets) are taken in and paid, the crates and pallets are reused
+ for(let i=GI.length-1;i>=0;i--){const it=GI[i];if(!inz(it))continue;if(it.type==='crate'){if(okc(it)){GI.splice(i,1);f.crat++;tk(it)}}else if(it.type==='steelbar'&&f.steel<f.scap-1e-6){GI.splice(i,1);f.steel++;cash+=IV.steelbar}else if(it.type==='ironbar'&&f.iron<f.icap-1e-6){GI.splice(i,1);f.iron++;cash+=IV.ironbar}}
+ for(let i=PALS.length-1;i>=0;i--){const q=PALS[i],st=q.st||1;if(q.planks||q.fk||q.on||!inz(q))continue;
+  if(!q.crates.some(Boolean)){if(f.pall+st<=f.pcap){PALS.splice(i,1);f.pall+=st}continue}
+  for(let k=0;k<9;k++){const c=q.crates[k];if(c&&okc(c)){q.crates[k]=null;f.crat++;tk(c)}}
+  if(!q.crates.some(Boolean)&&f.pall<f.pcap){PALS.splice(i,1);f.pall++}}
+ if(!host)return;const j=f.q[0];f.why='';if(!j)return;const pal=j.k==='p';if(!factoryOn||!plantOn||plant.stock<=0)return;
+ if(j.k==='h'||j.k==='k'){const hi=j.k==='h',src=hi?'steel':'iron',ty=hi?'hitch':'canister';   // a hitch takes 1 steel bar, a canister 1 iron bar; it lands in a crate on a pallet like the rest
+  if(f[src]<1){f.why='needs '+(hi?'steel':'iron')+' bars on the CARGO IN pad';return}
+  const sl=packSlot(f,facPals(),facFree(),ty);if(!sl){f.why=f.crat<1&&!facPals().some(p=>p.crates.includes(null))?'needs crates':f.pall<1&&!facPals().some(p=>p.crates.includes(null))?'needs pallets':'items pad is full';return}
+  f.prog+=dt/FACT[j.k];plant.stock=Math.max(0,plant.stock-.001*dt/FACT[j.k]);plantRun=true;
+  if(f.prog>=1){f.prog=0;packPut(f,sl,ty,FCS.rot);f[src]--;if(--j.n<=0)f.q.shift()}return}
+ const cost=pal?FACP:FACC;if(f.stock<cost-1e-6){f.why='needs planks';return}
+ if(pal){if(!facStk()&&!facFree().length){f.why='items pad is full';return}}
+ else if(!facCrateSlot()){f.why=f.pall<1&&!facFree().length?'items pad is full':f.pall<1?'needs pallets first (crates land on pallets)':'items pad is full';return}
+ f.prog+=dt/(pal?FACT.p:FACT.c);plant.stock=Math.max(0,plant.stock-.001*dt/(pal?FACT.p:FACT.c));plantRun=true;   // it burns the power plant's coal while it works: 1 kg an item
+ if(f.prog>=1){const sk=pal?facStk():null,fr=facFree()[0],cs=pal?null:facCrateSlot();if(pal?(!fr&&!sk):!cs){f.prog=1;return}f.prog=0;f.stock-=cost;
+  if(sk)sk.st=(sk.st||1)+1;else if(pal)PALS.push({x:fr[0],y:fr[1],a:FCS.rot*Math.PI/2,crates:Array(9).fill(null),fk:null,da:0});
+  else{let q=cs.p;if(!q){f.pall--;q={x:cs.cell[0],y:cs.cell[1],a:FCS.rot*Math.PI/2,crates:Array(9).fill(null),fk:null,da:0};PALS.push(q)}q.crates[cs.k]={type:'crate',items:Array(9).fill(null)}}
+  if(--j.n<=0)f.q.shift()}}
 let last=performance.now();
 // ---------- multiplayer: everyone who has the page open is in the one room and sees the others move on the map ----------
 // Presence only: each browser still runs its own world; what travels is where each player is, what he drives and what it carries.
@@ -2532,7 +2763,7 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2
 
 // ---------- the map is shared as a list of what was done to it ----------
 // Laying a road, making a big junction, taking one away and turning a building are sent in the order they were done, and every browser does the same thing to its own map. A browser that joins later gets the whole list and does it all in the same order. The things standing in a turned building are not turned again on the other side: they come with the vehicles, pallets and items.
-const NETX={acts:[],applying:false,send:null,units:[['mine',MS],['power plant',PS],['garage',GS],['lumberyard',LS],['sawmill',SWS],['quarry',QS],['iron mine',IRS],['crusher',CRS],['shop',SS],['fuel',FS]],rot:{}};
+const NETX={acts:[],applying:false,send:null,units:[['mine',MS],['power plant',PS],['garage',GS],['lumberyard',LS],['sawmill',SWS],['quarry',QS],['iron mine',IRS],['crusher',CRS],['factory',FCS],['foundry',FNS],['shop',SS],['fuel',FS]],rot:{}};
 for(const[n,U]of NETX.units)NETX.rot[n]=U.rot;
 {const w=(t,f)=>function(c,r){const e=f.apply(this,arguments);if(!e&&!NETX.applying){const a=t==='r'?['r',c,r,mapPiece]:[t,c,r];NETX.acts.push(a);if(NETX.send)NETX.send(a)}return e};placeRoad=w('r',placeRoad);makeBig=w('b',makeBig);demolish=w('d',demolish)}
 function netApplyAct(a){NETX.applying=true;try{const t=a[0];
@@ -2577,11 +2808,11 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
   return e}
 
  // the shared numbers (stock of every building, what a site has been given, upgrades, planks, the garage storage): each browser sends how much each went up or down since the last time, and adds what the others send. The on/off levers and "built" are set to what the last change said.
- const BL={mine,plant,lumber,sawmill,quarry,iron,crusher},CT={},FLG={};
- for(const n in BL){const b=BL[n];for(const f of['stock','feed','prog','lvl','cap','rate','burn','fcap','flvl','gst','gsel','ylvl']){const d=Object.getOwnPropertyDescriptor(b,f);if(d&&typeof d.value==='number')CT[n+'.'+f]={get:()=>b[f],set:v=>{const o=b[f];b[f]=f==='lvl'||f==='cap'||f==='rate'||f==='burn'||f==='fcap'||f==='flvl'||f==='gsel'||f==='ylvl'?v:Math.max(0,v);if(f==='ylvl'&&o!==v)applyUnits()}}}
+ const BL={mine,plant,lumber,sawmill,quarry,iron,crusher,factory,foundry},CT={},FLG={};
+ for(const n in BL){const b=BL[n];for(const f of['stock','feed','prog','lvl','cap','rate','burn','fcap','flvl','gst','gsel','ylvl','ore','carb','iron','pall','crat','ccap','clvl','pcap','plvl','kcap','klvl','sand','sacap','salvl','steel','scap','slvl','icap','ilvl']){const d=Object.getOwnPropertyDescriptor(b,f);if(d&&typeof d.value==='number')CT[n+'.'+f]={get:()=>b[f],set:v=>{const o=b[f];b[f]=f==='lvl'||f==='cap'||f==='ccap'||f==='clvl'||f==='pcap'||f==='plvl'||f==='kcap'||f==='klvl'||f==='sacap'||f==='salvl'||f==='scap'||f==='slvl'||f==='icap'||f==='ilvl'||f==='rate'||f==='burn'||f==='fcap'||f==='flvl'||f==='gsel'||f==='ylvl'?v:Math.max(0,v);if(f==='ylvl'&&o!==v)applyUnits()}}}
   (b.reqs||[]).forEach((r,i)=>{CT[n+'.r'+i]={get:()=>r.got,set:v=>{r.got=Math.max(0,v)}}});if('built' in b)FLG[n+'.built']={get:()=>b.built,set:v=>{if(v&&!b.built)b.built=true}}}
- CT.planks={get:()=>planks,set:v=>{planks=Math.max(0,v)}};for(const k of['coal','logs','fuel'])CT['store.'+k]={get:()=>STORE[k],set:v=>{STORE[k]=Math.max(0,v)}};
- for(const k of['plantOn','lumberOn','sawOn','quarryOn','ironOn','crusherOn'])FLG[k]={get:()=>eval(k),set:v=>{eval(k+'='+v)}};
+ CT.planks={get:()=>planks,set:v=>{planks=Math.max(0,v)}};for(const k of['coal','logs','fuel'])CT['store.'+k]={get:()=>STORE[k],set:v=>{STORE[k]=Math.max(0,v)}};for(const k in SHST){CT['shop.'+k]={get:()=>SHST[k],set:v=>{SHST[k]=Math.max(0,v)}};CT['shopcap.'+k]={get:()=>SHCAP[k],set:v=>{SHCAP[k]=Math.max(50,v)}}}
+ for(const k of['plantOn','lumberOn','sawOn','factoryOn','foundryOn','quarryOn','ironOn','crusherOn'])FLG[k]={get:()=>eval(k),set:v=>{eval(k+'='+v)}};
  const BASE=WS.base||(WS.base={}),FB=WS.fb||(WS.fb={});
  const resync=()=>{for(const b of Object.values(BL))if(b.reqs&&!b.built)reqSync(b)};
  const sets=(a,fl)=>{for(const k in a)if(CT[k]){CT[k].set(a[k]);BASE[k]=CT[k].get()}for(const k in fl)if(FLG[k]){FLG[k].set(fl[k]);FB[k]=FLG[k].get()}resync()};
