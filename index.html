@@ -2790,8 +2790,8 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  if(!offline){if(host&&!WS.joined){WS.joined=true;WS.cb=cash}
  WS.on=host||WS.joined;WS.cb=WS.joined?WS.cb:cash}
  const rd=x=>Math.round(x*10)/10,cg=e=>[e.cargo.type,+e.cargo.amt.toFixed(2)];
- const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,tank:v.tank,name:v.name,out:v.out,starter:v.starter?1:0,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null,sl:v.slots,pl:v.pals?v.pals.map(palId):null});
- const trec=t=>({k:'t',id:t.id,kind:t.kind,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null,sl:t.slots,pl:t.pals?t.pals.map(palId):null});
+ const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,tank:v.tank,name:v.name,out:v.out,starter:v.starter?1:0,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null,on:v.on&&v.on.t?{t:v.on.t.id,lx:rd(v.on.lx),ly:rd(v.on.ly),da:+v.on.da.toFixed(3),f:v.on.f,tier:v.on.tier||0}:null,sl:v.slots,pl:v.pals?v.pals.map(palId):null});   // on: the ramp trailer this vehicle rides on
+ const trec=t=>({k:'t',id:t.id,kind:t.kind,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null,ld:t.ld&&t.ld.t?{t:t.ld.t.id,lx:rd(t.ld.lx),ly:rd(t.ld.ly),da:+t.ld.da.toFixed(3),f:t.ld.f,tier:t.ld.tier||0,tx:rd(t.ld.tx||0),go:t.ld.go||0}:null,sl:t.slots,pl:t.pals?t.pals.map(palId):null});
  const SH={PALLET,FSHELF,LSHELF,SSHELF,QSHELF,MSHELF,ISHELF,CSHELF};   // the shelves inside the shops
  const ensure=(o,c)=>o._n||(o._n=c+NETP+(WS.n=(WS.n||0)+1)),palId=p=>p?ensure(p,'p'):null;   // pallets, logs and items get an id the first time they are sent
  const prec=p=>({k:'p',id:ensure(p,'p'),x:rd(p.x),y:rd(p.y),a:+p.a.toFixed(3),da:+p.da.toFixed(3),planks:!!p.planks,fk:p.fk?p.fk.id:null,on:p.on?{e:p.on.e.id,p:p.on.p}:null,cr:p.crates});
@@ -2803,6 +2803,8 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  const mk={v:vrec,t:trec,p:prec,l:lrec,g:grec,s:o=>srec(o._k)},byId=id=>id?veh[id]||trl[id]||null:null;
  const everything=()=>{const L=[];for(const o of Object.values(veh))L.push(['v',o]);for(const o of Object.values(trl))L.push(['t',o]);for(const o of PALS)L.push(['p',o]);for(const o of LG)if(!o.st)L.push(['l',o]);for(const o of GI)L.push(['g',o]);for(const n in SH)L.push(['s',{_s:1,_k:n,_n:'sh.'+n}]);return L};
  const ownedByMe=e=>P.driving&&T.out&&(T===e||(()=>{let q=T.tr,n=0;while(q&&n++<6){if(q===e)return true;q=q.tr}return false})());
+ // what rides on a ramp trailer (a vehicle: v.on, a trailer: t.ld) points at that trailer: linked once the trailer exists
+ const linkRide=r=>{const e=r.k==='v'?veh[r.id]:r.k==='t'?trl[r.id]:null;if(!e)return;if(r.k==='v'){const t=r.on&&trl[r.on.t];if(t)e.on={t,lx:r.on.lx,ly:r.on.ly,da:r.on.da,f:r.on.f,tier:r.on.tier||0};else if(!r.on)e.on=null}else{const t=r.ld&&trl[r.ld.t];if(t)e.ld={t,lx:r.ld.lx,ly:r.ld.ly,da:r.ld.da,f:r.ld.f,tier:r.ld.tier||0,tx:r.ld.tx,go:r.ld.go||0};else if(!r.ld)e.ld=null}};
  function apply(r){let e=r.k==='v'?veh[r.id]:trl[r.id],fresh=false;
   if(!e){fresh=true;if(r.k==='v'){e=addVeh(r.kind,{bed:r.bed,color:r.color,bedColor:r.bedColor,eng:r.eng,nose:r.nose,tank:r.tank,forks:r.forks,hitch:r.hitch});delete veh[e.id];e.id=r.id;veh[r.id]=e}else{e=addTrl(r.kind,r.color);delete trl[e.id];e.id=r.id;trl[r.id]=e}}
   Object.assign(e,{hitch:r.hitch,name:r.name,out:r.out,color:r.color});if(r.k==='v')e.starter=!!r.starter;e.cargo.type=r.cg[0];e.cargo.amt=r.cg[1];
@@ -2846,7 +2848,7 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  const snap=()=>{const all=[];for(const[k,e]of everything()){const r=mk[k](e);r.ver=WS.ver[r.id]||1;if(!WS.ver[r.id])WS.ver[r.id]=1;all.push(r)}const[sa,sf]=absAll();return{e:all,cash,s:sa,fl:sf,acts:NETX.acts}};
  // a saved game is put back on a map nobody has touched yet: the same steps as joining, with the player put where the save says
  const restore=d=>{P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;WS.last={};WS.ver={};
-  take(d.e,'save');cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);
+  take(d.e,'save');for(const r of d.e)if(r.k==='v'||r.k==='t')linkRide(r);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);
   const m=d.me;if(m){const v=m.drv&&veh[m.drv],o=m.in&&OFFICES.find(q=>q.n===m.in);if(o){[P.x,P.y,P.a]=doorOut(o)}else{P.x=m.x;P.y=m.y;P.a=m.a}if(v){setActive(v);P.driving=true}else P.driving=false;cam.x=P.x;cam.y=P.y}};
  NET.api={snap,restore};
  if(offline)return;
