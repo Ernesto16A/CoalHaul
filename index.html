@@ -234,7 +234,7 @@ function applyMineV(){Object.assign(MVZ,uRect(MS,MV0))}
 function applyQuarry(gate){Object.assign(qz,uRect(QS,LYQ.pad));Object.assign(QVZ,uRect(QS,QV0));if(gate)LOTS[7].gate=uGate(QS,LOTS[7],LYQ.gate)}
 // the iron mine: the quarry again, written in the quarry's frame (gate to the west, lot x shifted to the west edge of the map) and turned 180 degrees, so its gate is on the east. It makes iron ore from the power plant's coal (1 coal = 1 t)
 const iron={built:false,need:10,got:0,stock:0,cap:50,lvl:0,rate:1,name:'Iron mine',unit:'t'};
-reqInit(quarry,[['coal',50,'t']]);reqInit(plant,[['coal',50,'t']]);reqInit(lumber,[['coal',50,'t'],['rock',50,'t']]);reqInit(sawmill,[['coal',50,'t'],['rock',50,'t'],['logs',10,'']]);reqInit(iron,[['coal',50,'t'],['rock',50,'t'],['planks',20,'']]);reqInit(factory,[['coal',50,'t'],['gravel',50,'t'],['logs',20,''],['planks',10,'']]);reqInit(foundry,[['coal',50,'t'],['gravel',50,'t'],['planks',20,''],['sand',20,'t']]);   // what each site needs (garage, shop, coal mine and fuel station are built from the start)
+reqInit(quarry,[['coal',50,'t']]);reqInit(plant,[['coal',50,'t']]);reqInit(lumber,[['coal',50,'t'],['rock',50,'t']]);reqInit(sawmill,[['coal',50,'t'],['rock',50,'t'],['logs',10,'']]);reqInit(iron,[['coal',50,'t'],['rock',50,'t'],['gravel',50,'t'],['planks',20,'']]);reqInit(factory,[['coal',50,'t'],['gravel',50,'t'],['logs',20,''],['planks',10,'']]);reqInit(foundry,[['coal',50,'t'],['gravel',50,'t'],['planks',20,''],['sand',20,'t']]);   // what each site needs (garage, shop, coal mine and fuel station are built from the start)
 // the crusher: a unit like the others (CRS): the lot at tile (8,8), turned a quarter so its gate and the building's door face west. 3 x 3 chunks: the building in the middle chunk, facing the gate, the sand loading pad on its north side and the rock unloading pad on its south side, each in the middle of its chunk (written in the unit's frame, where the gate is to the south and the pads are west and east)
 // A site first (50 t of rock and 50 t of coal on the unloading yard). Built, it crushes the rock that is unloaded (feed) into sand (stock), using the power plant's coal (1 coal for 1 t), and trucks load the sand at the loading pad
 const crusher={built:false,need:100,got:0,stock:0,gst:0,gsel:0,feed:0,cap:50,fcap:50,lvl:0,flvl:0,rate:1,name:'Crusher',unit:'t'};reqInit(crusher,[['rock',50,'t'],['coal',50,'t'],['logs',20,'']]);
@@ -357,7 +357,11 @@ const TKINDS={
  pickup:{n:'Pickup',ax:1,wb:2.4,maxst:Math.PI/3,vmax:6.5,acc:6,b0:-1,b1:3,cab0:1.4,flat:1,hx:-1.3,cap:5,trl:'small',tl:['small'],cost:400,fuel:5,burn:.5},
  dump:{n:'Dump truck',ax:1.6,wb:3.6,maxst:70*Math.PI/180,vmax:6,acc:5,b0:-1.4,b1:4.6,cab0:2.9,flat:2,hx:-1.7,cap:12,trl:'medium',tl:['small','medium','dolly'],cost:700,fuel:8,burn:.8},
  forklift:{n:'Forklift',ax:0,wb:1.6,maxst:80*Math.PI/180,vmax:3.5,acc:4,b0:-1.9,b1:.6,cab0:-1.4,hx:-2.2,hw:.8,solo:1,rear:1,cap:0,trl:'small',tl:['dolly','small'],cost:250,fuel:15,burn:.25},   // origin on the front (drive) axle; the rear wheels steer, so the tail swings out
- semi:{n:'Semi truck',ax:1.3,wb:2.7,maxst:70*Math.PI/180,vmax:6,acc:4.5,b0:-1,b1:3.6,cab0:1.5,hx:0,cap:0,trl:'semi',tl:['semi','medium','small'],cost:1200,fuel:20,burn:1.1}};
+ semi:{n:'Semi truck',ax:1.3,wb:2.7,maxst:70*Math.PI/180,vmax:6,acc:4.5,b0:-1,b1:3.6,cab0:1.5,hx:0,cap:0,trl:'semi',tl:['semi','medium','small'],cost:1200,fuel:20,burn:1.1},
+ // people movers: seats = [driver, then the passengers] as [along, across] in units; trunk = the 2x1 slot grid at the back (one item or one crate each)
+ atv:{n:'ATV',ax:.6,wb:1.5,maxst:Math.PI/3,vmax:7.5,acc:6.5,b0:-.8,b1:1.6,cab0:.2,hx:-1.1,hw:.65,cap:0,trl:'small',tl:['small'],cost:300,fuel:3,burn:.3,seats:[[.7,0]],solo:1},
+ car:{n:'Small car',ax:1,wb:2.3,maxst:Math.PI/3,vmax:7,acc:5.5,b0:-1.4,b1:2.9,cab0:-.1,hx:-1.7,hw:.9,cap:0,trl:'small',tl:['small'],cost:500,fuel:4,burn:.4,seats:[[1.5,-.42],[1.5,.42],[.45,-.42],[.45,.42]],trunk:{x0:-1.3,x1:-.38,y0:-.7,y1:.7,nc:1,n:2}},
+ minibus:{n:'Mini-bus',ax:1.4,wb:3.9,maxst:60*Math.PI/180,vmax:5.8,acc:4,b0:-1.3,b1:4.9,cab0:3,hx:-1.6,hw:1,cap:0,trl:'small',tl:[],cost:900,fuel:12,burn:.7,seats:[[3.7,-.5],[3.7,.5],[2.1,-.5],[2.1,.5],[.5,-.5],[.5,.5]]}};
 const TRL={
  pc:{n:'Small cargo trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:5,cargo:'coal',cost:120},
  pl:{n:'Small log trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:3,cargo:'logs',cost:180},
@@ -379,15 +383,15 @@ const TRL={
  dl:{n:'Dolly',cls:'dolly',bar:2.5,co:0,hw:.5,hh:1,cap:0,cargo:'none',fifth:-.2,cost:150}};
 let nid=1;const veh={},trl={},cnt={},NETP=Math.random().toString(36).slice(2,5);   // NETP: this browser's mark in every id it makes, so two players' vehicles never share an id
 // engines: more pull and speed, more fuel burnt, a higher price. A long nose (dump truck, semi truck): a bonnet ahead of the cab, the front axle under it
-const ENG=[{n:'Standard',acc:1,vmax:1,burn:1,c:0},{n:'Strong',acc:1.35,vmax:1.1,burn:1.3,c:.35},{n:'Powerful',acc:1.7,vmax:1.2,burn:1.65,c:.8}],HP0={pickup:100,dump:240,semi:420,forklift:40},hpOf=(k,e)=>Math.round(HP0[k]*ENG[e||0].acc/5)*5,NOSE=1.6,NOSEC=.25,hasNose=k=>k==='dump'||k==='semi';
+const ENG=[{n:'Standard',acc:1,vmax:1,burn:1,c:0},{n:'Strong',acc:1.35,vmax:1.1,burn:1.3,c:.35},{n:'Powerful',acc:1.7,vmax:1.2,burn:1.65,c:.8}],HP0={pickup:100,dump:240,semi:420,forklift:40,atv:40,car:90,minibus:130},hpOf=(k,e)=>Math.round(HP0[k]*ENG[e||0].acc/5)*5,NOSE=1.6,NOSEC=.25,hasNose=k=>k==='dump'||k==='semi';
 const TANKV=[{n:'Small',m:.5,c:-.04,off:1},{n:'Standard',m:1,c:0},{n:'Large',m:2,c:.08},{n:'Long-range',m:4,c:.18}];   // tank sizes: x the standard tank, and the price change
 const kdOf=(kind,eng,nose,tank)=>{const b=TKINDS[kind],tk=tank===undefined||tank===null?1:tank;if(!eng&&!nose&&tk===1)return b;const e=ENG[eng||0],o=Object.assign({},b,{acc:b.acc*e.acc,vmax:b.vmax*e.vmax,burn:b.burn*e.burn,fuel:b.fuel*TANKV[tk].m});if(nose){o.wb+=NOSE;o.b1+=NOSE;o.nose=1}return o};
 // fuel economy, in litres per 100 km with 1 tile = 1 m. The base is each kind with its smallest engine, empty, no trailer. A bigger engine uses more (x1.3, x1.65), every trailer adds 20%, and a full load adds up to 26%: a full semi with a trailer and the biggest engine is 20 x 1.65 x 1.2 x 1.2626 = 50.
-const ECO={pickup:10,dump:16,forklift:6,semi:20},LOADF=.2626;
+const ECO={pickup:10,dump:16,forklift:6,semi:20,atv:4,car:7,minibus:11},LOADF=.2626;
 function loadFrac(v){let a=0,c=0;const add=(e,cap)=>{if(cap>0){a+=Math.min(cap,e.cargo.amt||0);c+=cap}};add(v,KOF(v).cap);for(const t of chainOf(v))add(t,(TRL[t.kind]||{}).cap||0);return c?a/c:0}
 const l100=(v,k)=>(ECO[v.kind]||10)*(k||KOF(v)).burn/TKINDS[v.kind].burn*(1+chainOf(v).length*.2)*(1+LOADF*loadFrac(v));
 const KOF=v=>v.kd||TKINDS[v.kind],priceOf=(kind,eng,nose,tank)=>Math.round(TKINDS[kind].cost*(1+ENG[eng||0].c+(nose?NOSEC:0)+TANKV[tank===undefined||tank===null?1:tank].c)/10)*10;
-function addVeh(kind,o){o=o||{};const id='v'+NETP+nid++;cnt[kind]=(cnt[kind]||0)+1;return veh[id]={id,hitch:!!o.hitch,kind,bed:o.bed||(kind=='dump'?'coal':null),color:o.color||null,bedColor:o.bedColor||null,slots:o.bed==='items'?Array(4).fill(null):o.bed==='flat'?Array(4*TKINDS[kind].flat).fill(null):null,pals:o.bed==='flat'?Array(TKINDS[kind].flat).fill(null):null,name:TKINDS[kind].n+(o.forks==='logs'?' (log claw)':'')+(kind=='pickup'&&o.bed?' ('+o.bed+' bed)':o.bed=='logs'?' (log bed)':'')+' #'+cnt[kind],out:false,x:0,y:0,a:0,v:0,st:0,fuel:kdOf(kind,o.eng,o.nose,o.tank).fuel,cargo:{type:null,amt:0},tr:null,forks:o.forks||null,eng:o.eng||0,nose:!!o.nose,tank:o.tank===undefined||o.tank===null?1:o.tank,kd:kdOf(kind,o.eng,o.nose,o.tank)}}
+function addVeh(kind,o){o=o||{};const id='v'+NETP+nid++;cnt[kind]=(cnt[kind]||0)+1;return veh[id]={id,hitch:!!o.hitch,kind,bed:o.bed||(kind=='dump'?'coal':TKINDS[kind].trunk?'items':null),color:o.color||null,bedColor:o.bedColor||null,slots:(o.bed==='items'||(!o.bed&&TKINDS[kind].trunk))?Array(TKINDS[kind].trunk?TKINDS[kind].trunk.n:4).fill(null):o.bed==='flat'?Array(4*TKINDS[kind].flat).fill(null):null,pals:o.bed==='flat'?Array(TKINDS[kind].flat).fill(null):null,name:TKINDS[kind].n+(o.forks==='logs'?' (log claw)':'')+(kind=='pickup'&&o.bed?' ('+o.bed+' bed)':o.bed=='logs'?' (log bed)':'')+' #'+cnt[kind],out:false,x:0,y:0,a:0,v:0,st:0,fuel:kdOf(kind,o.eng,o.nose,o.tank).fuel,cargo:{type:null,amt:0},tr:null,forks:o.forks||null,eng:o.eng||0,nose:!!o.nose,tank:o.tank===undefined||o.tank===null?1:o.tank,kd:kdOf(kind,o.eng,o.nose,o.tank)}}
 function addTrl(kind,col){const id='t'+NETP+nid++;cnt[kind]=(cnt[kind]||0)+1;return trl[id]={id,hitch:false,on:true,kind,color:col||null,slots:kind==='pi'?Array(4).fill(null):TRL[kind].cargo==='flat'?Array(4*TRL[kind].places).fill(null):null,pals:TRL[kind].cargo==='flat'?Array(TRL[kind].places).fill(null):null,nz:false,ramp:false,rp:0,name:TRL[kind].n+' #'+cnt[kind],out:false,x:0,y:0,b:0,hx:0,hy:0,kx:0,ky:0,coupled:false,host:null,tr:null,cargo:{type:null,amt:0}}}
 const NOTR={on:false,kind:null,coupled:false,host:null,cargo:{type:null,amt:0}};
 const JACK=1.75,TURNBRAKE=.5,STEERRATE=1,VINNER=.5,FUELP=2.5;
@@ -652,22 +656,23 @@ function icon(kind,isT,col,bed,bcol,nose){const key=(isT?'t':'v')+kind+'|'+(col|
  try{let x0,x1;if(isT){const d=TRL[kind];x0=d.co-d.hw;x1=Math.max(d.co+d.hw,d.bar)}else{const d=kdOf(kind,0,nose);x0=d.b0;x1=d.b1}
   const sc=Math.min((W-12)/((x1-x0)*S),(H-8)/(2.4*S));g.setTransform(2*sc,0,0,2*sc,W-2*sc*((x0+x1)/2)*S,H);
   const cg={type:null,amt:0};
-  if(isT){const o={x:0,y:0,b:0,kind,cargo:cg,coupled:true,color:col};cast(shapesOf(o,[],.6));drawTrailer(o)}else{const v={x:0,y:0,a:0,st:0,cargo:cg,kind,color:col,bed,bedColor:bcol,nose,forks:kind==='forklift'&&bed==='logs'?'logs':null,kd:kdOf(kind,0,nose)};cast(shapesOf(v,[],.6));if(kind=='semi')drawTractor(v);else if(kind=='dump')drawDump(v);else if(kind=='forklift')drawForklift(v);else drawPickup(v)}
+  if(isT){const o={x:0,y:0,b:0,kind,cargo:cg,coupled:true,color:col};cast(shapesOf(o,[],.6));drawTrailer(o)}else{const v={x:0,y:0,a:0,st:0,cargo:cg,kind,color:col,bed,bedColor:bcol,nose,forks:kind==='forklift'&&bed==='logs'?'logs':null,kd:kdOf(kind,0,nose)};cast(shapesOf(v,[],.6));drawKind(v)}
  }finally{g=g0}
  return ICONS[key]=c.toDataURL()}
 // ---------- garage (spawn, park), garage upgrades (slots) and shop (buy, sell): separate buildings ----------
 const SLOTS={n:4},MAXSLOTS=16;let ftab='veh',panelOpen=false,panelMode='garage',gtab='veh',stab='veh',utab='garage',edit=null,pmsg='',cfg=null;
 const slotCost=()=>150*SLOTS.n,vCount=()=>Object.keys(veh).length,tCount=()=>Object.keys(trl).length,used=()=>Object.values(veh).filter(v=>!v.out).length+Object.values(trl).filter(t=>!t.out).length;
-const bedTxt=(d,b)=>!d.cap?'No bed':b==='logs'?'Log bed'+(d.n==='Pickup'?' · 3 logs':''):b==='fuel'?'Fuel tank · '+d.cap*20+' L':b==='items'?'Item bed · 4 slots':b==='flat'?'Flatbed · '+d.flat+(d.flat>1?' places':' place')+' (a pallet, or 4 crates / items each)':'Cargo bed · '+d.cap+' t',tlTxt=d=>'tows '+d.tl.map(c=>c==='dolly'?'a dolly':c+' trailers').join(', ');   // what the shop and garage say about a vehicle
+const bedTxt=(d,b)=>d.seats?d.seats.length+(d.seats.length>1?' seats':' seat')+(d.trunk?' · trunk: '+d.trunk.n+' slots (an item or a crate each)':''):!d.cap?'No bed':b==='logs'?'Log bed'+(d.n==='Pickup'?' · 3 logs':''):b==='fuel'?'Fuel tank · '+d.cap*20+' L':b==='items'?'Item bed · 4 slots':b==='flat'?'Flatbed · '+d.flat+(d.flat>1?' places':' place')+' (a pallet, or 4 crates / items each)':'Cargo bed · '+d.cap+' t',tlTxt=d=>d.tl.length?'tows '+d.tl.map(c=>c==='dolly'?'a dolly':c+' trailers').join(', '):'cannot tow';   // what the shop and garage say about a vehicle
 const trInfo=d=>d.cap?(d.cargo==='logs'?'Log bed · '+d.cap+' logs':d.cargo==='fuel'?'Fuel tank · '+d.cap+' L':'Cargo bed · '+d.cap+' t')+' · '+d.cls+' trailer':d.cargo==='flat'?'Flatbed · '+d.places+(d.places>1?' places':' place')+': a pallet, or 4 crates / items each · '+d.cls+' trailer':d.cargo==='items'?'Item bed · 4 slots for items carried by hand · '+d.cls+' trailer':d.cargo==='ramp'?'Flat deck with a fold-down rear ramp (click the ramp) · '+d.cls+' trailer':'Converter dolly: lets a pickup or dump truck tow a semi trailer';
 const stat=e=>e.out?' · <i>out</i>':' · in garage';
 const sellVal=k=>Math.round((TKINDS[k]||TRL[k]).cost*.5),sellOf=e=>sellVal(e.kind)+(e.hitch?Math.round(ITEMSHOP.hitch.cost*.5):0),sellNote=e=>e.hitch?' (incl. hitch $'+Math.round(ITEMSHOP.hitch.cost*.5)+')':'';   // a mounted hitch is sold with its vehicle or trailer, for half its price
 // loose items and pallets lying on the SELL / UNLOAD pad sell too, for half price; whatever is inside a crate or on a pallet counts (a canister's fuel at half the pump price)
 const IV={ironbar:5,steelbar:15,glass:8},itemVal=it=>(IV[it.type]!=null?IV[it.type]:Math.round(ITEMSHOP[it.type].cost*.5))+(it.items?it.items.reduce((a,x)=>a+(x?itemVal(x):0),0):0)+(it.type==='canister'?Math.round((it.fuel||0)*FUELP*.5):0);
 const palVal=p=>(p.planks?SITEPAY.planks:Math.round(ITEMSHOP.pallet.cost*.5)*(p.st||1))+p.crates.reduce((a,c)=>a+(c?itemVal(c):0),0);
-const itemInS=it=>inZ2([[it.x,it.y]],sellZ),palInS=p=>{const z=sellZ,h=PALW/2*S;return!p.planks&&!p.fk&&!p.on&&p.x-h>=z.x-z.w/2&&p.x+h<=z.x+z.w/2&&p.y-h>=z.y-z.h/2&&p.y+h<=z.y+z.h/2};   // a pallet spawns flush with the lot's edge: it only has to be inside it
+const itemInS=it=>{const z=sellZ;return Math.abs(it.x-z.x)<z.w/2&&Math.abs(it.y-z.y)<z.h/2},   // a loose item counts when its middle is inside the drawn pad (the same edge the unloading uses)
+  palInS=p=>!p.planks&&!p.fk&&!p.on&&itemInS(p);   // a pallet spawns flush with the lot's edge: it only has to be inside it
 const itemName=it=>ITEMS[it.type].n+(it.type==='crate'?' ('+cn(it)+'/9 items)':it.type==='canister'?' ('+(it.fuel||0).toFixed(1)+' L)':'');
-const inZ2=(ps,z)=>ps.every(p=>Math.abs(p[0]-z.x)<z.w/2-6&&Math.abs(p[1]-z.y)<z.h/2-14);
+const inZ2=(ps,z)=>{const q=[];for(let i=0;i<ps.length;i++){const a=ps[i],b=ps[1-i]||a,d=Math.hypot(b[0]-a[0],b[1]-a[1])||1,nx=-(b[1]-a[1])/d*14,ny=(b[0]-a[0])/d*14;q.push([a[0]+nx,a[1]+ny],[a[0]-nx,a[1]-ny])}return q.every(p=>Math.abs(p[0]-z.x)<z.w/2&&Math.abs(p[1]-z.y)<z.h/2)};   // a vehicle or trailer is on the pad when both ends, with half its width either side, are inside the drawn rectangle: the same on every side, whichever way the shop is turned
 const vInS=v=>v.out&&inZ2(vEnds(v),sellZ),tInS=t=>t.out&&inZ2(tEnds(t),sellZ);
 function sellVeh(v){v.on=null;if(v.tr){v.tr.coupled=false;v.tr.host=null;v.tr=null}if(v===T){R=NOTR;P.driving=false}v.out=false;delete veh[v.id]}
 function sellTrl(t){unloadAll(t);t.ld=null;if(t.tr){t.tr.coupled=false;t.tr.host=null;t.tr=null}if(t.host){t.host.tr=null;R=T.tr||NOTR}t.out=false;t.coupled=false;t.host=null;delete trl[t.id]}
@@ -1011,30 +1016,34 @@ function dumpCargo(){if(!P.driving&&!P.pass)return cwG();if(!P.driving||!T.out)r
  for(const p of PALS.filter(p=>p.fk===T)){drop(p);n++}
  flash(n?'Emptied: the cargo, items and pallets on the '+(rig.length>1?'whole rig':entName(T))+' are gone.':'Nothing to empty.')}
 const cabOf=v=>{const d=dir(v.a),o=(KOF(v).b1-.8)*S;return[v.x+d[0]*o,v.y+d[1]*o]};
-const nearCab=()=>{let b=null,bd=3.4*S;for(const v of Object.values(veh)){const k=v.kind;if(!v.out)continue;const c=cabOf(v),d=Math.hypot(P.x-c[0],P.y-c[1]);if(d<bd){bd=d;b=v}}return b};
+const nearCab=()=>{let b=null,bd=3.4*S;for(const v of Object.values(veh)){const k=v.kind;if(!v.out)continue;const d=seatDist(v);if(d<bd){bd=d;b=v}}return b};
 // ---------- seats: hover a cab to see them, F takes the seat under the cursor (left = driver, right = passenger) ----------
-const SEATX={pickup:2.2,dump:3.75,semi:2.55,forklift:-.65},CABX={pickup:[1.4,3],dump:[2.9,4.6],semi:[1.5,3.6],forklift:[-1.5,.3]};
-const seatPos=(v,sd)=>{const d=dir(v.a),lx=SEATX[v.kind]*S,ly=(KOF(v).solo?0:sd)*.45*S;return[v.x+d[0]*lx-d[1]*ly,v.y+d[1]*lx+d[0]*ly]};
+const SEATS={pickup:[[2.2,-.45],[2.2,.45]],dump:[[3.75,-.45],[3.75,.45]],semi:[[2.55,-.45],[2.55,.45]],forklift:[[-.65,0]]},CABX={pickup:[1.4,3],dump:[2.9,4.6],semi:[1.5,3.6],forklift:[-1.5,.3]};
+const seatsOf=v=>SEATS[v.kind]||TKINDS[v.kind].seats,cabX=v=>CABX[v.kind]||[Math.min(...seatsOf(v).map(q=>q[0]))-.8,Math.max(...seatsOf(v).map(q=>q[0]))+.8];   // seat 0 is the driver's; the cars and buses carry more passengers
+const seatPos=(v,sd)=>{const d=dir(v.a),q=seatsOf(v)[sd<0?0:Math.min(sd,seatsOf(v).length-1)],lx=q[0]*S,ly=q[1]*S;return[v.x+d[0]*lx-d[1]*ly,v.y+d[1]*lx+d[0]*ly]};
 let MX=null,MY=null;cv.addEventListener('mousemove',e=>{MX=e.clientX;MY=e.clientY});cv.addEventListener('mouseleave',()=>{MX=null});
 function hoverSeat(){if(IN||MX==null)return null;const mx=(MX-VW/2)/Z+cam.x,my=(MY-VH/2)/Z+cam.y;
- for(const v of Object.values(veh)){if(!v.out)continue;const l=loc(mx,my,v.x,v.y,v.a),c=CABX[v.kind];if(l[0]>=(c[0]-.25)*S&&l[0]<=(c[1]+.25)*S&&Math.abs(l[1])<1.4*S)return{v,sd:l[1]<0||KOF(v).solo?-1:1}}return null}
-const inReach=v=>{const c=cabOf(v);return Math.hypot(P.x-c[0],P.y-c[1])<3.4*S};
+ for(const v of Object.values(veh)){if(!v.out)continue;const l=loc(mx,my,v.x,v.y,v.a),c=cabX(v);if(l[0]>=(c[0]-.25)*S&&l[0]<=(c[1]+.25)*S&&Math.abs(l[1])<(Math.max(1.4,(KOF(v).hw||0)+.4))*S){const ss=seatsOf(v);let bi=0,bd=1e9;ss.forEach((q,i)=>{const d=Math.hypot(l[0]-q[0]*S,l[1]-q[1]*S);if(d<bd){bd=d;bi=i}});return{v,sd:bi===0?-1:bi}}}return null}
+const seatDist=v=>Math.min(Math.hypot(P.x-cabOf(v)[0],P.y-cabOf(v)[1]),...seatsOf(v).map((q,i)=>{const w=seatPos(v,i===0?-1:i);return Math.hypot(P.x-w[0],P.y-w[1])}));
+const inReach=v=>seatDist(v)<3.4*S;
+const exitPt=(v,sd)=>{const ca=dir(v.a),o=(SEATS[v.kind]?KOF(v).b1-1.2:seatsOf(v)[sd<0?0:sd][0])*S,sg=sd<0?1:-1;return[v.x+ca[0]*o+sg*ca[1]*2.1*S,v.y+ca[1]*o-sg*ca[0]*2.1*S]};   // beside your own seat
 function getInOut(){
  const h=hoverSeat();
  if(P.driving){
   if(!T.out)return;if(Math.abs(T.v)>1.2)return flash('Stop the vehicle first.');
-  if(h&&h.v===T&&h.sd===1){P.driving=false;P.pass=T;P.seatSd=1;T.v=0;return flash('You moved to the passenger seat.')}
-  const ca=dir(T.a),o=(KD.b1-1.2)*S;P.x=T.x+ca[0]*o+ca[1]*2.1*S;P.y=T.y+ca[1]*o-ca[0]*2.1*S;P.a=T.a;P.driving=false;T.v=0;flash('You got out.');
+  if(h&&h.v===T&&h.sd>=1){P.driving=false;P.pass=T;P.seatSd=h.sd;T.v=0;return flash('You moved to a passenger seat.')}
+  const q=exitPt(T,-1);P.x=q[0];P.y=q[1];P.a=T.a;P.driving=false;T.v=0;flash('You got out.');
  }else if(P.pass){
   const v=P.pass;
   if(h&&h.v===v&&h.sd===-1){if(netBusy(v))return flash('Another player is driving that.');if(heldList().length)return flash('You cannot drive while holding an item. Put it down or store it first.');setActive(v);P.pass=null;P.driving=true;return flash('You are driving the '+KOF(v).n+'.')}
-  const ca=dir(v.a),o=(KOF(v).b1-1.2)*S;P.x=v.x+ca[0]*o-ca[1]*2.1*S;P.y=v.y+ca[1]*o+ca[0]*2.1*S;P.a=v.a;P.pass=null;flash('You got out.');
+  if(h&&h.v===v&&h.sd>=1&&h.sd!==P.seatSd){P.seatSd=h.sd;return flash('You moved to another seat.')}
+  const q=exitPt(v,P.seatSd);P.x=q[0];P.y=q[1];P.a=v.a;P.pass=null;flash('You got out.');
  }else{
   let v,sd=-1;
   if(h){v=h.v;sd=h.sd;if(!inReach(v))return flash('Walk up to the cab to take a seat.')}else v=nearCab();
   if(!v)return flash('Walk up to a cab to get in. Click a seat to get in.');
   if(sd===-1){if(netBusy(v))return flash('Another player is driving that.');if(heldList().length)return flash('You cannot drive while holding an item. Put it down or store it first. The passenger seat is fine.');setActive(v);P.driving=true;flash('You are driving the '+KOF(v).n+'.')}
-  else{P.pass=v;P.seatSd=1;P.a=v.a;flash('You ride as a passenger. Double-click off the vehicle to get out, or click the driver seat to drive.')}
+  else{P.pass=v;P.seatSd=sd;P.a=v.a;flash('You ride as a passenger. Double-click off the vehicle to get out, or click the driver seat to drive.')}
  }}
 // ---------- items: carried by hand (one per hand, some need two); the hitch on the back of a truck is the first item ----------
 const ITEMS={hitch:{n:'Hitch',hands:1},crate:{n:'Crate',hands:2},canister:{n:'Canister',hands:1},pallet:{n:'Pallet',hands:2},ironbar:{n:'Iron',hands:1},steelbar:{n:'Steel',hands:1},glass:{n:'Glass',hands:1}};   // a pallet is carried with both hands (one at a time, taken off a stack from the top)
@@ -1097,7 +1106,7 @@ const RCH=()=>IN?REACH0*IS:REACH0;
 const mouseWorld=()=>MX==null||IN&&!IN.o.inw?null:IN?s2w(MX,MY):[(MX-VW/2)/Z+cam.x,(MY-VH/2)/Z+cam.y];
 const mountPt=e=>{if('b' in e){const d=TRL[e.kind];return wld((d.co-d.hw-.2)*S,0,e.x,e.y,e.b)}return wld(hitchX(e)*S,0,e.x,e.y,e.a)};   // the removable hitch sits right on the towing pivot
 // the 2x2 slot grid of an item bed / item trailer, in vehicle units (same numbers the sprites use)
-const slotGeom=e=>{const nc=e.pals?2*e.pals.length:2;if('b' in e){const d=TRL[e.kind];return{x0:d.co-d.hw+.1,x1:d.co+d.hw-.1,y0:-d.hh+.15,y1:d.hh-.15,nc}}return e.kind==='dump'?{x0:-1.32,x1:2.82,y0:-.88,y1:.88,nc}:{x0:-.92,x1:1.32,y0:-.88,y1:.88,nc}};
+const slotGeom=e=>{const nc=e.pals?2*e.pals.length:2;if('b' in e){const d=TRL[e.kind];return{x0:d.co-d.hw+.1,x1:d.co+d.hw-.1,y0:-d.hh+.15,y1:d.hh-.15,nc}}const tk=TKINDS[e.kind].trunk;if(tk)return{x0:tk.x0,x1:tk.x1,y0:tk.y0,y1:tk.y1,nc:tk.nc};return e.kind==='dump'?{x0:-1.32,x1:2.82,y0:-.88,y1:.88,nc}:{x0:-.92,x1:1.32,y0:-.88,y1:.88,nc}};
 const placeOf=(e,i)=>e.pals?Math.floor((i%slotGeom(e).nc)/2):-1,placeFree=(e,p)=>!e.pals[p]&&[0,1].every(c=>[0,1].every(r=>!e.slots[r*2*e.pals.length+2*p+c]));   // a pallet place is free when no pallet and none of its 4 slots is used
 const placePt=(e,p)=>{const q=slotGeom(e),n=e.pals.length;return wld((q.x0+(p+.5)*(q.x1-q.x0)/n)*S,0,e.x,e.y,'b' in e?e.b:e.a)};
 const slotRect=(e,i)=>{const q=slotGeom(e),gp=.05,w=(q.x1-q.x0-gp*(q.nc+1))/q.nc,h=(q.y1-q.y0-gp*3)/2,c=i%q.nc,r=Math.floor(i/q.nc);return{x:q.x0+gp+c*(w+gp),y:q.y0+gp+r*(h+gp),w,h}};
@@ -1352,7 +1361,7 @@ function step(dt){
   let dx=(K.right?1:0)-(K.left?1:0),dy=(K.down?1:0)-(K.up?1:0);if(IROT()){const r=IROT(),c=Math.cos(r),s=Math.sin(r),t=dx;dx=t*c+dy*s;dy=-t*s+dy*c}   // keys are screen directions, the room is turned
   if(dx||dy){const l=Math.hypot(dx,dy),sp=4.2*SPX*(IN?IS:1)*dt/l,oy=P.y,ox=P.x;P.x+=dx*sp;P.y+=dy*sp;if(!IN&&COLL)pushBlock();if(IN){const gm=interiorGeo(IN.o);P.x=Math.max(gm.xmin||-4208,Math.min(gm.xmax||-3792,P.x));P.y=Math.max(gm.ymin,Math.min(gm.ymax||-3862,P.y));if(gm.solid)for(const[a,b,c,d]of gm.solid){const R=8,nx=Math.max(a,Math.min(c,P.x)),ny=Math.max(b,Math.min(d,P.y)),qx=P.x-nx,qy=P.y-ny,q=Math.hypot(qx,qy);if(q<R){if(q>.01){P.x=nx+qx/q*R;P.y=ny+qy/q*R}else P.x=ox}}   /* furniture: the player is pushed off it */if((P.x<-4072||P.x>-3928)&&(!gm.WX||P.x>gm.WX[0]&&P.x<gm.WX[1]))for(const py of gm.PYs)if(Math.abs(P.y-py)<14)P.y=oy<py?py-14:py+14;if(gm.WX)for(const wx of gm.WX)if(Math.abs(P.x-wx)<14&&(P.y<-3990||P.y>-3910))P.x=ox<wx?wx-14:wx+14}
   if(!IN){for(const o of OFFICES){if(o.rot){if(Math.abs(P.y-(o.Y+75))<24&&P.x>=o.X-11&&P.x<o.X+6){enterOffice(o);break}continue}const[px,py]=o.site?uInv(o.site,P.x,P.y):[P.x,P.y];{const dd=offDoorXs(o).find(x=>Math.abs(px-x)<(o.doors?20:24));if(dd!==undefined&&py>=offRect0(o).y1-6&&py<offRect0(o).y1+11){DOORX=dd;enterOffice(o);break}}if(o.eh&&Math.abs(px-offDoorX(o))<24&&py>=o.Y-12&&py<=o.Y-4){enterOffice(o,1);break}}}else if(P.y>(interiorGeo(IN.o).exitY||-3868)&&(IN.o.doors?[-4060,-3940].some(x=>Math.abs(P.x-x)<20):Math.abs(P.x+4000)<(interiorGeo(IN.o).doorW||40)))exitMine();else if(IN.o.eh&&P.y<(interiorGeo(IN.o).exitNY||-4226)&&Math.abs(P.x+4000)<(interiorGeo(IN.o).doorW||40))exitMine(1);const d=ang(Math.atan2(dy,dx)-P.a),st=16*dt;P.a+=Math.abs(d)<st?d:Math.sign(d)*st}
-  for(const v of Object.values(veh)){const k=v.kind;if(v.out){const kd=TKINDS[k];pushOut(P,v.x,v.y,v.a,kd.b0*S,kd.b1*S,S,.38*S)}}
+  for(const v of Object.values(veh)){const k=v.kind;if(v.out){const kd=TKINDS[k];pushOut(P,v.x,v.y,v.a,kd.b0*S,kd.b1*S,(kd.hw||1)*S,.38*S)}}
   for(const t of Object.values(trl)){const k=t.kind;if(t.out){if(!t.ld&&!t.coupled&&!t.tr&&!IN)pushTrl(t,px0,py0);const d=TRL[k];pushOut(P,t.x,t.y,t.b,(d.co-d.hw)*S,(d.co+d.hw)*S,d.hh*S,.38*S)}}
  }
  syncLoaded(dt);syncLoadedT(dt);syncPallets();
@@ -2340,6 +2349,42 @@ function drawTractor(v){const u=S,a=v.a,CC=v.color||'#c0392b';
 // the round silver hitch on the back of the truck (an empty bracket when it has been taken off)
 function hitchGfx(v){const u=S,k=KOF(v),hx=hitchX(v);if(!v.hitch){g.fillStyle='#3a3d44';g.fillRect((k.b0-.3)*u,-.14*u,.3*u,.28*u);return}
  g.fillStyle='#5d6168';g.fillRect(hx*u,-.1*u,(k.b0-hx)*u+.1*u,.2*u);itemSprite('hitch',hx*u,0,.18*u)}
+function drawKind(v){const k=v.kind;if(k=='semi')drawTractor(v);else if(k=='dump')drawDump(v);else if(k=='forklift')drawForklift(v);else if(k=='atv')drawAtv(v);else if(k=='car')drawCar(v);else if(k=='minibus')drawMinibus(v);else drawPickup(v)}
+// an ATV: four fat tyres, a narrow body, a long seat, handlebars and a rack at the back
+function drawAtv(v){const u=S,a=v.a,CC=v.color||'#c0392b';
+ g.save();g.translate(v.x,v.y);g.rotate(a);
+ for(const y of[-.62,.62]){wheel(0,y,0,.72,.42);wheel(1.5,y,v.st,.72,.42)}
+ g.beginPath();g.roundRect(-.55*u,-.42*u,2.1*u,.84*u,.22*u);inked(CC,1.3);bevel(a,-.55*u,-.42*u,2.1*u,.84*u,.1*u);
+ g.beginPath();g.roundRect(-.62*u,-.36*u,.5*u,.72*u,.06*u);inked('#3a3d44',1);   // the rear rack
+ g.beginPath();g.roundRect(-.35*u,-.3*u,1.25*u,.6*u,.14*u);inked('#2a2d33',1.1);g.fillStyle='rgba(255,255,255,.12)';g.fillRect(-.28*u,-.24*u,1.1*u,.07*u);   // the long seat
+ g.strokeStyle=INK;g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(1.02*u,-.58*u);g.lineTo(1.02*u,.58*u);g.stroke();g.lineCap='butt';   // the handlebars
+ g.beginPath();g.roundRect(.95*u,-.12*u,.18*u,.24*u,.04*u);inked('#55595f',1);
+ lamp(1.5,-.34,.08,.22,'#fff3b0');lamp(1.5,.12,.08,.22,'#fff3b0');lamp(-.6,-.38,.06,.18,'#e23b2e');lamp(-.6,.2,.06,.18,'#e23b2e');
+ hitchGfx(v);g.restore()}
+// a small car: bonnet, a glass cab with a pale roof, and an open boot at the back with two slots
+function drawCar(v){const u=S,a=v.a,CC=v.color||'#c0392b';
+ g.save();g.translate(v.x,v.y);g.rotate(a);
+ for(const y of[-.8,.8]){wheel(0,y,0,.78,.32);wheel(2.3,y,v.st,.78,.32)}
+ hull(-1.4,2.9,.9,[0,2.3]);inked(CC);rim(a,-1.4,2.9,.9,[0,2.3]);
+ itemGrid(-1.3,-.38,-.7,.7,1,2,v.slots,a);   // the boot: two slots, an item or a crate each
+ lamp(-1.4,-.84,.08,.26,'#e23b2e');lamp(-1.4,.58,.08,.26,'#e23b2e');
+ glass(-.1,.7,-.34,.74);
+ g.beginPath();g.roundRect(-.1*u,-.78*u,2.1*u,1.56*u,.12*u);g.fillStyle=WHT[5];g.fill();g.strokeStyle=BLK[7];g.lineWidth=.8;g.stroke();   // the roof
+ glass(2.0,.74,2.42,.84);
+ g.strokeStyle=BLK[8];g.lineWidth=1;g.beginPath();g.moveTo(2.5*u,-.42*u);g.lineTo(2.78*u,-.36*u);g.moveTo(2.5*u,.42*u);g.lineTo(2.78*u,.36*u);g.stroke();
+ lamp(2.84,-.84,.08,.28,'#fff3b0');lamp(2.84,.56,.08,.28,'#fff3b0');
+ hitchGfx(v);g.restore()}
+// a mini-bus: a long box with a pale roof, a windscreen and a short bonnet
+function drawMinibus(v){const u=S,a=v.a,CC=v.color||'#c0392b';
+ g.save();g.translate(v.x,v.y);g.rotate(a);
+ for(const y of[-.88,.88]){wheel(0,y,0,.86,.34);wheel(3.9,y,v.st,.86,.34)}
+ hull(-1.3,4.9,1,[0,3.9]);inked(CC);rim(a,-1.3,4.9,1,[0,3.9]);
+ lamp(-1.3,-.9,.08,.28,'#e23b2e');lamp(-1.3,.62,.08,.28,'#e23b2e');
+ g.beginPath();g.roundRect(-1.12*u,-.86*u,4.8*u,1.72*u,.14*u);g.fillStyle=WHT[5];g.fill();g.strokeStyle=BLK[7];g.lineWidth=.8;g.stroke();   // the roof
+ g.strokeStyle=BLK[8];g.lineWidth=.8;for(const x of[.5,1.5,2.5])for(const y of[-.5,.5]){g.beginPath();g.roundRect((x-.28)*u,(y-.22)*u,.56*u,.44*u,.06*u);g.stroke()}   // roof hatches
+ glass(3.72,.84,4.2,.92);
+ lamp(4.84,-.9,.08,.3,'#fff3b0');lamp(4.84,.6,.08,.3,'#fff3b0');
+ hitchGfx(v);g.restore()}
 function drawPickup(v){const u=S,a=v.a,CC=v.color||'#c0392b',BB=v.bed==='fuel'?'#4a4e56':v.bedColor||'#8f6f10';
  g.save();g.translate(v.x,v.y);g.rotate(a);
  for(const y of[-.83,.83]){wheel(0,y,0);wheel(2.4,y,v.st)}
@@ -2394,11 +2439,11 @@ function shapesOf(o,L,k=1){
  if('b' in o){const d=TRL[o.kind],p=o.rp||0,dl=d.cls==='dolly',h=dl?.64:d.hh;L.push([o.x,o.y,o.b,(d.co-d.hw)*S,-h*S,2*d.hw*S,2*h*S,(d.ramp||dl?4:6)*k]);
   if(dl)for(const y of[-1,.66])L.push([o.x,o.y,o.b,-.43*S,y*S,.86*S,.34*S,2*k,2]);
   if(d.ramp&&p>.02)L.push([o.x,o.y,o.b,(d.co-d.hw-d.rl*p)*S,-.9*S,d.rl*p*S,1.8*S,1.6*k,2])}
- else{const kd=KOF(o);if(o.kind==='semi'){L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.cab0-kd.b0)*S,2*S,3*k]);L.push([o.x,o.y,o.a,kd.cab0*S,-S,(kd.b1-kd.cab0)*S,2*S,8*k])}else if(o.kind==='forklift'){L.push([o.x,o.y,o.a,kd.b0*S,-.8*S,2.3*S,1.6*S,7*k]);L.push([o.x,o.y,o.a,.35*S,-.75*S,.3*S,1.5*S,10*k]);for(const y of[-.38,.38])L.push([o.x,o.y,o.a,.55*S,(y-.08)*S,1.2*S,.16*S,1*k])}/* each fork throws its own thin shadow */else L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.b1-kd.b0)*S,2*S,(o.kind==='dump'?8:6.5)*k])}
+ else{const kd=KOF(o);if(o.kind==='semi'){L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.cab0-kd.b0)*S,2*S,3*k]);L.push([o.x,o.y,o.a,kd.cab0*S,-S,(kd.b1-kd.cab0)*S,2*S,8*k])}else if(o.kind==='forklift'){L.push([o.x,o.y,o.a,kd.b0*S,-.8*S,2.3*S,1.6*S,7*k]);L.push([o.x,o.y,o.a,.35*S,-.75*S,.3*S,1.5*S,10*k]);for(const y of[-.38,.38])L.push([o.x,o.y,o.a,.55*S,(y-.08)*S,1.2*S,.16*S,1*k])}/* each fork throws its own thin shadow */else L.push([o.x,o.y,o.a,kd.b0*S,-(kd.hw||1)*S,(kd.b1-kd.b0)*S,2*(kd.hw||1)*S,(o.kind==='dump'?8:6.5)*k])}
  return L}
 function drawFleet(t){
  for(const c of fuelCarriers()){if(!c.e.nz)continue;const z=zoneOf(c);g.save();g.translate(z.x,z.y);g.rotate(z.a);g.fillStyle='rgba(224,68,46,.22)';g.fillRect(-z.w/2,-z.h/2,z.w,z.h);g.strokeStyle='#e0442e';g.lineWidth=1.5;g.setLineDash([10,7]);g.lineDashOffset=-t/50;g.strokeRect(-z.w/2,-z.h/2,z.w,z.h);g.setLineDash([]);g.lineDashOffset=0;g.restore();txt('REFUEL',z.x,z.y+3,'#ff9a8a','bold 8px sans-serif')}
- const drawV=v=>{if(v.kind=='semi')drawTractor(v);else if(v.kind=='dump')drawDump(v);else if(v.kind=='forklift')drawForklift(v);else drawPickup(v)};
+ const drawV=drawKind;
  const reachV=v=>!v.on&&Object.values(trl).some(t=>rampCorr(v,v.x,v.y,v.a,t)&&!roomV(t,v));
  const top=rampTop,vw=VW/2/Z+240,vh=VH/2/Z+240,vis=o=>Math.abs(o.x-cam.x)<vw&&Math.abs(o.y-cam.y)<vh;   // what is out of sight is not drawn
  {const L=[];for(const v of Object.values(veh))if(v.out&&vis(v)&&!top(v))shapesOf(v,L);for(const x of Object.values(trl))if(x.out&&vis(x)&&!x.ld&&!rigRider(x)&&!trOnRamp(x))shapesOf(x,L);cast(L)}   // every shadow on the ground goes down first, under all the vehicles
@@ -2443,8 +2488,8 @@ function drawPlayer0(){
 // the two seats of the cab under the mouse; the one the cursor is nearest to lights up
 function drawSeats(){const h=hoverSeat();if(!h)return;const v=h.v;
  g.save();g.translate(v.x,v.y);g.rotate(v.a);
- for(const sd of KOF(v).solo?[-1]:[-1,1]){const on=sd===h.sd;g.fillStyle=on?'rgba(255,209,102,.95)':'rgba(20,22,28,.8)';g.strokeStyle=on?'#fff':'#ffffffaa';g.lineWidth=1.2;
-  g.beginPath();g.roundRect(SEATX[v.kind]*S-.42*S,(KOF(v).solo?0:sd)*.45*S-.4*S,.84*S,.8*S,2.5);g.fill();g.stroke()}
+ seatsOf(v).forEach((q,i)=>{const on=(h.sd===-1?0:h.sd)===i;g.fillStyle=on?'rgba(255,209,102,.95)':'rgba(20,22,28,.8)';g.strokeStyle=on?'#fff':'#ffffffaa';g.lineWidth=1.2;
+  g.beginPath();g.roundRect(q[0]*S-.42*S,q[1]*S-.4*S,.84*S,.8*S,2.5);g.fill();g.stroke()});
  g.restore();
  const c=cabOf(v);txt(h.sd===-1?'Click: drive':'Click: passenger',c[0],c[1]-2.2*S,'#ffd166','bold 11px sans-serif')}
 // ---------- the story: what to do next, and where the arrow points (always at a building's entrance, never at a pad) ----------
