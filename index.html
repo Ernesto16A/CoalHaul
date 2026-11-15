@@ -250,13 +250,16 @@ const reqOf=(b,k)=>b.reqs.find(r=>r.k===k),reqFmt=r=>(r.unit==='t'?r.got.toFixed
 function reqSync(b){for(const r of b.reqs){if(r.need-r.got<.05)r.got=r.need;else if(r.unit!=='t'&&Math.abs(r.got-Math.round(r.got))<.004)r.got=Math.round(r.got)}   /* whole items: a count a hair under a whole number is that number */
  b.got=b.reqs.reduce((a,r)=>a+Math.min(r.got,r.need),0);if(!b.built&&b.reqs.every(r=>r.got>=r.need-1e-6)){b.built=true;flash(b.name+' built!');return true}return false}
 function sweepLeft(cg,b){   /* the site is finished and its yard has moved: what is still on the truck goes in at once, paid as usual */
- if(!(cg.amt>0))return;if(cg.type==='coal'){const q=Math.min(cg.amt,plant.cap-plant.stock);if(q>0){cg.amt-=q;plant.stock+=q;cash+=q*SITEPAY.coal}}else if(cg.type==='logs'&&sawmill.built){const q=Math.min(cg.amt,sawmill.cap-sawmill.stock);if(q>0){cg.amt-=q;sawmill.stock+=q;cash+=q*SITEPAY.logs}}}
+ if(!(cg.amt>0))return;if(cg.type==='coal'){const q=Math.min(cg.amt,plant.cap-plant.stock);if(q>0){cg.amt-=q;plant.stock+=q;cash+=q*SITEPAY.coal}}}
 const SITEPAY={coal:10,logs:20,rock:10,iron:10,planks:60,sand:15,gravel:15};   // what the player is paid per unit delivered to a construction site
-function siteDeliver(b,cg,room){const r=cg.amt>0?reqOf(b,cg.type):null;if(!r)return b.name+' site needs: '+reqNeeds(b)+'.';if(r.got>=r.need-1e-6){if(r.k==='coal')return 'The site has all the coal it needs. Take the rest to the power plant.';return 'The site has all the '+r.k+' it needs.'}const q=Math.min(room,cg.amt,r.need-r.got);cg.amt-=q;r.got+=q;cash+=q*(SITEPAY[r.k]||0);reqSync(b);return 'Delivering '+r.k+' to the site…'}
-function siteAbsorb(){for(const b of[quarry,iron,factory,foundry]){if(b.built)continue;const z=b===quarry?qz:b===factory?fz:b===foundry?fnz:iz,inz=(x,y)=>Math.abs(x-z.x)<z.w/2&&Math.abs(y-z.y)<z.h/2,rl=reqOf(b,'logs'),rp=reqOf(b,'planks');
+function siteDeliver(b,cg,room){const r=cg.amt>0?reqOf(b,cg.type):null;if(!r)return b.name+' site needs: '+reqNeeds(b)+'.';if(r.k==='logs'||r.k==='planks')return 'Logs and planks are set down on the pad with a forklift, not unloaded from a vehicle.';if(r.got>=r.need-1e-6){if(r.k==='coal')return 'The site has all the coal it needs. Take the rest to the power plant.';return 'The site has all the '+r.k+' it needs.'}const q=Math.min(room,cg.amt,r.need-r.got);cg.amt-=q;r.got+=q;cash+=q*(SITEPAY[r.k]||0);reqSync(b);return 'Delivering '+r.k+' to the site…'}
+function siteAbsorb(){for(const b of[quarry,iron,factory,foundry,sawmill,crusher]){if(b.built)continue;const z=b===quarry?qz:b===factory?fz:b===foundry?fnz:b===sawmill?swz:b===crusher?cz:iz,inz=(x,y)=>Math.abs(x-z.x)<z.w/2&&Math.abs(y-z.y)<z.h/2,rl=reqOf(b,'logs'),rp=reqOf(b,'planks');
  if(rl)for(let i=LG.length-1;i>=0;i--){const l=LG[i];if(!l.st&&!l.fk&&inz(l.x,l.y)&&rl.got<rl.need-1e-6){LG.splice(i,1);rl.got+=1;cash+=SITEPAY.logs}}
  if(rp)for(let i=PALS.length-1;i>=0;i--){const p=PALS[i];if(p.planks&&!p.fk&&!p.on&&inz(p.x,p.y)&&rp.got<rp.need-1e-6){PALS.splice(i,1);rp.got+=1;cash+=SITEPAY.planks}}
- reqSync(b)}}
+ reqSync(b)}
+ if(sawmill.built)for(let i=LG.length-1;i>=0;i--){const l=LG[i];if(!l.st&&!l.fk&&Math.abs(l.x-swz.x)<swz.w/2&&Math.abs(l.y-swz.y)<swz.h/2&&sawmill.stock+1<=sawmill.cap){LG.splice(i,1);sawmill.stock+=1;cash+=SITEPAY.logs}}   // logs set down in the sawmill yard (by the log forklift) go into its store
+ for(let i=LG.length-1;i>=0;i--){const l=LG[i];if(!l.st&&!l.fk&&Math.abs(l.x-sellZ.x)<sellZ.w/2&&Math.abs(l.y-sellZ.y)<sellZ.h/2&&SHST.logs<SHCAP.logs-.001){LG.splice(i,1);SHST.logs+=1}}   // the shop pad and the garage unload pad take logs set down on them
+ for(let i=LG.length-1;i>=0;i--){const l=LG[i];if(!l.st&&!l.fk&&Math.abs(l.x-gUnl.x)<gUnl.w/2&&Math.abs(l.y-gUnl.y)<gUnl.h/2&&STORE.logs<STCAP.logs-.001){LG.splice(i,1);STORE.logs+=1}}}
 function applyIron(gate){Object.assign(iz,uRect(IRS,LYI.pad));Object.assign(IVZ,uRect(IRS,IV0));if(gate)LOTS[8].gate=uGate(IRS,LOTS[8],LYI.gate)}
 const BOARDS=[[1940,2260,'fuel',280,120,FS]];   // every readout board [x,y,name,w,h,unit]: boardsBuild lists them from what is built. A built building has two 7 x 7 boards on the map (upright, they always read facing south); a site has one board in its unit's frame (turned half a turn on itself when its unit faces west or north: boardFlip)
 const SBU={'power plant':PS,lumberyard:LS,sawmill:SWS,factory:FCS,foundry:FNS,quarry:QS,'iron mine':IRS};
@@ -1368,11 +1371,11 @@ function step(dt){
    else{mm='Loading coal…';const q=Math.min(lr*dt,cap-cg.amt,mine.stock);cg.type='coal';cg.amt+=q;mine.stock-=q}
   }else if(inZcU(SS,c,S0.sell)){
    if(!slow)mm='Slow down to unload.';else if(cg.amt<=0||!cg.type)mm='SELL / UNLOAD pad: park here and hold Space to unload any cargo into the shop storage.';
-   else if(SHST[cg.type]===undefined)mm='The shop storage does not take '+cg.type+'.';else if(SHST[cg.type]>=SHCAP[cg.type]-.001)mm='Shop storage for '+SHN[cg.type].toLowerCase()+' is full ('+SHCAP[cg.type]+' max). Sell some or upgrade it in the shop (Storage).';
+   else if(cg.type==='logs')mm='Logs are not unloaded from a vehicle: set them down on this pad with the log forklift.';else if(SHST[cg.type]===undefined)mm='The shop storage does not take '+cg.type+'.';else if(SHST[cg.type]>=SHCAP[cg.type]-.001)mm='Shop storage for '+SHN[cg.type].toLowerCase()+' is full ('+SHCAP[cg.type]+' max). Sell some or upgrade it in the shop (Storage).';
    else{mm='Unloading into the shop storage…';const q=Math.min(ur*dt,cg.amt,SHCAP[cg.type]-SHST[cg.type]);SHST[cg.type]+=q;cg.amt-=q}
   }else if(inZcG(c,G0.gUnl)){
    if(!slow)mm='Slow down to unload.';else if(cg.amt<=0||!cg.type)mm='Garage storage: park here to unload your cargo into it.';
-   else if(STORE[cg.type]===undefined)mm='Garage storage does not take '+cg.type+' yet.';else if(STORE[cg.type]>=STCAP[cg.type]-.001)mm='Garage '+cg.type+' storage is full ('+STCAP[cg.type]+' max). Upgrade it at the garage upgrade pad.';
+   else if(cg.type==='logs')mm='Logs are not unloaded from a vehicle: set them down on this pad with the log forklift.';else if(STORE[cg.type]===undefined)mm='Garage storage does not take '+cg.type+' yet.';else if(STORE[cg.type]>=STCAP[cg.type]-.001)mm='Garage '+cg.type+' storage is full ('+STCAP[cg.type]+' max). Upgrade it at the garage upgrade pad.';
    else{mm='Unloading into storage…';const q=Math.min(ur*dt,cg.amt,STCAP[cg.type]-STORE[cg.type]);STORE[cg.type]+=q;cg.amt-=q}
   }else if(inZcG(c,G0.gLoad)){
    const ty=cg.amt>0&&cg.type?cg.type:['coal','logs','fuel'].find(t=>takes(t)&&STORE[t]>.001),cf=ty==='fuel'?(c.cargo==='fuel'?c.cap:cap*(c.fm||1)):cap;
@@ -1419,8 +1422,7 @@ function step(dt){
   if(inZs(c,swU())){
    if(!slow)mm='Slow down to unload.';else if(!sawmill.built){mm=siteDeliver(sawmill,cg,ur*dt);if(sawmill.built)sweepLeft(cg)}
    else if(cg.type!=='logs'||cg.amt<=0)mm=cg.type==='coal'&&cg.amt>0?'The sawmill only takes logs.':'Sawmill: bring logs ($'+SITEPAY.logs+' each).';
-   else if(sawmill.stock>=sawmill.cap)mm='Sawmill storage is full. It only saws while the power plant runs.';
-   else{mm='Unloading logs at the sawmill…';const q=Math.min(ur*dt,cg.amt,sawmill.cap-sawmill.stock);cg.amt-=q;sawmill.stock+=q;cash+=q*SITEPAY.logs}
+   else mm='Logs are not unloaded from a vehicle: lift them off with the log forklift and set them down in the sawmill yard ($'+SITEPAY.logs+' each).';
   }
   if(inZs(c,fcU())){
    if(!slow)mm='Slow down to unload.';else if(!factory.built){mm=siteDeliver(factory,cg,ur*dt);if(factory.built)sweepLeft(cg)}
@@ -2402,7 +2404,8 @@ function drawFleet(t){
  {const L=[];for(const v of Object.values(veh))if(v.out&&vis(v)&&!top(v))shapesOf(v,L);for(const x of Object.values(trl))if(x.out&&vis(x)&&!x.ld&&!rigRider(x)&&!trOnRamp(x))shapesOf(x,L);cast(L)}   // every shadow on the ground goes down first, under all the vehicles
  for(const v of Object.values(veh))if(v.out&&vis(v)&&!top(v))drawV(v);
  for(const pass of[1,0])for(const x of Object.values(trl))if(x.out&&vis(x)&&!x.ld&&!rigRider(x)&&!trOnRamp(x)&&(TRL[x.kind].cls==='dolly')===!!pass)drawTrailer(x);
- {const it=[];for(const x of Object.values(trl)){if(!vis(x))continue;if(x.out&&x.ld)it.push({o:x,tr:1,tier:x.ld.tier});else if(rigRider(x)){const h=rigRider(x);it.push({o:x,tr:1,tier:(h.on||reachV(h)?-1:9)+.5})}else if(trOnRamp(x))it.push({o:x,tr:1,tier:0})}const reach=reachV;   // a truck backing under a loaded trailer to hitch it sits beneath it
+ {const it=[];for(const x of Object.values(trl)){if(!vis(x))continue;const dl=TRL[x.kind].cls==='dolly'?-.25:0;   // a dolly always sits under the trailer it carries, on a deck or off it
+  if(x.out&&x.ld)it.push({o:x,tr:1,tier:x.ld.tier+dl});else if(rigRider(x)){const h=rigRider(x);it.push({o:x,tr:1,tier:(h.on||reachV(h)?-1:9)+.5+dl})}else if(trOnRamp(x))it.push({o:x,tr:1,tier:dl})}const reach=reachV;   // a truck backing under a loaded trailer to hitch it sits beneath it
   for(const v of Object.values(veh))if(v.out&&vis(v)&&top(v))it.push({o:v,tier:v.on||reach(v)?-1:9});
   it.sort((a,b)=>a.tier-b.tier);
   for(const q of it){const o=q.o;const lift=q.tr&&o.ld&&o.ld.tier>0;   // loads on a higher tier are lifted and shadowed; a vehicle driving up is drawn over the ramp
