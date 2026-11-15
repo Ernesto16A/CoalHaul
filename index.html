@@ -527,7 +527,7 @@ function trlCorr(l,x,y,b,c){if(!c.out||c.ld||c===l||!TRL[c.kind].ramp||(c.rp||0)
  const d=TRL[c.kind],lp=loc(x,y,c.x,c.y,c.b),f=lineUp(l,b,c,lp[1]);if(!f)return false;const lead=lp[0]+extT(l,f)[1]*S;return lead<=(d.co+d.hw)*S&&lead>(d.co-d.hw-d.rl-1)*S}   /* anywhere from the ramp to the front of the deck */
 const ovRamp=v=>Object.values(trl).some(t=>t.out&&!t.ld&&TRL[t.kind].ramp&&(t.rp||0)>.02&&(d=>boxHit(vBody(v),{ox:t.x,oy:t.y,a:t.b,x0:d.co-d.hw-d.rl*t.rp,x1:d.co-d.hw,h:.9}))(TRL[t.kind]));   // any vehicle touching a lowered ramp is drawn over it, never under it
 const rampTop=v=>v.on||ovRamp(v)||Object.values(trl).some(t=>rampCorr(v,v.x,v.y,v.a,t));   // a vehicle on (or driving up to) a lowered ramp is drawn over it
-const rigRider=x=>{let h=x.host,n=0;while(h&&h.host&&n++<9)h=h.host;return h&&rampTop(h)?h:null};   // the riding truck this trailer is hitched behind, if any
+const rigRider=x=>{let h=x.host,n=0;while(h&&h.host&&n++<9)h=h.host;return h&&!('b' in h)&&rampTop(h)?h:null};   // only a truck at the head of the chain: a dolly left standing with its trailer is not a rig on a ramp   // the riding truck this trailer is hitched behind, if any
 const trOnRamp=l=>l.out&&!l.ld&&Object.values(trl).some(c=>trlCorr(l,l.x,l.y,l.b,c));   // a trailer being backed up (or pulled off) a ramp is drawn over it
 // a trailer dropped (unhitched) while it lies on a lowered ramp or deck, lined up with it, settles onto the carrier by itself; a hitched one stays yours until you drop it
 function settleFree(){for(const l of Object.values(trl)){if(!l.out||l.ld||l.coupled||l.tr)continue;
@@ -998,7 +998,7 @@ function couple(){
   const o=T.on,cc=o.t,lp=loc(c.x,c.y,cc.x,cc.y,cc.b),f=lineUp(c,c.b,cc,lp[1]);
   if(c.host!==T||c.tr||o.f>0||!f||!fitsTrl(c,cc,1))return flash('Drive the rig off the ramp trailer before parking this trailer.');
   c.ld={t:cc,lx:lp[0],ly:lp[1],da:ang(c.b-cc.b-(f<0?Math.PI:0)),f,tier:0,tx:lp[0],go:0};c.coupled=false;c.host=null;T.tr=null;R=NOTR;T.v*=.3;selT=null;selVeh=null;return flash('Trailer parked on the ramp trailer: '+c.name+'.')}
- if(c){const cc=Object.values(trl).find(x=>x!==c&&x.out&&!x.ld&&TRL[x.kind].ramp&&(x.rp||0)>.02&&(d=>boxHit(tBody(c),{ox:x.x,oy:x.y,a:x.b,x0:d.co-d.hw-d.rl*x.rp,x1:d.co+d.hw,h:d.hh}))(TRL[x.kind]));
+ if(c){const own=chainOf(c),cc=Object.values(trl).find(x=>x!==c&&!own.includes(x)&&x.out&&!x.ld&&TRL[x.kind].ramp&&(x.rp||0)>.02&&(d=>boxHit(tBody(c),{ox:x.x,oy:x.y,a:x.b,x0:d.co-d.hw-d.rl*x.rp,x1:d.co+d.hw,h:d.hh}))(TRL[x.kind]));
   if(cc){   /* the trailer is on (or partly on) a lowered ramp trailer: it is left exactly where it is, but only once it is straight and wholly on the deck; the game never moves it for you */
    const d=TRL[cc.kind],lp=loc(c.x,c.y,cc.x,cc.y,cc.b),f=lineUp(c,c.b,cc,lp[1]),da=f?ang(c.b-cc.b-(f<0?Math.PI:0)):9,e=f?extT(c,f):[0,0],sl=f&&fitsTrl(c,cc,1)&&slotFor(cc,c);
    if(sl&&sl.tier>0&&!c.tr&&Math.abs(da)<=.12&&Math.abs(lp[1])<=.5*S){const h=c.host;loadTrl(c,cc,{f,lp});h.tr=null;R=T.tr||NOTR;T.v*=.3;selT=null;selVeh=null;return flash('The '+TRL[c.kind].n+' goes up on top of the ramp trailer.')}   // the deck is taken: it rolls up onto the upper level
@@ -2563,6 +2563,7 @@ function drawFleet(t){
  {const it=[];for(const x of Object.values(trl)){if(!vis(x))continue;const dl=TRL[x.kind].cls==='dolly'?-.25:0;   // a dolly always sits under the trailer it carries, on a deck or off it
   if(x.out&&x.ld)it.push({o:x,tr:1,tier:x.ld.tier+dl});else if(rigRider(x)){const h=rigRider(x);it.push({o:x,tr:1,tier:(h.on||reachV(h)?-1:9)+.5+dl})}else if(trOnRamp(x))it.push({o:x,tr:1,tier:dl})}const reach=reachV;   // a truck backing under a loaded trailer to hitch it sits beneath it
   for(const v of Object.values(veh))if(v.out&&vis(v)&&top(v))it.push({o:v,tier:v.on||reach(v)?-1:9});
+  for(const q of it)if(!q.tr&&q.o.on){const c=it.find(z=>z.o===q.o.on.t);if(c&&c.tier>=q.tier)q.tier=c.tier+.1}   // what rides on a ramp trailer is always drawn over that trailer
   it.sort((a,b)=>a.tier-b.tier);
   for(const q of it){const o=q.o;const lift=q.tr&&o.ld&&o.ld.tier>0;   // loads on a higher tier are lifted and shadowed; a vehicle driving up is drawn over the ramp
    if(lift){const m=q.tr?TRL[o.kind].co:(KOF(o).b0+KOF(o).b1)/2,a=q.tr?o.b:o.a,cx=o.x+Math.cos(a)*m*S,cy=o.y+Math.sin(a)*m*S;cast(shapesOf(o,[],2.4));g.save();g.translate(cx,cy);g.scale(1.05,1.05);g.translate(-cx,-cy)}else cast(shapesOf(o,[],.5));   /* what rides on a deck throws its shadow on the deck */
