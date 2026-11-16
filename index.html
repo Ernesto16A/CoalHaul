@@ -1395,12 +1395,13 @@ function itemTarget(){
   if(i<0){if(hi&&hi.type==='crate')i=cr.findIndex(x=>!x);else i=cr.map(Boolean).lastIndexOf(true)}
   if(i>=0){const c=cr[i];if(hi)k=hi.type==='crate'?(c?'taken':'onpal'):c?(cn(c)<CRATECAP?'incrate':'cfull'):null;else if(c)k=freeHands()>=2?'palcrate':'full'}
   if(k){const hp=palCellPt(pl,i);cs.push({k,pl,ci:i,crate:cr[i]||null,it:hi,hp,d:()=>dP([pl.x,pl.y]),hov:hovP,pri:1})}}
- for(const c of itemCarriers()){if(hi&&(hi.type==='pallet'||hi.type==='barrier')&&c.e.pals)continue;const en=endsOf(c.ox,c.oy,c.a,c.e0,c.e1),sl=c.e.slots,mid=[(en[0][0]+en[1][0])/2,(en[0][1]+en[1][1])/2],
+ for(const c of itemCarriers()){if(hi&&hi.type==='pallet'&&c.e.pals)continue;const en=endsOf(c.ox,c.oy,c.a,c.e0,c.e1),sl=c.e.slots,mid=[(en[0][0]+en[1][0])/2,(en[0][1]+en[1][1])/2],
    hovC=(x,y)=>{const l=loc(x,y,c.ox,c.oy,c.a);return l[0]>c.e0*S&&l[0]<c.e1*S&&Math.abs(l[1])<1.05*S};
   let k=null,idx=-1;
   const pl=i=>c.e.pals&&placeObj(c.e,placeOf(c.e,i));   // slots under a pallet belong to the pallet
-  if(m&&hovC(m[0],m[1])){idx=slotAtPt(c.e,c.ox,c.oy,c.a,m[0],m[1]);if(pl(idx))continue;   // the slot under the cursor
+  if(m&&hovC(m[0],m[1])){idx=slotAtPt(c.e,c.ox,c.oy,c.a,m[0],m[1]);if(pl(idx))continue;if(hi&&hi.type==='barrier'&&c.e.pals&&!(sl[idx]&&sl[idx].type==='crate'))continue;   /* a barrier goes into a crate in a slot, never into a single slot: on a flatbed it takes a whole place */   // the slot under the cursor
    if(held.length)k=intoC(sl[idx])?(cn(sl[idx])<CRATECAP?'incrate':'cfull'):sl[idx]?'taken':'put';else if(sl[idx])k=freeHands()>=ITEMS[sl[idx].type].hands?'slot':'full'}
+  else if(hi&&hi.type==='barrier'&&c.e.pals)continue;
   else{const fr=sl.findIndex((x,i)=>!x&&!pl(i)),us=sl.map((x,i)=>!!x&&!pl(i)).lastIndexOf(true);if(held.length&&fr>=0){k='put';idx=fr}else if(us>=0){idx=us;k=freeHands()>=ITEMS[sl[idx].type].hands?'slot':'full'}}
   if(k){let hp=mid;if(idx>=0){const r=slotRect(c.e,idx);hp=wld((r.x+r.w/2)*S,(r.y+r.h/2)*S,c.ox,c.oy,c.a)}
    cs.push({k,c,si:idx,it:held[held.length-1],crate:k==='incrate'||k==='cfull'||(sl[idx]&&sl[idx].type==='crate')?sl[idx]:null,hp,d:()=>distSeg(P.x,P.y,en[0],en[1]),hov:hovC,pri:1})}}
