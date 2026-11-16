@@ -407,7 +407,7 @@ const TRL={
  pt:{n:'Small flatbed trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:0,cargo:'flat',places:1,cost:160},
  tt:{n:'Medium flatbed trailer',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:0,cargo:'flat',places:2,cost:260},
  sf:{n:'Semi flatbed trailer',cls:'semi',bar:6.2,co:3,hw:4,hh:1,cap:0,cargo:'flat',king:1,places:4,cost:600},
- ctr:{n:'Shipping container',cls:'box',bar:0,co:0,hw:2,hh:1,cap:0,cargo:'box',cost:5000},   // a container: lifted with a crane's cables, set on a flatbed (2 places) or the ground. Holds nothing yet
+ ctr:{n:'Shipping container',cls:'box',bar:0,co:0,hw:2,hh:1,cap:0,bulk:10,cargo:'box',cost:5000},   // a container: lifted with a crane's cables, set on a flatbed (2 places) or the ground. bulk: tons of bulk cargo (coal, rock, ore, sand, gravel; one kind at a time) it takes while it hangs on the crane's hook, loaded and unloaded by holding Space on the pads
  mf:{n:'Short semi flatbed trailer',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:0,cargo:'flat',king:1,places:2,cost:320},   // flatbeds: each place takes one pallet, or 4 crates / items in its 2x2 slots
  pq:{n:'Small liquid tanker',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:150,cargo:'liquid',cost:240},   // liquid tankers: any liquid but fuel (water, milk, oil...), in litres
  tq:{n:'Medium liquid tanker',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:400,cargo:'liquid',cost:380},
@@ -621,6 +621,8 @@ function rigCs(){const o=[];if(!T.out)return o;
  if(KD.cap>0&&T.bed!=='items'&&T.bed!=='flat'&&T.bed!=='ramp')o.push({cg:T.cargo,cap:T.bed==='fuel'||T.bed==='liquid'?KD.cap*20:T.bed==='logs'?(T.kind==='pickup'?3:T.kind==='dump'?6:KD.cap):KD.cap,cargo:T.bed||'any',fm:20,ox:T.x,oy:T.y,a:T.a,e0:KD.b0,e1:KD.b1,ent:T,slow:()=>Math.abs(T.v)<1.2});
  return o}
 function carriers(){const o=P.driving?rigCs():[];
+  if(P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT)for(const t of Object.values(trl))if(t.fk===P.pass&&TRL[t.kind].bulk){const tr=TRL[t.kind];o.push({cg:t.cargo,cap:tr.bulk,cargo:'any',ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>true,ent:t,hang:true})}   // a container on the crane's hook works like a cargo space on the pads, while it is the selected thing and Space is held
+ 
  for(const t of Object.values(trl)){const k=t.kind;if(t.out&&TRL[k].cap>0&&!chainOf(T).includes(t)&&(!t.coupled||'b' in t.host)){const tr=TRL[k];o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>true})}}
  return o}
 const cpts=c=>{const d=dir(c.a);return[[c.ox+d[0]*c.e1*S,c.oy+d[1]*c.e1*S],[c.ox+d[0]*c.e0*S,c.oy+d[1]*c.e0*S]]};
@@ -1204,10 +1206,14 @@ function hangList(v){const o=[];if(v.ctool)o.push({k:'tool',n:ATTK[v.ctool].n,t:
  for(const p of PALS)if(p.fk===v){const c=(p.crates||[]).filter(Boolean).length;o.push({k:'load',n:'Pallet'+(c?' with '+c+(c>1?' crates':' crate'):''),t:'load'})}
  {const n=LG.filter(l=>l.fk===v).length;if(n)o.push({k:'load',n:n+(n>1?' logs':' log'),t:'load'})}
  for(const a of ATT)if(a.fk===v)o.push({k:'load',n:ATTK[a.kind].n,t:'attachment'});
- for(const e of Object.values(veh))if(e.fk===v)o.push({k:'load',n:entName(e),t:'vehicle'});
- for(const t of Object.values(trl))if(t.fk===v)o.push({k:'load',n:entName(t),t:'trailer'});
+ for(const e of Object.values(veh))if(e.fk===v)o.push({k:'load',n:entName(e),t:'vehicle',e});
+ for(const t of Object.values(trl))if(t.fk===v){const b=TRL[t.kind].bulk,cg=t.cargo;o.push({k:'load',n:entName(t)+(b?(cg&&cg.amt>.005?' · '+cg.amt.toFixed(1)+' / '+b+' t '+cg.type:' · empty, '+b+' t'):''),t:'trailer',e:t,bulk:!!b})}
  return o}
 const hangSel=(v,h)=>Math.min(v.csel||0,h.length-1);
+let hangMsg='';
+const hangSelEnt=()=>{const v=P.pass;if(!(v&&v.kind==='crane'&&P.seatSd===CSEAT))return null;const h=hangList(v),s=h[hangSel(v,h)];return s&&s.e||null},
+ hangBulk=()=>{const e=hangSelEnt();return e&&'b' in e&&TRL[e.kind].bulk?e:null},   // the selected thing on the hook, if it is a bulk container
+ hangHeld=t=>SPK.down&&SPK.hang&&hangSelEnt()===t;
 function craneSelect(){const v=P.pass;if(!(v.ft>=1&&v.ftOn))return flash('Put the feet down first: Space from the truck cab.');const h=hangList(v);if(!h.length)return flash('Nothing hangs on the hook.');if(h.length===1)return flash('Only one thing on the hook: '+h[0].n+'.');
  v.csel=(hangSel(v,h)+1)%h.length;const s=h[v.csel];flash('Selected: '+s.n+(s.k==='tool'?' (C takes it off)':' (C sets it down)'))}
 let hangSig='';
@@ -1573,8 +1579,8 @@ function rampTarget(){const m=mouseWorld();if(m&&hoverSeat())return null;let bes
 const SPK={down:false,t:0},spaceHeld=()=>SPK.down&&P.driving&&performance.now()-SPK.t>=250;
 function toggleRamp(t){if(t.ramp&&loadsOn(t).some(l=>l.ld.go))return flash('Wait for the load to finish moving.');if(t.ramp&&vehsOn(t).some(v=>v.tr&&v.on.f>0&&rigRear(v)+v.on.lx<(TRL[t.kind].co-TRL[t.kind].hw)*S-2))return flash('Pull the whole rig onto the deck first.');t.ramp=!t.ramp;return flash(t.ramp?(t.glue?'Ramp down. The truck cannot move until it is raised.':'Ramp down. The trailer cannot move until it is raised.'):'Ramp up.')}
 function spaceDown(){if(!panelOpen&&P.driving&&T.out&&T.kind==='crane'&&(selVeh===T||!chain().length))return craneFeet();   // with a trailer hitched and selected, Space works the trailer (V selects the crane truck for the feet)
-if(!panelOpen&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT)return craneHook();if(!panelOpen&&P.driving&&T.out&&T.kind!=='forklift'){SPK.down=true;SPK.t=performance.now();return}spaceKey()}
-function spaceUp(){if(!SPK.down)return;SPK.down=false;if(performance.now()-SPK.t>=250||!P.driving||!T.out)return;
+if(!panelOpen&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT){if(hangBulk()){SPK.down=true;SPK.hang=true;SPK.t=performance.now();return}return craneHook()} /* with a container selected Space does nothing but load / unload it (hold) */ if(!panelOpen&&P.driving&&T.out&&T.kind!=='forklift'){SPK.down=true;SPK.t=performance.now();return}spaceKey()}
+function spaceUp(){if(SPK.hang){SPK.hang=false;SPK.down=false;return}if(!SPK.down)return;SPK.down=false;if(performance.now()-SPK.t>=250||!P.driving||!T.out)return;
  const t=curSel();if(t&&TRL[t.kind].ramp&&selVeh!==T)return toggleRamp(t);if(gdeck(T)&&(selVeh===T||!t||!TRL[t.kind].ramp))return toggleRamp(gdeck(T));   // a pickup or dump truck with a ramp bed: its own ramp
  if(KD.trunk)return setBoot(T,!T.boot);   // a car: a tap opens or closes its boot
  if(t&&TRL[t.kind].ramp)return toggleRamp(t);
@@ -1672,9 +1678,9 @@ function step(dt){
  // (the shop's SELL pad no longer takes cargo, planks or items into a storage: what stands on it is sold from the shop menu's Sell tab)
  for(const t of Object.values(trl)){const k=t.kind;if(t.out){const p=tipPt(t);t.kx=p.x;t.ky=p.y}}
  // ----- cargo -----
- let m=null;const cs=carriers();
+ let m=null;hangMsg='';const cs=carriers();
  for(const c of cs){
-  const cg=c.cg,amt0=cg.amt,cap=c.cap,slow=c.slow(),act=!!c.ent&&c.ent===selEnt()&&spaceHeld(),lr=act?cap*.3:0,ur=act?cap*.4:0,takes=t=>c.cargo==='any'?t!=='fuel':c.cargo===t||(c.cargo==='coal'&&(t==='rock'||t==='iron'||t==='sand'||t==='gravel'));let mm=null;
+  const cg=c.cg,amt0=cg.amt,cap=c.cap,slow=c.slow(),act=!!c.ent&&(c.hang?hangHeld(c.ent):c.ent===selEnt()&&spaceHeld()),lr=act?cap*.3:0,ur=act?cap*.4:0,takes=t=>c.cargo==='any'?t!=='fuel':c.cargo===t||(c.cargo==='coal'&&(t==='rock'||t==='iron'||t==='sand'||t==='gravel'));let mm=null;
   if(inZcU(MS,c,LYM.pad)){
    if(!slow)mm='Slow down to load.';else if(!takes('coal'))mm='This cargo space does not take coal.';else if(cg.type!=='coal'&&cg.amt>0)mm='Dump the other cargo first (G).';else if(cg.amt>=cap-.01)mm='Load full.';else if(mine.stock<=0)mm='The coal mine is empty. It regenerates 0.1 t per second.';
    else{mm='Loading coal…';const q=Math.min(lr*dt,cap-cg.amt,mine.stock);cg.type='coal';cg.amt+=q;mine.stock-=q}
@@ -1745,8 +1751,9 @@ function step(dt){
   if(takes('fuel')&&FZS.some(z=>satHit(zoneBox(z),{ox:c.ox,oy:c.oy,a:c.a,x0:c.e0,x1:c.e1,h:1}))){const cf=c.cargo==='fuel'?c.cap:c.cap*(c.fm||1);
    if(!slow)mm='Slow down to load fuel.';else if(cg.type&&cg.type!=='fuel'&&cg.amt>0)mm='Empty the other cargo first (G).';else if(cg.amt>=cf-.01)mm='Fuel cargo full.';else if(cash<=0)mm='No cash for fuel.';
    else{mm='Loading fuel… $'+FUELP.toFixed(1)+' per litre.';const q=Math.min(act?cf*.3*dt:0,cf-cg.amt,cash/FUELP);cg.type='fuel';cg.amt+=q;cash-=q*FUELP}}
-  if(!act&&mm)mm=!c.ent?'A parked trailer does not load by itself: hitch it, select it with V and hold Space.':c.ent===selEnt()?'Hold Space to load or unload the '+(c.ent===T?'truck bed':c.ent.name)+'.':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.';
+  if(!act&&mm)mm=c.hang?(hangSelEnt()===c.ent?'Hold Space to load or unload the '+c.ent.name+' (C sets it down).':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.'):!c.ent?'A parked trailer does not load by itself: hitch it, select it with V and hold Space.':c.ent===selEnt()?'Hold Space to load or unload the '+(c.ent===T?'truck bed':c.ent.name)+'.':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.';
   if(cg.amt<=.001){cg.amt=0;cg.type=null;if(amt0>.001)cash=Math.round(cash*1e4)/1e4}   // a cargo just emptied: clear float dust from the payment
+  if(c.hang)hangMsg=mm||'';
   if(mm&&!m)m=mm}
  for(const it of GI)if(it.type==='canister'&&(it.fuel||0)<CANCAP&&cash>0&&FZS.some(z=>Math.abs(it.x-z.x)<z.w/2&&Math.abs(it.y-z.y)<z.h/2)){   // a canister set down on a FUEL square fills up, paid by the litre
   const q=Math.min(4*dt,CANCAP-(it.fuel||0),cash/FUELP);it.fuel=(it.fuel||0)+q;cash-=q*FUELP}
@@ -1781,7 +1788,7 @@ function step(dt){
  const rc=rigCs(),c0=rc[0],st=selTr();
 
  if(!P.driving){const q=padAt(),nc=nearCab(),fc=nearFuelCarrier();
-  m=P.pass&&craneRun(P.pass)?(P.pass.ft>=1&&P.pass.ftOn?'Crane cab: A / D swing the boom · W / S slide it out and in · Q / E turn the load · C attaches or detaches a tool ('+(P.pass.ctool?ATTK[P.pass.ctool].n:'none')+') · V selects what hangs on the hook · Space lifts or sets down. Boom '+(boomL(P.pass)/S).toFixed(1)+' units.':'Crane cab: the feet must be down first (Space from the truck cab).'):P.pass?'Passenger: double-click off the vehicle to get out · click the driver seat to drive.'+(KOF(P.pass).trunk?' · Space opens or closes the boot.':''):panelOpen?'Walk away from the area (or press Space / Esc) to close the panel.':q?upText(q):leverHint()?leverHint():pourHint()?pourHint():tankHint()?tankHint():itemHint()?itemHint():fuelHover()?'Click to '+(fuelHover().c.e.nz?'pick up':'put out')+' the refuel zone of '+fuelHover().c.e.name+'.':nc?'Click a seat to get in the '+KOF(nc).n+'.':'On foot: WASD to walk. Walk up to a cab and click a seat.'}
+  m=P.pass&&craneRun(P.pass)?(hangMsg&&P.pass.ft>=1?hangMsg:P.pass.ft>=1&&P.pass.ftOn?'Crane cab: A / D swing the boom · W / S slide it out and in · Q / E turn the load · C attaches or detaches a tool ('+(P.pass.ctool?ATTK[P.pass.ctool].n:'none')+') · V selects what hangs on the hook · '+(hangBulk()?'hold Space loads or unloads the container (C sets it down).':'Space lifts or sets down.')+' Boom '+(boomL(P.pass)/S).toFixed(1)+' units.':'Crane cab: the feet must be down first (Space from the truck cab).'):P.pass?'Passenger: double-click off the vehicle to get out · click the driver seat to drive.'+(KOF(P.pass).trunk?' · Space opens or closes the boot.':''):panelOpen?'Walk away from the area (or press Space / Esc) to close the panel.':q?upText(q):leverHint()?leverHint():pourHint()?pourHint():tankHint()?tankHint():itemHint()?itemHint():fuelHover()?'Click to '+(fuelHover().c.e.nz?'pick up':'put out')+' the refuel zone of '+fuelHover().c.e.name+'.':nc?'Click a seat to get in the '+KOF(nc).n+'.':'On foot: WASD to walk. Walk up to a cab and click a seat.'}
  else if(!m){
   if(st)m='Trailer at the hitch: '+st.name+'. Press C to hitch it.';
   else if(T.kind==='crane')m=T.ftOn?(T.ft<1?'Feet going down…':'Feet down. Click the crane cab at the back to work the crane · Space folds it and lifts the feet.'):T.ft>0?'Folding the crane…':'Crane truck: stop, then Space puts the 4 feet down'+(chain().length?' (V selects the truck itself; with a trailer selected, Space works the trailer)':'')+'.';
