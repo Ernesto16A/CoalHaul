@@ -1944,7 +1944,7 @@ function drawGround(){
  g.lineJoin='round';g.lineCap='butt';
  drawRoads();
  // the building's name painted on the asphalt just inside its gate
- LOTS.forEach((l,i)=>{const nm=['COAL MINE','POWER PLANT','GARAGE','LUMBERYARD','SAWMILL','SHOP','FUEL STATION','QUARRY','IRON MINE','CRUSHER','FACTORY'][i];
+ LOTS.forEach((l,i)=>{const nm=['COAL MINE','POWER PLANT','GARAGE','LUMBERYARD','SAWMILL','SHOP','FUEL STATION','QUARRY','IRON MINE','CRUSHER','FACTORY','FOUNDRY'][i];
   for(const q of GATES(l)){const S2=q.side==='S'||q.side==='N',px=S2?(q.a+q.b)/2:q.side==='W'?l.x0+36:l.x1-36,py=q.side==='S'?l.y1-24:q.side==='N'?l.y0+24:(q.a+q.b)/2;   // one at every gate
    g.save();g.globalAlpha=.8;g.fillStyle=l.col;g.textAlign='center';g.font='bold 34px sans-serif';g.translate(px,py);g.rotate(q.side==='S'?0:q.side==='N'?Math.PI:q.side==='W'?Math.PI/2:-Math.PI/2);g.fillText(nm,0,12);g.restore()}});   // reads like road lettering: upright for the driver heading in
 }
