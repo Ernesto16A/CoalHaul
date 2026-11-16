@@ -1520,12 +1520,52 @@ function dropItem(){const h=heldList();if(!h.length)return flash('Your hands are
 // a pallet set down on the ground goes onto the square corner nearest the forks, squared to the grid
 function palSpot(f){const i=Math.round(f[0]/S),j=Math.round(f[1]/S),c=PALS.find(p=>p.fk===T);let why=null;
  for(const[a,b]of[[i-1,j-1],[i,j-1],[i-1,j],[i,j]]){if(bldAt((a+.5)*S,(b+.5)*S))why='road';else if(cellUsed(a,b,c))why=why||'taken'}return{x:i*S,y:j*S,why}}
+// ---- what Space / C takes, and where it sets down: marked while the forklift's forks or claw, or the crane's hook, are at work. Yellow: what is taken. Green: where it goes. Red: it cannot go there ----
+const HLC={pick:'#ffd166',put:'#5ad17a',bad:'#ff6b5a'};
+function hlBox(ox,oy,a,x0,x1,h,col,fill){g.save();g.translate(ox,oy);g.rotate(a);g.beginPath();g.rect(x0,-h,x1-x0,2*h);if(fill){g.fillStyle=col+'3a';g.fill()}g.strokeStyle=col;g.lineWidth=2;g.setLineDash([6,4]);g.stroke();g.setLineDash([]);g.restore()}
+const hlPal=(x,y,a,col,fill)=>hlBox(x,y,a,-PALW/2*S,PALW/2*S,PALW/2*S,col,fill);
+const hlBody=(b,col,fill)=>hlBox(b.ox,b.oy,b.a,b.x0*S-2,b.x1*S+2,b.h*S+2,col,fill);
+function hlDot(x,y,r,col){g.save();g.strokeStyle=col;g.lineWidth=2;g.setLineDash([5,4]);g.beginPath();g.arc(x,y,r,0,7);g.stroke();g.restore()}
+const hlSeg=(a,b,col)=>{g.save();g.strokeStyle=col;g.globalAlpha=.8;g.lineWidth=7;g.lineCap='round';g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();g.restore()};
+function drawSpaceHL(){if(IN)return;let v=null;
+ if(P.driving&&T&&T.out&&T.kind==='forklift')v=T;else if(!P.driving&&P.pass&&P.pass.kind==='crane'&&P.pass.ft>=1&&P.pass.ftOn)v=P.pass;
+ if(!v)return;const q=v.kind==='crane'?hookPt(v):forkPt(v),a=liftA(v),tool=attOf(v);if(!tool)return;
+ const hlAtt=o=>hlDot(o.x,o.y,.9*S,HLC.pick),hlPlace=(e,i,col)=>{const w=placePt(e,i);hlPal(w[0],w[1],'b' in e?e.b:e.a,col,1)};
+ const nearPlace=()=>{for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){const w=placePt(e,i);if(Math.hypot(w[0]-q[0],w[1]-q[1])<.9*S)return{e,i}}return null};
+ const ground=(c,w,h)=>{const bad=bldAt(q[0],q[1]);hlBox(q[0],q[1],a,-w,w,h,bad?HLC.bad:HLC.put,1)};
+ if(tool==='forks'||tool==='cables'){
+  const hp=PALS.find(p=>p.fk===v),ha=ATT.find(o=>o.fk===v);
+  if(tool==='cables'){const ht=Object.values(trl).find(t=>t.fk===v),hv=Object.values(veh).find(o=>o.fk===v);
+   if(ht){const d=TRL[ht.kind];let done=false;if(isCont(ht))for(const e of flatbeds()){if(e.pals.length<2)continue;for(let i=0;i+1<e.pals.length;i++){const w0=placePt(e,i),w1=placePt(e,i+1),m=[(w0[0]+w1[0])/2,(w0[1]+w1[1])/2];if(Math.hypot(m[0]-q[0],m[1]-q[1])>1.1*S)continue;const ok=placeFree(e,i,ht)&&placeFree(e,i+1,ht);hlPlace(e,i,ok?HLC.put:HLC.bad);hlPlace(e,i+1,ok?HLC.put:HLC.bad);done=true}}
+    if(!done)ground(0,d.hw*S,d.hh*S);return}
+   if(hv){const k=KOF(hv);let done=false;for(const t of Object.values(trl)){if(!t.out||t.ld||!TRL[t.kind].ramp||t===hv||!fitsDeck(hv,t))continue;const dd=TRL[t.kind],l=loc(q[0],q[1],t.x,t.y,t.b);if(Math.abs(l[1])>dd.hh*S||l[0]<(dd.co-dd.hw)*S||l[0]>(dd.co+dd.hw)*S)continue;hlBody(tBody(t),HLC.put,1);done=true;break}
+    if(!done){const bad=envBad(q[0],q[1],a,null)||bldAt(q[0],q[1]);hlBox(q[0],q[1],a,k.b0*S,k.b1*S,(k.hw||1)*S,bad?HLC.bad:HLC.put,1)}return}}
+  if(hp){const f=q,pl=nearPlace();
+   if(pl){const ex=pl.e.pals[pl.i],ok=placeFree(pl.e,pl.i)||(ex&&canStack(ex,hp));hlPlace(pl.e,pl.i,ok?HLC.put:HLC.bad);return}
+   const ex=PALS.find(o=>o!==hp&&!o.fk&&!o.on&&Math.hypot(o.x-f[0],o.y-f[1])<.9*S);if(ex&&canStack(ex,hp)){hlPal(ex.x,ex.y,ex.a,HLC.put,1);return}
+   const i=Math.round(f[0]/S),j=Math.round(f[1]/S);let bad=false;for(const[x,y]of[[i-1,j-1],[i,j-1],[i-1,j],[i,j]])if(bldAt((x+.5)*S,(y+.5)*S)||cellUsed(x,y,hp))bad=true;hlPal(i*S,j*S,0,bad?HLC.bad:HLC.put,1);return}
+  if(ha){const pp=palAt(q),fp=pp?null:freePlaceAt(q,ha);if(pp)hlPal(pp.x,pp.y,pp.a,HLC.put,1);else if(fp)hlPlace(fp.e,fp.p,HLC.put);else ground(0,S*.6,S*.6);return}
+  if(tool==='forks'){let b=null,bd=.8*S;for(const p of PALS){if(p.fk)continue;const d=Math.hypot(p.x-q[0],p.y-q[1]);if(d<bd){bd=d;b=p}}
+   if(b){hlPal(b.x,b.y,b.a,HLC.pick,1);return}let o=null,od=1*S;for(const x of ATT){if(x.fk)continue;const d=Math.hypot(x.x-q[0],x.y-q[1]);if(d<od){od=d;o=x}}if(o)hlAtt(o);return}
+  // the cables: the first thing the hook would pick up
+  let best=null,bd=1e9;
+  for(const o of Object.values(veh)){if(!o.out||o===v||o.fk)continue;const l=loc(q[0],q[1],o.x,o.y,o.a),k=KOF(o);if(l[0]<k.b0*S||l[0]>k.b1*S||Math.abs(l[1])>(k.hw||1)*S)continue;const d=Math.hypot(q[0]-o.x,q[1]-o.y);if(d<bd){bd=d;best=vBody(o)}}
+  for(const t of Object.values(trl)){if(!t.out||t.fk||isGlue(t))continue;const l=loc(q[0],q[1],t.x,t.y,t.b),d=TRL[t.kind];if(Math.abs(l[0]-d.co*S)>d.hw*S||Math.abs(l[1])>d.hh*S)continue;const dd=Math.hypot(q[0]-t.x,q[1]-t.y);if(dd<bd){bd=dd;best=tBody(t)}}
+  for(const o of ATT){if(o.fk)continue;const d=Math.hypot(o.x-q[0],o.y-q[1]);if(d<1*S&&d<bd){bd=d;best={dot:o}}}
+  if(best){if(best.dot)hlAtt(best.dot);else hlBody(best,HLC.pick,1)}return}
+ if(tool==='claw'){const h=LG.find(l=>l.fk===v);
+  if(h){const sp=logSpotG(q,a+Math.PI/2);hlBox(sp.x,sp.y,sp.a,-18,18,9,sp.why?HLC.bad:HLC.put,1);return}
+  let b=null,bd=.9*S;for(const l of LG){if(l.fk)continue;const e=logEnds(l),d=distSeg(q[0],q[1],e[0],e[1]);if(d<bd){bd=d;b=l}}if(b){const e=logEnds(b);hlSeg(e[0],e[1],HLC.pick)}return}
+ if(tool==='grab'){const held=LG.filter(l=>l.fk===v);
+  if(held.length){const qa=Math.round(a/(Math.PI/2))*Math.PI/2,ux=Math.round(Math.cos(qa)),uy=Math.round(Math.sin(qa)),m0=logSpotG(q,qa+Math.PI/2);for(const l of held){const k=l.go||0,o=logSpotG([m0.x+ux*k*S,m0.y+uy*k*S],qa+Math.PI/2);hlBox(o.x,o.y,o.a,-18,18,9,o.why?HLC.bad:HLC.put,1)}return}
+  const ax=[Math.cos(a),Math.sin(a)],c=[];for(const l of LG){if(l.fk)continue;const dx=l.x-q[0],dy=l.y-q[1],al=dx*ax[0]+dy*ax[1],ac=-dx*ax[1]+dy*ax[0];if(Math.abs(al)>1.6*S||Math.abs(ac)>1.1*S)continue;if(Math.abs(Math.sin(l.a-a-Math.PI/2))>.45)continue;c.push([Math.hypot(dx,dy),l])}
+  c.sort((x,y)=>x[0]-y[0]);for(const[,l]of c.slice(0,3)){const e=logEnds(l);hlSeg(e[0],e[1],HLC.pick)}}}
 // the squares near you while you hold something (or near the forks while a pallet is lifted), and the one that would be used
 function drawGrid(){const lift=P.driving&&T.out&&T.kind==='forklift'&&PALS.some(p=>p.fk===T),hold=!P.driving&&!P.pass&&heldList().length&&!IN;if(!lift&&!hold)return;
  const cx=lift?forkPt(T)[0]:P.x,cy=lift?forkPt(T)[1]:P.y,R=lift?3*S:RCH()+S;g.lineWidth=1;g.strokeStyle='rgba(255,255,255,.16)';g.beginPath();
  for(let j=Math.floor((cy-R)/S);j<=Math.floor((cy+R)/S);j++)for(let i=Math.floor((cx-R)/S);i<=Math.floor((cx+R)/S);i++){const x=(i+.5)*S,y=(j+.5)*S;if(Math.hypot(x-cx,y-cy)>R||bldAt(x,y))continue;g.rect(i*S+1,j*S+1,S-2,S-2)}g.stroke();
  if(hold){const c=dropCell();if(c.i!==undefined&&(MX!=null||!c.why)){const bad=!!c.why;g.fillStyle=bad?'#ff6b5a44':'#ffd16655';g.strokeStyle=bad?'#ff6b5a':'#ffd166';g.lineWidth=1.5;{const w=(c.bar&&!c.br?2:1)*S,h=(c.bar&&c.br?2:1)*S;g.fillRect(c.i*S+1,c.j*S+1,w-2,h-2);g.strokeRect(c.i*S+1,c.j*S+1,w-2,h-2)}}}
- else{const f=forkPt(T);if(!flatbeds().some(e=>e.pals.some((_,i)=>{const q=placePt(e,i);return Math.hypot(q[0]-f[0],q[1]-f[1])<.9*S}))){const q=palSpot(f),bad=!!q.why;g.strokeStyle=bad?'#ff6b5a':'#ffd166';g.lineWidth=1.5;g.strokeRect(q.x-S+1,q.y-S+1,2*S-2,2*S-2)}}}
+ /* the place where a lifted pallet goes down is marked by drawSpaceHL */}
 // items are always drawn upright on the screen (their bottom to the south), whatever they lie on: a turned room, a vehicle, a pallet
 function itemSprite(type,x,y,r){const m=g.getTransform(),a=Math.atan2(m.b,m.a);if(Math.abs(a)<1e-3)return itemSprite0(type,x,y,r);g.save();g.translate(x,y);g.rotate(-a);try{itemSprite0(type,0,0,r)}finally{g.restore()}}
 // on a vehicle's bed an item turns with the vehicle, its bottom toward the vehicle's back (drawn in the vehicle's own frame, x forward)
@@ -3007,7 +3047,7 @@ function draw(t){
  for(const v of Object.values(veh))if(v.out&&v.kind==='crane')drawTool(v);   // the crane's tool under what it holds (a pallet sits on the forks), the boom over both
  for(const p of PALS)if(p.fk)drawPallet(p);for(const o of ATT)if(o.onP)drawAtt(o);for(const l of LG)if(l.fk)drawLog(l);for(const o of ATT)if(o.fk)drawAtt(o);for(const it of GI)if(it.fk){if(it.type==='barrier'||it.type==='cone')drawObst(it);else{g.save();g.translate(it.x,it.y);g.rotate(it.a||0);itemSprite(it,0,0,it.type==='canister'?S*.46:S*.38);g.restore()}}
  for(const v of Object.values(veh))if(v.out&&v.kind==='crane')drawCraneTop(v);if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
- drawReach();
+ drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
  drawSeats();drawPlayer();drawTop();drawTestGrid();
  const tg=objective(),O=P.driving&&T.out?T:P;
