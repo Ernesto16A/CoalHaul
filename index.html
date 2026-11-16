@@ -344,7 +344,7 @@ function pushBlock(){const r=6,fix=b=>{const x0=b.x0-r,x1=b.x1+r,y0=b.y0-r,y1=b.
  for(const o of OFFICES)fix(offRect(o));for(const b of BLDS)fix(b);for(const w of WALLS)fix(w);
  for(const it of GI){if(it.type==='cone'){const d=Math.hypot(P.x-it.x,P.y-it.y),m=.38*S+r;if(d<m&&d>0){P.x=it.x+(P.x-it.x)/d*m;P.y=it.y+(P.y-it.y)/d*m}}else if(it.type==='barrier'){const hx=(it.r?.3:1)*S,hy=(it.r?1:.3)*S;fix({x0:it.x-hx,x1:it.x+hx,y0:it.y-hy,y1:it.y+hy})}}}
 // off-road: as soon as any corner of the vehicle or of a trailer it tows is on the grass (outside the street and its dirt edge), the whole rig is slowed (OFFSP) and its consumption (litres per 100 km) is OFFFUEL times the road's
-const OFFSP=.5,OFFFUEL=2;
+const OFFSP=.5,OFFFUEL=2,CRANEBURN=.01;   // CRANEBURN: litres a second the crane burns while it works
 function rigOff(){if(!T)return false;for(const b of[vBody(T,T.x,T.y,T.a),...chain().map(t=>tBody(t,t.x,t.y,t.b))])for(const[u,v]of rectPts(b.x0,b.x1,b.h)){const w=wld(u*S,v*S,b.ox,b.oy,b.a);if(!onRoad(w[0],w[1]))return true}return false}
 const DMAX=120,DA0=135,DSW=270,dial=(()=>{const c=60,cy=58,r=46,pt=(a,d)=>[c+Math.cos(a*Math.PI/180)*d,cy+Math.sin(a*Math.PI/180)*d],f=n=>n.toFixed(1);
 const arc=(a0,a1)=>{const p=pt(a0,r),q=pt(a1,r);return'M'+f(p[0])+' '+f(p[1])+'A'+r+' '+r+' 0 1 1 '+f(q[0])+' '+f(q[1])};
@@ -1186,8 +1186,11 @@ function craneFeet(){const v=T;if(Math.abs(v.v)>.3)return flash('Stop the truck 
  v.ftOn=false;flash('Folding the crane and lifting the feet…')}
 function craneTick(v,dt){const c=crOf(v);v.ft=v.ft||0;
  if(v.ftOn){v.ft=Math.min(1,v.ft+dt*.8);
-  if(craneRun(v)&&v.ft>=1){c.rot=ang(c.rot+((K.right?1:0)-(K.left?1:0))*.7*dt);c.ext=Math.max(0,Math.min(1,c.ext+((K.up?1:0)-(K.down?1:0))*.2*dt));c.hr=ang(c.hr+((K.ce?1:0)-(K.cq?1:0))*1.4*dt)}}
+  if(craneRun(v)&&v.ft>=1){const kk=K.left||K.right||K.up||K.down||K.ce||K.cq;   // the crane works off the truck's engine: while the boom or the hook is being moved it burns CRANEBURN litres a second, and with an empty tank it stands still
+   if(kk&&!(v.fuel>0)){if(performance.now()-crSay>2500){crSay=performance.now();flash('The tank is empty: the crane cannot move.')}}
+   else{c.rot=ang(c.rot+((K.right?1:0)-(K.left?1:0))*.7*dt);c.ext=Math.max(0,Math.min(1,c.ext+((K.up?1:0)-(K.down?1:0))*.2*dt));c.hr=ang(c.hr+((K.ce?1:0)-(K.cq?1:0))*1.4*dt);if(kk)v.fuel=Math.max(0,v.fuel-CRANEBURN*dt)}}}
  else{const tw=(x,r)=>Math.abs(x)<r?0:x-Math.sign(x)*r;c.rot=tw(c.rot,.9*dt);c.ext=Math.max(0,c.ext-.3*dt);c.hr=tw(c.hr,1.6*dt);   // folding: the boom turns back over the truck and slides in, then the feet come up
+  if(c.rot||c.ext||c.hr)v.fuel=Math.max(0,v.fuel-CRANEBURN*dt);   // folding the boom back burns fuel too
   if(!c.rot&&!c.ext&&!c.hr)v.ft=Math.max(0,v.ft-dt*.8)}
  const q=hookPt(v),a=liftA(v);for(const o of ATT)if(o.fk===v&&v.ctool==='cables'){o.x=q[0];o.y=q[1];o.a=a}   // what hangs on the cables follows the hook (pallets, attachments on the forks and logs follow through syncPallets / syncLogs)
  for(const o of Object.values(veh))if(o.fk===v){o.x=q[0];o.y=q[1];o.a=a;o.v=0}
