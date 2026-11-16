@@ -1183,7 +1183,7 @@ const forkPt=v=>v.kind==='crane'?hookPt(v):wld(1.25*S,0,v.x,v.y,v.a);
 const craneRun=v=>P.pass===v&&P.seatSd===CSEAT;
 const crHeld=v=>PALS.find(p=>p.fk===v)||LG.find(l=>l.fk===v)||ATT.find(o=>o.fk===v);
 function craneFeet(){const v=T;if(Math.abs(v.v)>.3)return flash('Stop the truck first.');
- if(!v.ftOn){v.ftOn=true;return flash('Feet going down. Climb into the crane cab at the back (click it) to work the crane.')}
+ if(!v.ftOn){if(v.on||v.fk)return flash('The feet cannot go down while the crane truck rides on a trailer or hangs on cables: drive it off first. The crane cannot be used from there.');v.ftOn=true;return flash('Feet going down. Climb into the crane cab at the back (click it) to work the crane.')}
  if(crHeldAny(v))return flash('Set the load down first: the crane cannot fold with something on the hook.');
  v.ftOn=false;flash('Folding the crane and lifting the feet…')}
 function craneTick(v,dt){const c=crOf(v);v.ft=v.ft||0;
