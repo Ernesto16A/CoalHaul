@@ -334,7 +334,7 @@ const doorOut=(o,back)=>{const p=[P.x<-3000&&o.doors&&!back?o.X+o.doors.reduce((
 const inBox=(r,x,y,m)=>x>r.x0-m&&x<r.x1+m&&y>r.y0-m&&y<r.y1+m;
 const APRON=114;   // trailers may run over the kerb and the pavement at a bend (a truck apron), but never onto the grass
 const bldAt=(x,y)=>!IN&&(WALLS.some(r=>inBox(r,x,y,0))||BLDS.some(r=>inBox(r,x,y,0))||OFFICES.some(o=>inBox(offRect(o),x,y,0)));   // a square under a building or wall: nothing can be left there (roads and anywhere else are fine)
-const envSolid=(x,y,W)=>{if(!onRoad(x,y,W))return true;if(obstAt(x,y))return true;
+const envSolid=(x,y,W)=>{if(obstAt(x,y))return true;   /* the verge is no wall any more: vehicles may leave the road (half speed, double fuel); walls and buildings still stop them */ 
  for(const r of WALLS)if(inBox(r,x,y,3))return true;for(const r of BLDS)if(inBox(r,x,y,3))return true;for(const o of OFFICES)if(inBox(offRect(o),x,y,3))return true;return false};
 function envBad(tx,ty,ta,pz){const ch=chain();
  for(const[bi,b]of[vBody(T,tx,ty,ta),...ch.map((t,i)=>tBody(t,pz[i][0],pz[i][1],pz[i][2]))].entries())for(const[u,v]of rectPts(b.x0,b.x1,b.h)){const w=wld(u*S,v*S,b.ox,b.oy,b.a);if(envSolid(w[0],w[1],bi?APRON:ROADW))return true}
@@ -343,7 +343,7 @@ function envBad(tx,ty,ta,pz){const ch=chain();
 function pushBlock(){const r=6,fix=b=>{const x0=b.x0-r,x1=b.x1+r,y0=b.y0-r,y1=b.y1+r;if(P.x>x0&&P.x<x1&&P.y>y0&&P.y<y1){const d=[P.x-x0,x1-P.x,P.y-y0,y1-P.y],m=Math.min(...d);if(m==d[0])P.x=x0;else if(m==d[1])P.x=x1;else if(m==d[2])P.y=y0;else P.y=y1}};
  for(const o of OFFICES)fix(offRect(o));for(const b of BLDS)fix(b);for(const w of WALLS)fix(w);
  for(const it of GI){if(it.type==='cone'){const d=Math.hypot(P.x-it.x,P.y-it.y),m=.38*S+r;if(d<m&&d>0){P.x=it.x+(P.x-it.x)/d*m;P.y=it.y+(P.y-it.y)/d*m}}else if(it.type==='barrier'){const hx=(it.r?.3:1)*S,hy=(it.r?1:.3)*S;fix({x0:it.x-hx,x1:it.x+hx,y0:it.y-hy,y1:it.y+hy})}}}
-const DMAX=120,DA0=135,DSW=270,dial=(()=>{const c=60,cy=58,r=46,pt=(a,d)=>[c+Math.cos(a*Math.PI/180)*d,cy+Math.sin(a*Math.PI/180)*d],f=n=>n.toFixed(1);
+const OFFSP=.5,OFFFUEL=2,DMAX=120,DA0=135,DSW=270,dial=(()=>{const c=60,cy=58,r=46,pt=(a,d)=>[c+Math.cos(a*Math.PI/180)*d,cy+Math.sin(a*Math.PI/180)*d],f=n=>n.toFixed(1);
 const arc=(a0,a1)=>{const p=pt(a0,r),q=pt(a1,r);return'M'+f(p[0])+' '+f(p[1])+'A'+r+' '+r+' 0 1 1 '+f(q[0])+' '+f(q[1])};
 let s='<svg viewBox="0 0 120 100" width="150" height="125" style="display:block;margin:0 auto">';
 s+='<path d="'+arc(DA0,DA0+DSW)+'" fill="none" stroke="currentColor" stroke-opacity=".15" stroke-width="6" stroke-linecap="round"/>';
@@ -1623,11 +1623,13 @@ function step(dt){
  else if(P.driving&&T.out){
   const v=T,ch0=chain(),o=[T.x,T.y,T.a,ch0.map(t=>[t.x,t.y,t.b,t.hx,t.hy])],pz=()=>chain().map(t=>[t.x,t.y,t.b]),was=badPose(T.x,T.y,T.a,pz()),wasE=!COLL||envBad(T.x,T.y,T.a,pz());
   const gdk=gdeck(T),pinB=!!(gdk&&(gdk.ramp||gdk.rp>.02)),pin=pinB||ch0.some(t=>TRL[t.kind].ramp&&(t.ramp||t.rp>.02));if(pin&&thr)flash(pinB?'Raise the ramp bed before driving: tap Space.':'Raise the ramp before moving the trailer: tap Space (V selects the ramp trailer).');   // a lowered ramp pins the rig
+  const OFFR=onRoad(v.x,v.y)?1:OFFSP;   // off the road: half the speed, twice the fuel (OFFSP, OFFFUEL)
   v.v+=thr*(thr*v.v<0?KD.acc*2:KD.acc)*dt;if(!thr)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v),5*dt);
   if(K.brake)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v),10*dt);
   v.v=Math.max(-3,Math.min(KD.vmax,v.v));
+  if(OFFR<1){const c=(v.v>0?KD.vmax:3)*OFFR;if(Math.abs(v.v)>c)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v)-c,12*dt)}   // leaving the road: eased down to the off-road top speed, then held there
   if(pin||v.fuel<=0)v.v=0;
-  {const tn=Math.abs(v.st)/KD.maxst,cap=(v.v>0?KD.vmax:3)*(1-TURNBRAKE*tn);if(Math.abs(v.v)>cap)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v)-cap,(2+4*tn)*dt)}
+  {const tn=Math.abs(v.st)/KD.maxst,cap=(v.v>0?KD.vmax:3)*OFFR*(1-TURNBRAKE*tn);if(Math.abs(v.v)>cap)v.v-=Math.sign(v.v)*Math.min(Math.abs(v.v)-cap,(2+4*tn)*dt)}
   {const sf=Math.min(1,Math.abs(v.v)/KD.vmax),lock=KD.maxst*(1-.45*sf);
    if(stIn){const d=stIn*lock-v.st,rate=STEERRATE*(1-.4*sf)*(stIn*v.st<0?1.6:1)*dt;v.st+=Math.sign(d)*Math.min(Math.abs(d),rate)}
    else if(v.st){const rate=(.7+1.3*sf)*dt;v.st-=Math.sign(v.st)*Math.min(Math.abs(v.st),rate)}
@@ -1636,7 +1638,7 @@ function step(dt){
   follow(dt);
   if((!was&&badPose(v.x,v.y,v.a,pz()))||(!wasE&&envBad(v.x,v.y,v.a,pz()))){v.x=o[0];v.y=o[1];v.a=o[2];ch0.forEach((t,i)=>{[t.x,t.y,t.b,t.hx,t.hy]=o[3][i]});v.v=0}
   tryBoard(v);
-  v.fuel=Math.max(0,Math.min(KD.fuel,v.fuel)-l100(v,KD)/1e5*Math.abs(v.v)*VM*SPX/S*dt);   /* (a tank can never hold more than it is: an older save with a bigger tank is cut down) */if(v.fuel<=0)v.v=0;
+  v.fuel=Math.max(0,Math.min(KD.fuel,v.fuel)-l100(v,KD)*(OFFR<1?OFFFUEL:1)/1e5*Math.abs(v.v)*VM*SPX/S*dt);   /* (a tank can never hold more than it is: an older save with a bigger tank is cut down) */if(v.fuel<=0)v.v=0;
  }else if(!P.driving&&!P.pass){
   const px0=P.x,py0=P.y;
   let dx=(K.right?1:0)-(K.left?1:0),dy=(K.down?1:0)-(K.up?1:0);if(IROT()){const r=IROT(),c=Math.cos(r),s=Math.sin(r),t=dx;dx=t*c+dy*s;dy=-t*s+dy*c}   // keys are screen directions, the room is turned
