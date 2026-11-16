@@ -62,7 +62,7 @@ html,body,#hud,#bl,#msg,#touch{-webkit-user-select:none;user-select:none;-webkit
 <button id="tbtn">Test</button>
 <div id="tp"><b>Test</b> · debug<label for="tcash">Cash (set to)</label><div class="row"><input id="tcash" type="number" step="100" inputmode="numeric" placeholder="e.g. 5000"><button id="tset">Set</button></div><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tbed" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Bed type change in the garage</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tcol" type="checkbox" checked style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Collision (kerbs, walls, buildings)</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tgrid" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Grid: tiles and chunks</span></label><label>Construction sites</label><div class="row"><button id="tbuild">Build all</button></div><label for="ttu">Turn a building (90° clockwise)</label><div class="row"><select id="ttu"></select><button id="ttugo">Turn</button></div><label>Crane test</label><div class="row"><button id="tcrane">Crane kit at the garage</button></div><label for="ttp">Teleport player to</label><div class="row"><select id="ttp"></select><button id="ttpgo">Go</button></div><div id="tmsg" style="min-height:18px;margin-top:8px;font-size:12px;color:#ffd29f"></div></div>
 <div id="gp"></div>
-<div id="bl"><div class="p" id="selp" style="display:none;align-items:center"></div><div id="vd" class="p" style="display:none"><div id="vn"></div><div class="vr">Load <span id="cl"></span></div><div class="bar"><i id="load"></i></div><div id="dial"></div><div class="vr" style="text-align:center;margin:0 0 2px;min-height:15px"><b id="spd"></b></div><div class="vr">Fuel <span id="fl"></span></div><div class="bar"><i id="fbar"></i></div></div></div>
+<div id="bl"><div class="p" id="selp" style="display:none;align-items:center"></div><div id="vd" class="p" style="display:none"><div id="vn"></div><div id="vdrv"><div class="vr">Load <span id="cl"></span></div><div class="bar"><i id="load"></i></div><div id="dial"></div><div class="vr" style="text-align:center;margin:0 0 2px;min-height:15px"><b id="spd"></b></div></div><div class="vr">Fuel <span id="fl"></span></div><div class="bar"><i id="fbar"></i></div><div id="chang" style="display:none"></div></div></div>
 <div id="msg"></div>
 <div id="touch"><div id="stick"><div id="knob"></div></div><div class="ac"><button id="vb">V</button><button id="cb">C</button><button id="gb">G</button><button id="hb" class="e">␣</button><button id="qb" data-k="cq" style="display:none">Q</button><button id="eb" data-k="ce" style="display:none">E</button></div></div>
 <script>
@@ -1069,7 +1069,7 @@ const curSel=()=>{const ch=chain();return ch.length?(ch.includes(selT)?selT:ch[c
 const nearTip=(fh,locked)=>{if(!fh)return null;if(fh.alt)return nearTip(Object.assign({},fh,{alt:null}),locked)||nearTip(fh.alt,locked);let b=null,bd=VINNER*S;for(const t of Object.values(trl)){if(isGlue(t))continue;if(!t.out||(t.ld&&t.ld.go)||t.coupled||!fh.cls.includes(TRL[t.kind].cls)||(fh.ok&&!fh.any&&!fh.ok(t.kind)))continue;if(!locked&&t.ld&&(t.ld.t.rp||0)<RAMPDOWN)continue;   /* a trailer riding on a ramp trailer can only be taken off with the ramp down */
 const k=tipPt(t),d=Math.hypot(k.x-fh.x,k.y-fh.y);if(d<=bd){bd=d;b=t}}return b};
 const selTr=()=>P.driving&&T.out?nearTip(freeHost()):null;
-function cycleTrailer(){if(!P.driving||!T.out)return flash('Get in a vehicle first.');const ch=chain(),at=T.kind==='forklift'&&attOf(T);if(!ch.length&&!at)return flash('No trailer attached.');
+function cycleTrailer(){if(P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT)return craneSelect();if(!P.driving||!T.out)return flash('Get in a vehicle first.');const ch=chain(),at=T.kind==='forklift'&&attOf(T);if(!ch.length&&!at)return flash('No trailer attached.');
  const cur=selVeh==='att'&&at?'att':selVeh===T||!ch.length?T:curSel(),all=(at?['att']:[]).concat(ch,[T]),nx=all[(all.indexOf(cur)+1)%all.length];
  if(nx==='att'){selVeh='att';return flash('Selected: '+ATTK[at].n+' (C detaches it)')}
  if(nx===T){selVeh=T;return flash('Selected: the vehicle'+(KD.flat||KD.trunk?' (its own bed)':''))}
@@ -1199,7 +1199,22 @@ function craneTick(v,dt){const c=crOf(v);v.ft=v.ft||0;
 const CTOOLS=['forks','claw','grab','cables'],CSLOT=1.55;   // CSLOT: the cables' place on the deck, between the cabs
 const cslotPt=v=>wld(CSLOT*S,0,v.x,v.y,v.a);
 const crHeldAny=v=>crHeld(v)||Object.values(veh).some(o=>o.fk===v)||Object.values(trl).some(t=>t.fk===v);
+// what hangs on the hook, in the order V cycles through it: the tool first (forks, claw, grab or cables), then what it carries
+function hangList(v){const o=[];if(v.ctool)o.push({k:'tool',n:ATTK[v.ctool].n,t:'tool'});
+ for(const p of PALS)if(p.fk===v){const c=(p.crates||[]).filter(Boolean).length;o.push({k:'load',n:'Pallet'+(c?' with '+c+(c>1?' crates':' crate'):''),t:'load'})}
+ {const n=LG.filter(l=>l.fk===v).length;if(n)o.push({k:'load',n:n+(n>1?' logs':' log'),t:'load'})}
+ for(const a of ATT)if(a.fk===v)o.push({k:'load',n:ATTK[a.kind].n,t:'attachment'});
+ for(const e of Object.values(veh))if(e.fk===v)o.push({k:'load',n:entName(e),t:'vehicle'});
+ for(const t of Object.values(trl))if(t.fk===v)o.push({k:'load',n:entName(t),t:'trailer'});
+ return o}
+const hangSel=(v,h)=>Math.min(v.csel||0,h.length-1);
+function craneSelect(){const v=P.pass;if(!(v.ft>=1&&v.ftOn))return flash('Put the feet down first: Space from the truck cab.');const h=hangList(v);if(!h.length)return flash('Nothing hangs on the hook.');if(h.length===1)return flash('Only one thing on the hook: '+h[0].n+'.');
+ v.csel=(hangSel(v,h)+1)%h.length;const s=h[v.csel];flash('Selected: '+s.n+(s.k==='tool'?' (C takes it off)':' (C sets it down)'))}
+let hangSig='';
+function drawHang(v){const h=hangList(v),s=hangSel(v,h),sg=h.map(x=>x.n).join('|')+'#'+s;if(sg===hangSig)return;hangSig=sg;
+ $('chang').innerHTML='<div class="vr" style="margin-top:8px">On the hook <small style="opacity:.7">· V select</small></div>'+(h.length?h.map((x,i)=>`<div style="margin-top:3px;padding:3px 7px;border-radius:6px;font-size:12px;color:#fff;background:${i===s?'#3b6ea5':'#2b3642'};border:1px solid ${i===s?'#8fc1ff':'#33414f'}">${i===s&&h.length>1?'▸ ':''}${x.n} <small style="opacity:.65">${x.t}</small></div>`).join(''):'<div style="margin-top:3px;font-size:12px;opacity:.65">nothing</div>')}
 function craneTool(){const v=P.pass;if(!(v.ft>=1&&v.ftOn))return flash('Put the feet down first: Space from the truck cab.');
+ {const h=hangList(v),s=h[hangSel(v,h)];if(s&&s.k==='load')return craneHook()}   // a load is the picked one: C sets it down
  const q=hookPt(v);
  if(v.ctool){if(crHeldAny(v))return flash('Set the load down first.');const k=v.ctool,nm=ATTK[k].n;
   const o={x:q[0],y:q[1],a:liftA(v),kind:k},pp=palAt(q),fp=pp?null:freePlaceAt(q);if(pp)o.onP=pp;else if(fp){o.on={e:fp.e,p:fp.p,da:0}}
@@ -1766,7 +1781,7 @@ function step(dt){
  const rc=rigCs(),c0=rc[0],st=selTr();
 
  if(!P.driving){const q=padAt(),nc=nearCab(),fc=nearFuelCarrier();
-  m=P.pass&&craneRun(P.pass)?(P.pass.ft>=1&&P.pass.ftOn?'Crane cab: A / D swing the boom · W / S slide it out and in · Q / E turn the load · C attaches or detaches a tool ('+(P.pass.ctool?ATTK[P.pass.ctool].n:'none')+') · Space lifts or sets down. Boom '+(boomL(P.pass)/S).toFixed(1)+' units.':'Crane cab: the feet must be down first (Space from the truck cab).'):P.pass?'Passenger: double-click off the vehicle to get out · click the driver seat to drive.'+(KOF(P.pass).trunk?' · Space opens or closes the boot.':''):panelOpen?'Walk away from the area (or press Space / Esc) to close the panel.':q?upText(q):leverHint()?leverHint():pourHint()?pourHint():tankHint()?tankHint():itemHint()?itemHint():fuelHover()?'Click to '+(fuelHover().c.e.nz?'pick up':'put out')+' the refuel zone of '+fuelHover().c.e.name+'.':nc?'Click a seat to get in the '+KOF(nc).n+'.':'On foot: WASD to walk. Walk up to a cab and click a seat.'}
+  m=P.pass&&craneRun(P.pass)?(P.pass.ft>=1&&P.pass.ftOn?'Crane cab: A / D swing the boom · W / S slide it out and in · Q / E turn the load · C attaches or detaches a tool ('+(P.pass.ctool?ATTK[P.pass.ctool].n:'none')+') · V selects what hangs on the hook · Space lifts or sets down. Boom '+(boomL(P.pass)/S).toFixed(1)+' units.':'Crane cab: the feet must be down first (Space from the truck cab).'):P.pass?'Passenger: double-click off the vehicle to get out · click the driver seat to drive.'+(KOF(P.pass).trunk?' · Space opens or closes the boot.':''):panelOpen?'Walk away from the area (or press Space / Esc) to close the panel.':q?upText(q):leverHint()?leverHint():pourHint()?pourHint():tankHint()?tankHint():itemHint()?itemHint():fuelHover()?'Click to '+(fuelHover().c.e.nz?'pick up':'put out')+' the refuel zone of '+fuelHover().c.e.name+'.':nc?'Click a seat to get in the '+KOF(nc).n+'.':'On foot: WASD to walk. Walk up to a cab and click a seat.'}
  else if(!m){
   if(st)m='Trailer at the hitch: '+st.name+'. Press C to hitch it.';
   else if(T.kind==='crane')m=T.ftOn?(T.ft<1?'Feet going down…':'Feet down. Click the crane cab at the back to work the crane · Space folds it and lifts the feet.'):T.ft>0?'Folding the crane…':'Crane truck: stop, then Space puts the 4 feet down'+(chain().length?' (V selects the truck itself; with a trailer selected, Space works the trailer)':'')+'.';
@@ -1788,7 +1803,8 @@ function step(dt){
  $('cash').textContent='$'+money(cash);
  if(!STORY.fuel&&plant.reqs[0].got>=5-1e-6&&P.driving&&T.out&&T.fuel>=KD.fuel*.95)STORY.fuel=1;
  goalTick();{const h=goalHTML();if(h!==$('goal')._h){$('goal').innerHTML=h;$('goal')._h=h;document.documentElement.style.setProperty('--gh',$('goal').offsetHeight+'px')}}
- $('vd').style.display=P.driving&&T.out?'block':'none';$('vn').textContent=T.name||'';$('fl').textContent=T.tank?T.fuel.toFixed(1)+' / '+KD.fuel+' L ('+T.tank.toUpperCase()+' tank)':'No tank';$('fbar').style.width=(T.tank?T.fuel/KD.fuel*100:0)+'%';$('fbar').style.background=T.fuel<KD.fuel*.2?'#e0442e':'#6fb6ff';
+ const cvH=P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null,cvD=cvH?KOF(cvH):KD,cvT=cvH||T;   // in the crane cab the panel shows the crane truck: its fuel gauge and what hangs on the hook
+  $('vd').style.display=(P.driving&&T.out)||cvH?'block':'none';$('vdrv').style.display=cvH?'none':'';$('chang').style.display=cvH?'':'none';$('vn').textContent=cvT.name||'';$('fl').textContent=cvT.tank?cvT.fuel.toFixed(1)+' / '+cvD.fuel+' L ('+cvT.tank.toUpperCase()+' tank)':'No tank';$('fbar').style.width=(cvT.tank?cvT.fuel/cvD.fuel*100:0)+'%';$('fbar').style.background=cvT.fuel<cvD.fuel*.2?'#e0442e':'#6fb6ff';if(cvH)drawHang(cvH);
  if(P.driving&&T.out){const k=Math.abs(T.v)*KMH,fr=Math.min(1,k/DMAX);dial.n.setAttribute('transform','rotate('+(DA0+DSW*fr).toFixed(1)+' 60 58)');dial.p.setAttribute('stroke-dasharray',(fr*100).toFixed(1)+' 100');dial.t.textContent=Math.round(k);$('spd').textContent=rigOff()?'Off-road':''}
  {const cr=P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?'':'none';$('qb').style.display=cr;$('eb').style.display=cr}   // Q / E touch buttons: only in the crane cab
  $('hk').style.display=P.driving&&T.out&&R.on?'':'none';$('hk').textContent=R.on?'Trailer: hitched (C to drop)':'No trailer (C hitch · V select)';
