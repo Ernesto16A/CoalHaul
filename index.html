@@ -344,7 +344,7 @@ function pushBlock(){const r=6,fix=b=>{const x0=b.x0-r,x1=b.x1+r,y0=b.y0-r,y1=b.
  for(const o of OFFICES)fix(offRect(o));for(const b of BLDS)fix(b);for(const w of WALLS)fix(w);
  for(const it of GI){if(it.type==='cone'){const d=Math.hypot(P.x-it.x,P.y-it.y),m=.38*S+r;if(d<m&&d>0){P.x=it.x+(P.x-it.x)/d*m;P.y=it.y+(P.y-it.y)/d*m}}else if(it.type==='barrier'){const hx=(it.r?.3:1)*S,hy=(it.r?1:.3)*S;fix({x0:it.x-hx,x1:it.x+hx,y0:it.y-hy,y1:it.y+hy})}}}
 // off-road: as soon as any corner of the vehicle or of a trailer it tows is on the grass (outside the street and its dirt edge), the whole rig is slowed (OFFSP) and its consumption (litres per 100 km) is OFFFUEL times the road's
-const OFFSP=.5,OFFFUEL=2,CRANEBURN=.01;   // CRANEBURN: litres a second the crane burns while it works
+const OFFSP=.5,OFFFUEL=2,CRANEBURN=.5/60;   // CRANEBURN: litres a second the crane burns while it works (0.5 L a minute)
 function rigOff(){if(!T)return false;for(const b of[vBody(T,T.x,T.y,T.a),...chain().map(t=>tBody(t,t.x,t.y,t.b))])for(const[u,v]of rectPts(b.x0,b.x1,b.h)){const w=wld(u*S,v*S,b.ox,b.oy,b.a);if(!onRoad(w[0],w[1]))return true}return false}
 const DMAX=120,DA0=135,DSW=270,dial=(()=>{const c=60,cy=58,r=46,pt=(a,d)=>[c+Math.cos(a*Math.PI/180)*d,cy+Math.sin(a*Math.PI/180)*d],f=n=>n.toFixed(1);
 const arc=(a0,a1)=>{const p=pt(a0,r),q=pt(a1,r);return'M'+f(p[0])+' '+f(p[1])+'A'+r+' '+r+' 0 1 1 '+f(q[0])+' '+f(q[1])};
