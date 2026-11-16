@@ -89,6 +89,7 @@ function link(c,r,nc,nr){const add=(x,y,m)=>{const k=ck(x,y);if(!LOTT.has(k))RC.
  if(nc>c){add(c,r,EB);add(nc,nr,WB)}else if(nc<c){add(c,r,WB);add(nc,nr,EB)}else if(nr>r){add(c,r,SB);add(nc,nr,NB)}else{add(c,r,NB);add(nc,nr,SB)}}
 function road(...p){for(let i=0;i<p.length-1;i++){let c=p[i][0],r=p[i][1];const c2=p[i+1][0],r2=p[i+1][1],dc=Math.sign(c2-c),dr=Math.sign(r2-r);while(c!==c2||r!==r2){link(c,r,c+dc,r+dr);c+=dc;r+=dr}}}
 // a tile with exactly two perpendicular connections is a turn: its street bends around the tile corner they share
+const dm=m=>m&&!(m&(m-1))?(m<4?m<<2:m>>2)|m:m;   // a street tile with one connection is a dead end: it runs straight on to the far edge of its tile and stops there, into the grass (no rounded cap, no loose end)
 const corner=m=>m===(EB|SB)?[1,1]:m===(EB|NB)?[1,-1]:m===(WB|SB)?[-1,1]:m===(WB|NB)?[-1,-1]:null;
 // tile coordinates (column,row); one tile is 320 px. A 3x3 site is a ring of eight street tiles (four turns, four straights) around an island tile.
 // the city is a grid of streets (rows 3 and 7, columns 3, 7, 11 and 15) with a 3x3-chunk block between them, five across and three down: every lot fills a block (the shop's 2x2 lot sits in a corner of one) and its gate opens on the street beside it
@@ -188,7 +189,7 @@ const inRect=(r,x,y,m=0)=>x>r.x0-m&&x<r.x1+m&&y>r.y0-m&&y<r.y1+m;
 const inYard=(x,y)=>yards.some(r=>inRect(r,x,y));
 function distSeg(px,py,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((px-a[0])*dx+(py-a[1])*dy)/(dx*dx+dy*dy||1)));return Math.hypot(px-(a[0]+t*dx),py-(a[1]+t*dy))}
 function onRoad(x,y,W){if(inYard(x,y)||LOTS.some(l=>inRect(l,x,y)))return true;
- const c=Math.floor(x/TS),r=Math.floor(y/TS);const wk=ck(c,r),an=()=>WIDE.some(f=>f.k==='hub'?hubHit(f,x,y,W||ROADW):f.k==='bigT'?bigTHit(f,x,y,W||ROADW):f.k==='bigX'?bigXHit(f,x,y,W||ROADW):curveHit(f,x,y,W||ROADW));if(WT.has(wk))return an();if(WD.has(wk)&&an())return true;const m=RC.get(wk);if(m===undefined)return false;
+ const c=Math.floor(x/TS),r=Math.floor(y/TS);const wk=ck(c,r),an=()=>WIDE.some(f=>f.k==='hub'?hubHit(f,x,y,W||ROADW):f.k==='bigT'?bigTHit(f,x,y,W||ROADW):f.k==='bigX'?bigXHit(f,x,y,W||ROADW):curveHit(f,x,y,W||ROADW));if(WT.has(wk))return an();if(WD.has(wk)&&an())return true;let m=RC.get(wk);if(m===undefined)return false;m=dm(m);
  const lx=x-(c*TS+TS/2),ly=y-(r*TS+TS/2),w=W||ROADW,cn=corner(m);
  if(cn){const d=Math.hypot(lx-cn[0]*TS/2,ly-cn[1]*TS/2);return d>RR-w&&d<RR+w}
  if((Math.abs(lx)<=w&&Math.abs(ly)<=w)||(m&NB&&ly<0&&Math.abs(lx)<=w)||(m&SB&&ly>0&&Math.abs(lx)<=w)||(m&EB&&lx>0&&Math.abs(ly)<=w)||(m&WB&&lx<0&&Math.abs(ly)<=w))return true
@@ -198,7 +199,7 @@ function onRoad(x,y,W){if(inYard(x,y)||LOTS.some(l=>inRect(l,x,y)))return true;
  return false}
 // centre lines of the street tiles, so trees can keep away from them
 const SEGS=new Map();
-for(const[k,m]of RC){const q=k.split(','),cx=q[0]*TS+TS/2,cy=q[1]*TS+TS/2,cn=corner(m),L=[];
+for(const[k,m0]of RC){const m=dm(m0),q=k.split(','),cx=q[0]*TS+TS/2,cy=q[1]*TS+TS/2,cn=corner(m),L=[];
  if(cn){const px=cx+cn[0]*TS/2,py=cy+cn[1]*TS/2,a0=cn[0]>0?(cn[1]>0?Math.PI:Math.PI/2):(cn[1]>0?Math.PI*1.5:0);let pr=null;
   for(let i=0;i<=8;i++){const an=a0+i*Math.PI/16,pt=[px+Math.cos(an)*RR,py+Math.sin(an)*RR];if(pr)L.push([pr,pt]);pr=pt}}
  else{const c0=[cx,cy];L.push([c0,c0]);if(m&NB)L.push([c0,[cx,cy-TS/2]]);if(m&SB)L.push([c0,[cx,cy+TS/2]]);if(m&EB)L.push([c0,[cx+TS/2,cy]]);if(m&WB)L.push([c0,[cx-TS/2,cy]])}
@@ -1816,7 +1817,7 @@ const FIL=70;
 const ROADL=[[SH+30,64,'#7d7b72',1],[SH+27.5,62,'#b5b2a7'],[SH+4,57,'#d8d5ca',1],[SH,56,'#8b6c45'],[RW+2,45,'#222428',1],[RW,44,'#383a3f'],[RW-10,36,'#3e4046',1]],LINEC='rgba(242,242,232,.72)',MIDC='#f0c64a';
 function drawRoads(){
  const near=Z>=.5,vx=VW/2/Z+TS,vy=VH/2/Z+TS,seen=(x,y,m=0)=>Math.abs(x-cam.x)<vx+m&&Math.abs(y-cam.y)<vy+m,tiles=[];
- for(const[k,m]of RC){const q=k.split(','),cx=q[0]*TS+TS/2,cy=q[1]*TS+TS/2;if(seen(cx,cy))tiles.push([cx,cy,m,+q[0],+q[1]])}   // only the street tiles in view
+ for(const[k,m]of RC){const q=k.split(','),cx=q[0]*TS+TS/2,cy=q[1]*TS+TS/2;if(seen(cx,cy))tiles.push([cx,cy,dm(m),+q[0],+q[1]])}   // only the street tiles in view
  for(const L of[...ROADL,null]){if(L&&L[3]&&!near)continue;   // null: the markings
   for(const[cx,cy,m,tc,tr]of tiles){const N=m&NB,E=m&EB,Sx=m&SB,W=m&WB,cn=corner(m);
    let a0=0,px=0,py=0;if(cn){px=cx+cn[0]*TS/2;py=cy+cn[1]*TS/2;a0=cn[0]>0?(cn[1]>0?Math.PI:Math.PI/2):(cn[1]>0?Math.PI*1.5:0)}
