@@ -1380,6 +1380,7 @@ function itemTarget(){
  if(!held.length)for(const o of ATT){if(o.kind!=='cables'||o.fk)continue;const p=[o.x,o.y];cs.push({k:freeHands()>=2?'cabpick':'full',o,hp:p,d:()=>dP(p),hov:(x,y)=>Math.hypot(x-o.x,y-o.y)<.9*S,pri:0})}   // the cables: carried with both hands
  for(const v of Object.values(veh)){if(!v.out||v.kind!=='crane')continue;const p=cslotPt(v);if(v.cslot&&!held.length)cs.push({k:freeHands()>=2?'cslotpick':'full',e:v,hp:p,d:()=>dP(p),hov:(x,y)=>Math.hypot(x-p[0],y-p[1])<1*S,pri:0,cab:1});else if(!v.cslot&&v.ctool!=='cables'&&hi&&hi.type==='cables')cs.push({k:'cslotput',e:v,it:hi,hp:p,d:()=>dP(p),hov:(x,y)=>Math.hypot(x-p[0],y-p[1])<1*S,pri:0,cab:1})}
  if(hi&&hi.type==='cables')for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){if(!placeFree(e,i))continue;const p=placePt(e,i);cs.push({k:'cabput',e,pi:i,it:hi,hp:p,d:()=>dP(p),hov:(x,y)=>Math.hypot(x-p[0],y-p[1])<.9*S,pri:0})}
+ if(hi&&hi.type==='pallet')for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){if(!placeFree(e,i))continue;const p=placePt(e,i),a='b' in e?e.b:e.a;cs.push({k:'palput',e,pi:i,it:hi,hp:p,d:()=>dP(p),hov:(x,y)=>{const l=loc(x,y,p[0],p[1],a);return Math.abs(l[0])<1.05*S&&Math.abs(l[1])<1.05*S},pri:0})}   // a pallet in the hands goes on a free place of a flatbed (the whole 2x2), never into one item slot
  for(const it of GI){if(it.fk)continue;const p=[it.x,it.y],into=intoC(it);cs.push({k:into?(cn(it)<CRATECAP?'incrate':'cfull'):freeHands()>=ITEMS[it.type].hands?'ground':'full',it:into?hi:it,crate:it.type==='crate'?it:null,hp:p,d:()=>dP(p),hov:(x,y)=>it.type==='barrier'?obstHit(it,x,y,.4*S):Math.hypot(x-it.x,y-it.y)<.9*S,pri:0})}
  for(const pl of PALS){if(pl.planks||pl.fk||palAtt(pl)||pl.crates.some(Boolean)||pl.on&&!pl.on.e.out)continue;if(held.length&&!(hi&&hi.type==='pallet'))continue;const hovP2=(x,y)=>palCell(pl,x,y)>=0;   // an empty pallet: pick one up with both hands, or stack the one in your hands on it
   cs.push({k:hi?((pl.st||1)>=PSTK?'pstackfull':'palstack'):freeHands()>=2?'palpick':'full',pl,hp:[pl.x,pl.y],d:()=>dP([pl.x,pl.y]),hov:hovP2,pri:1})}
@@ -1387,7 +1388,7 @@ function itemTarget(){
   if(i<0){if(hi&&hi.type==='crate')i=cr.findIndex(x=>!x);else i=cr.map(Boolean).lastIndexOf(true)}
   if(i>=0){const c=cr[i];if(hi)k=hi.type==='crate'?(c?'taken':'onpal'):c?(cn(c)<CRATECAP?'incrate':'cfull'):null;else if(c)k=freeHands()>=2?'palcrate':'full'}
   if(k){const hp=palCellPt(pl,i);cs.push({k,pl,ci:i,crate:cr[i]||null,it:hi,hp,d:()=>dP([pl.x,pl.y]),hov:hovP,pri:1})}}
- for(const c of itemCarriers()){const en=endsOf(c.ox,c.oy,c.a,c.e0,c.e1),sl=c.e.slots,mid=[(en[0][0]+en[1][0])/2,(en[0][1]+en[1][1])/2],
+ for(const c of itemCarriers()){if(hi&&hi.type==='pallet'&&c.e.pals)continue;const en=endsOf(c.ox,c.oy,c.a,c.e0,c.e1),sl=c.e.slots,mid=[(en[0][0]+en[1][0])/2,(en[0][1]+en[1][1])/2],
    hovC=(x,y)=>{const l=loc(x,y,c.ox,c.oy,c.a);return l[0]>c.e0*S&&l[0]<c.e1*S&&Math.abs(l[1])<1.05*S};
   let k=null,idx=-1;
   const pl=i=>c.e.pals&&placeObj(c.e,placeOf(c.e,i));   // slots under a pallet belong to the pallet
@@ -1415,6 +1416,7 @@ function itemAction(){const t=itemTarget();if(!t)return false;
  if(t.k==='cslotpick'){t.e.cslot=null;giveItem(mkItem('cables'));flash('Cables taken off the crane truck.');return true}
  if(t.k==='cslotput'){t.e.cslot='cables';dropFromHands(t.it);flash('Cables put in their place on the crane truck.');return true}
  if(t.k==='cabput'){ATT.push({x:0,y:0,a:0,kind:'cables',on:{e:t.e,p:t.pi,da:0}});dropFromHands(t.it);syncCarried();flash('Cables put on the '+entName(t.e)+'.');return true}
+ if(t.k==='palput'){const q=placePt(t.e,t.pi),pl={x:q[0],y:q[1],a:'b' in t.e?t.e.b:t.e.a,crates:Array(9).fill(null),fk:null,da:0,on:{e:t.e,p:t.pi}};PALS.push(pl);t.e.pals[t.pi]=pl;dropFromHands(t.it);flash('Pallet put on the '+entName(t.e)+'.');return true}
  if(t.k==='incrate'){putIn(t.crate,t.it);dropFromHands(t.it);flash(ITEMS[t.it.type].n+' put in the crate ('+cn(t.crate)+'/9).');return true}
  if(t.k==='pstackfull'){flash('That stack is full ('+PSTK+' pallets).');return true}
  if(t.k==='palstack'){const h=heldList().find(i=>i.type==='pallet');t.pl.st=(t.pl.st||1)+1;dropFromHands(h);flash('Pallet stacked ('+t.pl.st+'/'+PSTK+').');return true}
@@ -1431,7 +1433,7 @@ function itemAction(){const t=itemTarget();if(!t)return false;
 const IK=()=>'Click';
 function itemHint(){const t=itemTarget();if(!t){const h=heldList();if(!h.length||P.driving||P.pass)return null;const c=dropCell();return c.why?'Holding the '+ITEMS[h[h.length-1].type].n+': point at a free square in reach (not inside a building) and click to put it down.':'Click to put the '+ITEMS[h[h.length-1].type].n+' down on the square.'}if(t.far)return'Too far to reach: step closer (the circle around you is your reach).';const R='';
  if(t.k==='bootopen')return'Click to open the boot of the '+entName(t.e)+'.';if(t.k==='bootclose')return'Click to close the boot of the '+entName(t.e)+'.';
- if(t.k==='cabpick')return'Click to pick up the cables (both hands).';if(t.k==='cslotpick')return'Click to take the cables off the crane truck.';if(t.k==='cslotput')return'Click to put the cables in their place on the crane truck.';if(t.k==='cabput')return'Click to put the cables on this flatbed place.';
+ if(t.k==='cabpick')return'Click to pick up the cables (both hands).';if(t.k==='cslotpick')return'Click to take the cables off the crane truck.';if(t.k==='cslotput')return'Click to put the cables in their place on the crane truck.';if(t.k==='cabput')return'Click to put the cables on this flatbed place.';if(t.k==='palput')return'Click to put the pallet on this flatbed place.';
  if(t.k==='incrate')return'Click to put the '+ITEMS[t.it.type].n+' in the crate ('+cn(t.crate)+'/9).';if(t.k==='cfull')return'That crate is full (9/9).';if(t.k==='palpick')return'Click to pick the pallet up with both hands'+((t.pl.st||1)>1?' (takes the top one of '+t.pl.st+')':'')+'.';if(t.k==='palstack')return'Click to stack the pallet on this one ('+(t.pl.st||1)+'/'+PSTK+').';if(t.k==='pstackfull')return'That stack is full ('+PSTK+' pallets).';if(t.k==='onpal')return'Click to put the crate on the pallet.';if(t.k==='palcrate')return'Click to take the crate off the pallet'+R+'.';
  return (t.k==='taken'?'That slot is taken: hover an empty one.':t.k==='full'?'Your hands are full.':t.k==='busy'?'Unhitch the trailer (C) before taking the hitch off.':t.k==='mount'?'Click to mount the hitch on the '+entName(t.e)+'.':t.k==='take'?'Click to take the hitch off the '+entName(t.e)+'.':t.k==='ground'?'Click to pick up the '+ITEMS[t.it.type].n+'.':t.k==='put'?'Click to put the '+ITEMS[t.it.type].n+' into the slots.':'Click to take an item out of the slots.')+R}
 // the reach circle around the player on foot, and a ring on what the mouse is over (yellow = in reach, red = too far)
@@ -1568,7 +1570,7 @@ function drawPallet(p){const u=S,h=PALW/2*u;g.save();g.translate(p.x,p.y);g.rota
   g.restore()}
  g.restore();
  if(ns>1){g.save();g.translate(p.x,p.y);g.fillStyle='rgba(18,22,28,.88)';g.beginPath();g.arc(0,0,9,0,7);g.fill();g.strokeStyle='#ffe27a';g.lineWidth=1.2;g.stroke();g.fillStyle='#fff';g.font='bold 13px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(ns,0,.5);g.restore()}   // the number of pallets in the stack, on top
- p.crates.forEach((c,i)=>{if(c){const q=palCellPt(p,i);crateSprite(c,q[0],q[1],PALW/6*u*.9)}})}
+ p.crates.forEach((c,i)=>{if(c){const q=palCellPt(p,i);g.save();g.translate(q[0],q[1]);g.rotate(p.a);crateSprite(c,0,0,PALW/6*u*.9);g.restore()}})}   // a crate stands on the pallet and turns with it
 function rampTarget(){const m=mouseWorld();if(m&&hoverSeat())return null;let best=null,bd=1e9;   // a vehicle's seat under the mouse comes first: a vehicle standing on a ramp can still be got into   // the ramp under the mouse (or, with no mouse, the closest one in reach)
  for(const t of Object.values(trl)){if(!t.out||t.ld||!TRL[t.kind].ramp)continue;const tr=TRL[t.kind],x0=(tr.co-tr.hw)*S,x1=x0-tr.rl*S,lp=loc(P.x,P.y,t.x,t.y,t.b),
    dd=Math.hypot(lp[0]-Math.max(x1,Math.min(x0,lp[0])),lp[1]-Math.max(-.9*S,Math.min(.9*S,lp[1])));
