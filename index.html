@@ -16,7 +16,7 @@ body.mapmode #tside,body.mapmode #hud,body.mapmode #gmbtn,body.mapmode #tbtn,bod
 .bar i{display:block;height:100%;width:0;background:var(--accent)}
 #chat{display:flex;flex-direction:column;gap:3px;max-width:min(420px,70vw)}#chlog{display:flex;flex-direction:column;gap:2px}#chlog div{background:rgba(14,16,20,.62);color:#e8e8ea;font:13px/1.35 system-ui,sans-serif;padding:3px 8px;border-radius:6px;transition:opacity .6s;word-break:break-word}#chlog div.old{opacity:0}#chat.open #chlog div{opacity:1}#chlog .sys{color:#9fd3ff}#chlog b{font-weight:600}#chin{display:none;pointer-events:auto;background:rgba(14,16,20,.88);color:#fff;border:1px solid #ffffff44;border-radius:6px;padding:6px 9px;font:14px system-ui,sans-serif;outline:none;width:min(420px,70vw)}#chat.open #chin{display:block}
 #bl{position:fixed;left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none;z-index:2}#vd{min-width:190px}#vd #vn{font-weight:bold;margin-bottom:4px}#vd .vr{font-size:13px;opacity:.95;margin-top:3px}#vd .bar{width:100%}#vd b{color:var(--accent)}
-@media (pointer:coarse){#bl{bottom:calc(env(safe-area-inset-bottom,0px) + 84px)}}
+@media (pointer:coarse){#bl{bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}}
 #msg{max-width:min(70%,calc(100vw - 460px));position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);background:var(--panel);padding:8px 14px;border-radius:6px;font-size:15px;text-align:center}
 #gp{display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(96vw,760px);height:min(92vh,820px);overflow-y:auto;box-sizing:border-box;background:rgba(18,22,18,.96);border:1px solid #fff3;border-radius:10px;padding:14px 16px;font-size:14px;z-index:7;touch-action:auto}
 #gp .gh{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px}
@@ -39,7 +39,7 @@ body.mapmode #tside,body.mapmode #hud,body.mapmode #gmbtn,body.mapmode #tbtn,bod
 #tp button{background:#2b3a2b;color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
 #touch{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:none;justify-content:space-between;align-items:flex-end;padding:0 max(12px,env(safe-area-inset-left,0px));pointer-events:none;z-index:3;--bs:min(58px,14vw);--js:min(140px,36vw)}
 #touch>div{display:grid;gap:8px;pointer-events:none}
-#touch #stick{display:block;position:relative;width:var(--js);height:var(--js);border-radius:50%;background:rgba(20,24,20,.45);border:2px solid #fff5;pointer-events:auto;touch-action:none}
+#touch #stick{display:none;position:fixed;left:0;top:0;width:var(--js);height:var(--js);border-radius:50%;background:rgba(20,24,20,.45);border:2px solid #fff5;pointer-events:none;touch-action:none;z-index:4}#touch #stick.on{display:block}#touch{justify-content:flex-end!important}
 #stick:before{content:"";position:absolute;inset:26%;border-radius:50%;border:1px dashed #fff3}
 #knob{position:absolute;width:44%;height:44%;left:28%;top:28%;border-radius:50%;background:rgba(241,239,230,.55);border:2px solid #fff8;pointer-events:none}
 #stick.on #knob{background:rgba(242,177,52,.8)}
@@ -53,8 +53,8 @@ body.inmenu #touch,body.inmenu #tside,body.inmenu #gmbtn,body.inmenu #tbtn{displ
 @media (pointer:coarse){#touch{display:flex}#msg{bottom:calc(env(safe-area-inset-bottom,0px) + 150px)}#gp button{padding:10px 14px;min-height:42px}#gp .sw button{min-width:36px;height:36px}#tbtn,#tp button{padding:9px 14px}#hud{padding-right:78px}.p{font-size:13px;padding:6px 10px}}
 @media (pointer:coarse){#dial{display:none}#vd{min-width:150px}}
 @media (pointer:coarse) and (min-width:700px) and (min-height:600px){#dial{display:block}#vd{min-width:190px}}
-@media (pointer:coarse) and (orientation:portrait){#msg{top:calc(var(--hudb,180px) + 8px);bottom:auto;max-width:92vw;font-size:14px}#bl{bottom:calc(env(safe-area-inset-bottom,0px) + 172px)}}
-@media (pointer:coarse) and (orientation:landscape){#msg{max-width:min(36%,320px);left:12px;transform:none;text-align:left;top:calc(env(safe-area-inset-top,0px) + 64px + var(--gh,32px));bottom:auto;font-size:13px}#bl{left:calc(min(140px,36vh) + 30px);bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}}
+@media (pointer:coarse) and (orientation:portrait){#msg{top:calc(var(--hudb,180px) + 8px);bottom:auto;max-width:92vw;font-size:14px}#bl{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);max-width:calc(100vw - 230px)}}
+@media (pointer:coarse) and (orientation:landscape){#msg{max-width:min(36%,320px);left:12px;transform:none;text-align:left;top:calc(env(safe-area-inset-top,0px) + 64px + var(--gh,32px));bottom:auto;font-size:13px}#bl{left:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}}
 @media (pointer:coarse) and (max-height:520px){#touch{--bs:min(48px,12vh);--js:min(120px,32vh)}#vd .bar{height:6px}#hud .p{padding:4px 8px}}
 </style></head><body>
 <canvas id="c"></canvas>
@@ -392,9 +392,12 @@ document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset
   kn.style.transform='translate('+vx*k+'px,'+vy*k+'px)';const dz=R*.28;JOY.on=L>dz;if(JOY.on)JOY.a=Math.atan2(vy,vx);
   setK(vx<-dz&&Math.abs(vx)>Math.abs(vy)*.5,vx>dz&&Math.abs(vx)>Math.abs(vy)*.5,vy<-dz&&Math.abs(vy)>Math.abs(vx)*.5,vy>dz&&Math.abs(vy)>Math.abs(vx)*.5)};
  const end=e=>{if(e.pointerId!==pid)return;pid=null;JOY.on=false;JOY.g=1;st.classList.remove('on');kn.style.transform='';setK(0,0,0,0)};
- st.addEventListener('pointerdown',e=>{if(pid!==null)return;e.preventDefault();pid=e.pointerId;try{st.setPointerCapture(pid)}catch(_){}st.classList.add('on');move(e)});
- st.addEventListener('pointermove',e=>{if(e.pointerId===pid)move(e)});
- ['pointerup','pointercancel','lostpointercapture'].forEach(t=>st.addEventListener(t,end));st.addEventListener('contextmenu',e=>e.preventDefault())}
+ // the stick appears wherever a finger goes down on the map with nothing to tap there, stays while the finger is held and follows it until it lifts. A short tap that did not move still counts as a tap (a double tap off the vehicle gets out, a tap on an empty square puts down what you hold)
+ let t0=0,x0=0,y0=0,far=false;
+ JOY.start=e=>{if(pid!==null)return;pid=e.pointerId;t0=performance.now();x0=e.clientX;y0=e.clientY;far=false;const R=st.offsetWidth/2||70;st.style.left=(e.clientX-R)+'px';st.style.top=(e.clientY-R)+'px';st.classList.add('on');move(e)};
+ JOY.cancel=()=>{if(pid!==null)end({pointerId:pid})};
+ addEventListener('pointermove',e=>{if(e.pointerId!==pid)return;if(Math.hypot(e.clientX-x0,e.clientY-y0)>12)far=true;move(e)});
+ ['pointerup','pointercancel'].forEach(t=>addEventListener(t,e=>{if(e.pointerId!==pid)return;const tap=t==='pointerup'&&!far&&performance.now()-t0<320;end(e);if(tap){MX=e.clientX;MY=e.clientY;clickAct()}}))}
 $('hb').addEventListener('pointerdown',()=>spaceDown());['pointerup','pointercancel','pointerleave'].forEach(t=>$('hb').addEventListener(t,()=>spaceUp()));addEventListener('blur',()=>{SPK.down=false});$('cb').addEventListener('pointerdown',()=>couple());$('vb').addEventListener('pointerdown',()=>cycleTrailer());$('gb').addEventListener('pointerdown',()=>dumpCargo());$('rb').addEventListener('pointerdown',()=>{if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}});
 $('chb').addEventListener('click',()=>{const c=document.getElementById('chat');if(c.classList.contains('open'))chatClose();else chatOpen('')});$('cmb').addEventListener('click',()=>{if(!bigMap)camMode()});   // touch: the chat and the camera (TAB)
 
@@ -1523,6 +1526,7 @@ function cwF(){const i=cwCell();if(i<0)return false;const c=CW.c,it=c.items[i],h
  c.items[i]=hi;dropFromHands(hi);flash(ITEMS[hi.type].n+' put in the crate ('+cn(c)+'/9).');return true}
 function cwG(){const i=CW?cwCell():-1,h=heldList(),hv=CW?null:targetCrate(itemTarget()),hc=hv||h.find(x=>x.type==='crate');if(i<0){if(hc){if(!cn(hc))return flash('The crate is already empty.');hc.items.fill(null);return flash('Crate emptied.')}if(CW)flash('Point at an item in the crate window, then press G to delete it.');return}const it=CW.c.items[i];if(!it)return flash('That cell is empty.');CW.c.items[i]=null;flash('Deleted: '+ITEMS[it.type].n+'.')}
 cv.addEventListener('pointerdown',e=>{if(bigMap||e.button)return;MX=e.clientX;MY=e.clientY;
+ if(e.pointerType==='touch'&&TOUCHUI&&JOY.start){if(ptrs.size>1){JOY.cancel();return}if(!tapTarget()){JOY.start(e);return}}   // touch: nothing to tap here: the stick
  if(CW&&!P.driving&&!P.pass&&inCW()){const i=cwCell();if(i>=0&&CW.c.items[i])DRAG={i};else if(i>=0)cwF();return}   // an item: picked up by the mouse (a click takes it, a drag moves it); an empty cell: put what you hold in
  if(CW){CW=null;DRAG=null;return}   // a click outside the crate window closes it
  clickAct()});
@@ -1723,6 +1727,12 @@ function drawCrLever(){if(!crusher.built)return;const r=CRLR(),w=r.x1-r.x0,h=r.y
 function leverTarget(){if(!hasLever()||P.driving)return null;const m=mouseWorld();if(!m||m[0]<LEVER.x||m[0]>LEVER.x+LEVER.w||m[1]<LEVER.y||m[1]>LEVER.y+LEVER.h)return null;return{far:Math.hypot(P.x-(LEVER.x+LEVER.w/2),P.y-(LEVER.y+10))>RCH()}}
 const leverHint=()=>{const c=crLeverT();if(c)return c.far?'Too far to reach the lever.':'Click to load '+(crusher.gsel?'sand':'gravel')+' on the crusher\'s loading pad instead.';const t=leverTarget();return t?(t.far?'Too far to reach the lever.':IN.o.n==='lumberyard'?'Click to switch the lumberyard '+(lumberOn?'off: it stops making logs, so no coal is burnt for it.':'on.'):IN.o.n==='crusher'?'Click to switch the crusher '+(crusherOn?'off: it stops crushing, so no coal is burnt for it.':'on.'):IN.o.n==='iron mine'?'Click to switch the iron mine '+(ironOn?'off: it stops making iron ore, so no coal is burnt for it.':'on.'):IN.o.n==='quarry'?'Click to switch the quarry '+(quarryOn?'off: it stops making rock, so no coal is burnt for it.':'on.'):IN.o.n==='foundry'?'Click to switch the foundry '+(foundryOn?'off: it makes nothing and burns none of the plant\'s coal.':'on.'):IN.o.n==='factory'?'Click to switch the factory '+(factoryOn?'off: it makes nothing and burns none of the plant\'s coal.':'on.'):IN.o.n==='sawmill'?'Click to switch the sawmill '+(sawOn?'off: it stops sawing, so no planks are made.':'on.'):'Click to switch the power plant '+(plantOn?'off: it stops burning coal and giving power.':'on.')):null};
 let EXC=0;const dblOff=()=>{const t=performance.now(),ok=t-EXC<450;EXC=ok?0:t;return ok};   // two clicks in a row off the vehicle
+// would a tap here do something (not counting what is out of reach)? Then the tap acts; if not, a finger here brings up the stick
+function tapTarget(){if(panelOpen||CW)return true;const h=hoverSeat(),nf=t=>t&&!t.far;
+ if(nf(crLeverT())||nf(leverTarget()))return true;
+ if(P.pass||P.driving){const v=P.pass||T;return!!(h&&h.v===v)}
+ if(nf(fuelHover())||(!IN&&nf(rampTarget()))||pourTarget()||tankTarget())return true;
+ if(h)return true;return nf(itemTarget())}
 function clickAct(){   // a left click: everything done with the mouse in the world
  if(panelOpen)return;
  const h=hoverSeat(),m=mouseWorld();
@@ -1902,7 +1912,7 @@ function step(dt){
     const VC={pickup:'#c0392b',dump:'#c0392b',semi:'#c0392b',forklift:'#e0b020',atv:'#c0392b',car:'#c0392b',minibus:'#c0392b'},kd=KOF(T),tc=t=>TRL[t.kind].cargo==='none'?'#8a8f98':t.color||(TRL[t.kind].cargo==='logs'?'#6f7a3a':TRL[t.kind].cargo==='fuel'?'#b83a2e':TRL[t.kind].cargo==='items'?'#4f6f8f':'#d8a21c'),tw=t=>Math.round(TRL[t.kind].hw*16+6);
     const chip=(n,c,w,cls)=>`<div class="chip${cls}"><i style="width:${w}px;background:${c}"></i><small>${n}</small></div>`;
     el.innerHTML=(at2?chip(ATTK[at2].n,'#8d929b',14,sa2?' sel':'')+'<span class="arr">›</span>':'')+chip(kd.n,T.color||VC[T.kind],Math.round((kd.b1-kd.b0)*8),selVeh===T?' sel':'')+ch.map((t,i)=>'<span class="arr">›</span>'+chip(TRL[t.kind].n,tc(t),tw(t),t===cs2?' sel':'')).join('')+(fr?'<span class="arr">›</span>'+chip(TRL[fr.kind].n+' (free)',tc(fr),tw(fr),' sel free'):'')}}}
- $('msg').textContent=TOUCHUI?m.replace(/\bClick/g,'Tap').replace(/\bclick/g,'tap').replace(/\bclicks\b/g,'taps'):m;   /* touch: tap, not click */
+ $('msg').textContent=TOUCHUI?m.replace('WASD to walk','hold a finger on the map and slide it to walk').replace('WASD / arrows move the map, wheel or +/- zoom, drag to pan','Drag to move the map, + / − to zoom').replace(/\bClick/g,'Tap').replace(/\bclick/g,'tap').replace(/\bclicks\b/g,'taps'):m;   /* touch: tap, not click */
  let coal=0,logs=0,fl=0,cap=0,cf=0,rk=0,ir=0,gv=0,gr=0;let lq=0,lqt='';rc.forEach(c=>{if(c.cargo==='fuel'){cf+=c.cap;fl+=c.cg.amt}else if(c.cargo==='liquid'){cf+=c.cap;if(c.cg.type){lq+=c.cg.amt;lqt=c.cg.type}}else{cap+=c.cap;if(c.cg.type==='fuel')fl+=c.cg.amt;else if(c.cg.type==='logs')logs+=c.cg.amt;else if(c.cg.type==='rock')rk+=c.cg.amt;else if(c.cg.type==='iron')ir+=c.cg.amt;else if(c.cg.type==='sand')gv+=c.cg.amt;else if(c.cg.type==='gravel')gr+=c.cg.amt;else coal+=c.cg.amt}});
  $('cl').textContent=rc.length?([coal>0?coal.toFixed(1)+' t coal':'',logs>0?Math.floor(logs)+' logs':'',rk>0?rk.toFixed(1)+' t rock':'',ir>0?ir.toFixed(1)+' t iron ore':'',gv>0?gv.toFixed(1)+' t sand':'',gr>0?gr.toFixed(1)+' t gravel':'',fl>0?Math.floor(fl)+' L fuel':'',lq>0?Math.floor(lq)+' L '+lqt:''].filter(Boolean).join(' + ')||'0')+' / '+(cap||cf+' L'):P.driving&&T.out&&KD.trunk?'boot '+T.slots.filter(Boolean).length+'/'+T.slots.length+(T.boot?', open':', closed'):'no cargo space';
  $('load').style.width=cap?((coal+rk+ir+logs+(fl&&!cf?fl/20:0))/cap*100)+'%':cf?((fl+lq)/cf*100)+'%':'0';$('load').style.background=logs>coal?'#a8743a':'#f2b134';
