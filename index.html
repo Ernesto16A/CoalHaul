@@ -363,7 +363,7 @@ const padOn=q=>q.exit||q.minein||q.fshop||q.lshop?false:   /* only the shop sell
 // ---------- input ----------
 const K={};
 const keys={q:'cq',e:'ce',w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
-addEventListener('keydown',e=>{if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=e.key.toLowerCase();if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
+addEventListener('keydown',e=>{if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=e.key.toLowerCase();if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
 addEventListener('keyup',e=>{if(e.key==' ')spaceUp();{const m=MKEYS[e.key.toLowerCase()];if(m)MK[m]=0}const k=keys[e.key.toLowerCase()];if(k)K[k]=0});
 document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();K[k]=1;b.classList.add('dn');b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>{K[k]=0;b.classList.remove('dn')}));b.addEventListener('contextmenu',e=>e.preventDefault())});
 {const st=$('stick'),kn=$('knob');let pid=null;JOY.g=1;
@@ -1476,8 +1476,14 @@ function drawReach(){if(P.driving||P.pass)return;
   else{g.beginPath();g.arc(t.hp[0],t.hp[1],(t.cab?1:.6)*S,0,7);g.stroke()}}}
 // ----- the crate window: click a crate in reach to open its 3 x 3 cells above it. F puts / takes in the cell under the cursor, G deletes what is in it, dragging moves an item to another cell or onto a free ground square -----
 let CW=null,DRAG=null;   // CW: the open crate; DRAG: {i} the cell being dragged
-const w2s=(x,y)=>{const r=IN?IROT():0,dx=x-cam.x,dy=y-cam.y,c=Math.cos(r),s=Math.sin(r);return[(dx*c-dy*s)*Z+VW/2,(dx*s+dy*c)*Z+VH/2]};
-const s2w=(sx,sy)=>{const ux=(sx-VW/2)/Z,uy=(sy-VH/2)/Z,r=IN?IROT():0,c=Math.cos(r),s=Math.sin(r);return[cam.x+ux*c+uy*s,cam.y-ux*s+uy*c]};
+// camera views (TAB): 'north' = the map stays north-up (as before); 'follow' = while you drive (or sit in a vehicle) the camera turns with it so it always points up the screen. On foot it turns back to north
+let CAMMODE=(()=>{try{return localStorage.getItem('coalhaul.cam')||'north'}catch(e){return'north'}})(),CAMR=0,CHW=400,CHH=300;
+const VROT=()=>IN?IROT():(bigMap||LIVEMAP)?0:CAMR;
+function camMode(){CAMMODE=CAMMODE==='follow'?'north':'follow';try{localStorage.setItem('coalhaul.cam',CAMMODE)}catch(e){}flash(CAMMODE==='follow'?'Camera: follows the vehicle (it always points up). TAB to switch.':'Camera: north up. TAB to switch.')}
+function camTurn(dt){const v=P.pass&&P.pass.out?P.pass:P.driving&&T.out?T:null,tg=CAMMODE==='follow'&&v&&!IN?-v.a-Math.PI/2:0;let d=ang(tg-CAMR);CAMR=ang(CAMR+d*Math.min(1,dt*(v?9:4)));if(Math.abs(ang(tg-CAMR))<1e-4)CAMR=tg;
+ const r=VROT();if(Math.abs(r)>1e-3){CHW=CHH=Math.hypot(VW,VH)/2/Z}else{CHW=CHW;CHH=CHH}}   // half the size of what is on screen, in world units (turned: the half-diagonal) for skipping what is off it
+const w2s=(x,y)=>{const r=VROT(),dx=x-cam.x,dy=y-cam.y,c=Math.cos(r),s=Math.sin(r);return[(dx*c-dy*s)*Z+VW/2,(dx*s+dy*c)*Z+VH/2]};
+const s2w=(sx,sy)=>{const ux=(sx-VW/2)/Z,uy=(sy-VH/2)/Z,r=VROT(),c=Math.cos(r),s=Math.sin(r);return[cam.x+ux*c+uy*s,cam.y-ux*s+uy*c]};
 const targetCrate=t=>!t?null:t.crate||(t.k==='ground'&&t.it.type==='crate'?t.it:null)||(t.c&&t.si>=0&&t.c.e.slots[t.si]&&t.c.e.slots[t.si].type==='crate'?t.c.e.slots[t.si]:null);
 function crateWorld(c){if(GI.includes(c))return[c.x,c.y];
  for(const p of PALS){const i=p.crates.indexOf(c);if(i>=0)return p.on&&!p.on.e.out?null:palCellPt(p,i)}
@@ -1740,7 +1746,7 @@ function step(dt){
   v.fuel=Math.max(0,Math.min(KD.fuel,v.fuel)-l100(v,KD)*(OFFR<1?OFFFUEL:1)/1e5*Math.abs(v.v)*VM*SPX/S*dt);   /* (a tank can never hold more than it is: an older save with a bigger tank is cut down) */if(v.fuel<=0)v.v=0;
  }else if(!P.driving&&!P.pass){
   const px0=P.x,py0=P.y;
-  let dx=(K.right?1:0)-(K.left?1:0),dy=(K.down?1:0)-(K.up?1:0);if(IROT()){const r=IROT(),c=Math.cos(r),s=Math.sin(r),t=dx;dx=t*c+dy*s;dy=-t*s+dy*c}   // keys are screen directions, the room is turned
+  let dx=(K.right?1:0)-(K.left?1:0),dy=(K.down?1:0)-(K.up?1:0);if(VROT()){const r=VROT(),c=Math.cos(r),s=Math.sin(r),t=dx;dx=t*c+dy*s;dy=-t*s+dy*c}   // keys are screen directions, the room (or the camera) is turned
   if(dx||dy){const l=Math.hypot(dx,dy),sp=4.2*SPX*(IN?IS:1)*dt/l,oy=P.y,ox=P.x;P.x+=dx*sp;P.y+=dy*sp;if(!IN&&COLL)pushBlock();if(IN){const gm=interiorGeo(IN.o);P.x=Math.max(gm.xmin||-4208,Math.min(gm.xmax||-3792,P.x));P.y=Math.max(gm.ymin,Math.min(gm.ymax||-3862,P.y));if(gm.solid)for(const[a,b,c,d]of gm.solid){const R=8,nx=Math.max(a,Math.min(c,P.x)),ny=Math.max(b,Math.min(d,P.y)),qx=P.x-nx,qy=P.y-ny,q=Math.hypot(qx,qy);if(q<R){if(q>.01){P.x=nx+qx/q*R;P.y=ny+qy/q*R}else P.x=ox}}   /* furniture: the player is pushed off it */if((P.x<-4072||P.x>-3928)&&(!gm.WX||P.x>gm.WX[0]&&P.x<gm.WX[1]))for(const py of gm.PYs)if(Math.abs(P.y-py)<14)P.y=oy<py?py-14:py+14;if(gm.WX)for(const wx of gm.WX)if(Math.abs(P.x-wx)<14&&(P.y<-3990||P.y>-3910))P.x=ox<wx?wx-14:wx+14}
   if(!IN){for(const o of OFFICES){if(o.rot){if(Math.abs(P.y-(o.Y+75))<24&&P.x>=o.X-11&&P.x<o.X+6){enterOffice(o);break}continue}const[px,py]=o.site?uInv(o.site,P.x,P.y):[P.x,P.y];{const dd=offDoorXs(o).find(x=>Math.abs(px-x)<(o.doors?20:24));if(dd!==undefined&&py>=offRect0(o).y1-6&&py<offRect0(o).y1+11){DOORX=dd;enterOffice(o);break}}if(o.eh&&Math.abs(px-offDoorX(o))<24&&py>=o.Y-12&&py<=o.Y-4){enterOffice(o,1);break}}}else if(P.y>(interiorGeo(IN.o).exitY||-3868)&&(IN.o.doors?[-4060,-3940].some(x=>Math.abs(P.x-x)<20):Math.abs(P.x+4000)<(interiorGeo(IN.o).doorW||40)))exitMine();else if(IN.o.eh&&P.y<(interiorGeo(IN.o).exitNY||-4226)&&Math.abs(P.x+4000)<(interiorGeo(IN.o).doorW||40))exitMine(1);const d=ang(Math.atan2(dy,dx)-P.a),st=16*dt;P.a+=Math.abs(d)<st?d:Math.sign(d)*st}
   for(const v of Object.values(veh)){const k=v.kind;if(v.out){const kd=TKINDS[k];pushOut(P,v.x,v.y,v.a,kd.b0*S,kd.b1*S,(kd.hw||1)*S,.38*S)}}
@@ -1919,7 +1925,7 @@ const FIL=70;
 // a street in cross-section, from the outside in: [half width, corner radius at a dead end, colour, 1 = too fine to draw from far away]. The markings come last
 const ROADL=[[SH+30,64,'#7d7b72',1],[SH+27.5,62,'#b5b2a7'],[SH+4,57,'#d8d5ca',1],[SH,56,'#8b6c45'],[RW+2,45,'#222428',1],[RW,44,'#383a3f'],[RW-10,36,'#3e4046',1]],LINEC='rgba(242,242,232,.72)',MIDC='#f0c64a';
 function drawRoads(){
- const near=Z>=.5,vx=VW/2/Z+TS,vy=VH/2/Z+TS,seen=(x,y,m=0)=>Math.abs(x-cam.x)<vx+m&&Math.abs(y-cam.y)<vy+m,tiles=[];
+ const near=Z>=.5,vx=CHW+TS,vy=CHH+TS,seen=(x,y,m=0)=>Math.abs(x-cam.x)<vx+m&&Math.abs(y-cam.y)<vy+m,tiles=[];
  for(const[k,m]of RC){const q=k.split(','),cx=q[0]*TS+TS/2,cy=q[1]*TS+TS/2;if(seen(cx,cy))tiles.push([cx,cy,dm(m),+q[0],+q[1]])}   // only the street tiles in view
  for(const L of[...ROADL,null]){if(L&&L[3]&&!near)continue;   // null: the markings
   for(const[cx,cy,m,tc,tr]of tiles){const N=m&NB,E=m&EB,Sx=m&SB,W=m&WB,cn=corner(m);
@@ -1989,7 +1995,7 @@ function lowres(fn){if(!GQ)return fn();const[res,tx,ty,px]=GQ,w=Math.ceil(px/4)+
  g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(LQ,0,0,w*4,w*4);g.restore()}
 function drawGround(){
  const s=dpr*Z;let b=0;while(b<GRES.length-1&&GRES[b]<s-.001)b++;
- const CS=GSPAN[b]*TS,hw=VW/2/Z,hh=VH/2/Z,x0=cam.x-hw,x1=cam.x+hw,y0=cam.y-hh,y1=cam.y+hh,t0=performance.now(),v=SITES.reduce((a,q)=>a*8+(q.b.built?7:siteGeo(OFFICES.find(o=>o.n===q.off),q).done),RC.size*4096+WT.size*64+WD.size);
+ const CS=GSPAN[b]*TS,hw=CHW,hh=CHH,x0=cam.x-hw,x1=cam.x+hw,y0=cam.y-hh,y1=cam.y+hh,t0=performance.now(),v=SITES.reduce((a,q)=>a*8+(q.b.built?7:siteGeo(OFFICES.find(o=>o.n===q.off),q).done),RC.size*4096+WT.size*64+WD.size);
  if(v!==GCV){GCH.clear();GCV=v}   // a site has got further or was finished, or a street was built or taken away: the ground looks different now
  GFR++;
  const i0=Math.floor(x0/CS),i1=Math.floor(x1/CS),j0=Math.floor(y0/CS),j1=Math.floor(y1/CS),have=[];let miss=[];
@@ -2413,7 +2419,7 @@ function paintBuildings(X0,Y0,X1,Y1){const vis=(x0,y0,x1,y1,m=70)=>x1>X0-m&&x0<X
   for(const o of OFFICES){const r=offRect(o);if(!vis(r.x0-40,r.y0-40,r.x1+90,r.y1+40))continue;const sq=siteOfOff(o);if(sq){const f=()=>paintSite(o,sq,sh);o.site?uWrapS(o.site,f):f()}else if(sh){shadeBox(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0,15);const tl=ROOFTALL[o.n];if(tl){const f=()=>{for(const[x,y,w,h,z]of tl)shadeBox(o.X+x,o.Y+y,w,h,15+z,2)};o.site?uWrapS(o.site,f):f()}}else if(o.site)uWrap(o.site,()=>paintOffice(o));else paintOffice(o)}
   for(const[bx,by,n,w=192,h=96,U]of BOARDS){const r=U?uBox(U,{x0:bx,y0:by,x1:bx+w,y1:by+h}):{x0:bx,y0:by,x1:bx+w,y1:by+h};if(vis(r.x0,r.y0,r.x1,r.y1)){if(sh)shadeBox(r.x0,r.y0,r.x1-r.x0,r.y1-r.y0,9);else{const f=()=>{g.save();g.translate(bx,by);g.scale(h/96,h/96);if(boardFlip(U)){g.translate(w*96/h/2,48);g.rotate(Math.PI);g.translate(-w*96/h/2,-48)}paintBoard(0,0,n,w*96/h);g.restore()};U?uWrap(U,f):f()}}}
   for(const[zx,zy,need,U,o]of sc){const c=U?uRot(U,zx,zy):[zx,zy];if(vis(c[0]-420,c[1]-420,c[0]+420,c[1]+420))U?uWrapS(U,()=>paintScenery(zx,zy,need,sh,o&&{...o,flip:boardFlip(U)})):paintScenery(zx,zy,need,sh,o)}}}
-function drawBuildings(t){const hw=VW/2/Z,hh=VH/2/Z,seen=(x,y,m)=>Math.abs(x-cam.x)<hw+m&&Math.abs(y-cam.y)<hh+m;
+function drawBuildings(t){const hw=CHW,hh=CHH,seen=(x,y,m)=>Math.abs(x-cam.x)<hw+m&&Math.abs(y-cam.y)<hh+m;
  // the jib of the tower crane on a site swings slowly; it is high up, so its shadow falls far from it
  for(const o of OFFICES){const sq=siteOfOff(o);if(!sq)continue;const{mx:lx,my:ly}=siteGeo(o,sq),[mx,my]=o.site?uRot(o.site,lx,ly):[lx,ly],ra=o.site?o.site.rot*Math.PI/2:0;if(!seen(mx,my,300))continue;const ang=.5+Math.sin(t/4000)*.45,jib=()=>{g.beginPath();g.rect(-52,-4,250,8);g.rect(-60,-9,24,18)};
   g.save();g.translate(mx+SUN[0]*30,my+SUN[1]*30);g.rotate(ang+ra);g.fillStyle='rgba(6,10,18,.2)';jib();g.fill();g.restore();
@@ -2457,7 +2463,7 @@ function floorBoards(x0,y0,x1,y1,c,v,seed){g.fillStyle=c;g.fillRect(x0,y0,x1-x0,
 function innerShade(x0,y0,x1,y1,d=16,a=.38){for(const[x,y,w,h,p,q,r,s]of[[x0,y0,x1-x0,d,0,y0,0,y0+d],[x0,y1-d,x1-x0,d,0,y1,0,y1-d],[x0,y0,d,y1-y0,x0,0,x0+d,0],[x1-d,y0,d,y1-y0,x1,0,x1-d,0]]){const G=g.createLinearGradient(p,q,r,s);G.addColorStop(0,'rgba(0,0,0,'+a+')');G.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=G;g.fillRect(x,y,w,h)}}
 // furniture: a box that stands on the floor, with its shadow, a lit and a shaded edge and an outline
 const furn=(x,y,w,h,c,z=4)=>{g.fillStyle='rgba(0,0,0,.32)';g.fillRect(x+z*.6,y+z*.8,w,h);g.fillStyle=c;g.fillRect(x,y,w,h);bevel(0,x,y,w,h,2);g.strokeStyle=INK;g.lineWidth=1.2;g.strokeRect(x,y,w,h)};
-function drawTestGrid(ox=0,oy=0){if(!TGRID)return;const hw=VW/2/Z+40,hh=VH/2/Z+40,x0=cam.x-hw,x1=cam.x+hw,y0=cam.y-hh,y1=cam.y+hh,f=(a,s)=>Math.floor((a+ox)/s)*s-ox,g2=(a,s)=>Math.floor((a+oy)/s)*s-oy;
+function drawTestGrid(ox=0,oy=0){if(!TGRID)return;const hw=CHW+40,hh=CHH+40,x0=cam.x-hw,x1=cam.x+hw,y0=cam.y-hh,y1=cam.y+hh,f=(a,s)=>Math.floor((a+ox)/s)*s-ox,g2=(a,s)=>Math.floor((a+oy)/s)*s-oy;
  g.lineWidth=Math.max(.5,.8/Z*1.4);g.strokeStyle='rgba(255,255,255,.22)';g.beginPath();for(let x=f(x0,S);x<=x1;x+=S){g.moveTo(x,y0);g.lineTo(x,y1)}for(let y=g2(y0,S);y<=y1;y+=S){g.moveTo(x0,y);g.lineTo(x1,y)}g.stroke();
  g.lineWidth=Math.max(1.2,2/Z*1.4);g.strokeStyle='rgba(255,214,102,.75)';g.beginPath();for(let x=f(x0,TS);x<=x1;x+=TS){g.moveTo(x,y0);g.lineTo(x,y1)}for(let y=g2(y0,TS);y<=y1;y+=TS){g.moveTo(x0,y);g.lineTo(x1,y)}g.stroke()}
 // text on a board always fits it: it shrinks to the width, and a long line breaks in two at the space nearest its middle first
@@ -2574,7 +2580,7 @@ function syncLogs(){for(const l of LG)if(l.fk){const v=l.fk;if(!v.out){l.fk=null
  const n=lumber.built?Math.floor(lumber.stock+1e-6):0,st=LG.filter(l=>l.st&&!l.fk);   // the stock and the logs in the station agree: loading takes the last one, production adds one
  while(st.length>n)LG.splice(LG.indexOf(st.pop()),1);
  while(st.length<n){const c=freeCell();if(!c)break;const l={x:c[0],y:c[1],a:LS.rot*Math.PI/2,st:true,fk:null};LG.push(l);st.push(l)}}
-function drawLog(l){if(Math.abs(l.x-cam.x)>VW/Z/2+60||Math.abs(l.y-cam.y)>VH/Z/2+60)return;g.save();g.translate(l.x,l.y);g.rotate(l.a);
+function drawLog(l){if(Math.abs(l.x-cam.x)>CHW+60||Math.abs(l.y-cam.y)>CHH+60)return;g.save();g.translate(l.x,l.y);g.rotate(l.a);
  g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.roundRect(-17,-6,36,15,6);g.fill();g.beginPath();g.roundRect(-18,-7,36,14,6);inked('#8a5a2b',1.1);
  g.strokeStyle='#6b431d';g.lineWidth=1;g.beginPath();for(const k of[-3,0,3]){g.moveTo(-13,k);g.lineTo(10,k)}g.stroke();
  g.beginPath();g.ellipse(16,0,3,6,0,0,7);inked('#d9b27c',1);g.strokeStyle='#a8844f';g.lineWidth=.8;g.beginPath();g.ellipse(16,0,1.4,3,0,0,7);g.stroke();g.restore()}
@@ -2988,7 +2994,7 @@ function attDraw(k,hold){const u=S;if(k==='cables')return cablesGfx(1.25*u,0,u);
   for(const[x,sd]of[[.72,1],[fx,-1]]){g.beginPath();g.roundRect(x*u,-.56*u,.18*u,1.12*u,.05*u);inked(sd>0?'#b5561f':'#d06a1f',1.1);g.fillStyle=WHT[7];g.fillRect((x+.03)*u,-.52*u,.04*u,1.04*u);
    g.fillStyle='#2a2d33';for(let y=-.44;y<.5;y+=.22){g.beginPath();g.moveTo((sd>0?x+.18:x)*u,(y-.07)*u);g.lineTo((sd>0?x+.25:x-.07)*u,y*u);g.lineTo((sd>0?x+.18:x)*u,(y+.07)*u);g.fill()}}}}
 // an attachment lying on the ground, on a pallet or on a flatbed, with its shadow
-function drawAtt(o){if(!o._icon&&(Math.abs(o.x-cam.x)>VW/Z/2+60||Math.abs(o.y-cam.y)>VH/Z/2+60))return;const u=S,k=o.kind,s=sunL(o.a,1.8);g.save();g.translate(o.x,o.y);g.rotate(o.a);g.translate(-1.25*u,0);
+function drawAtt(o){if(!o._icon&&(Math.abs(o.x-cam.x)>CHW+60||Math.abs(o.y-cam.y)>CHH+60))return;const u=S,k=o.kind,s=sunL(o.a,1.8);g.save();g.translate(o.x,o.y);g.rotate(o.a);g.translate(-1.25*u,0);
  g.save();g.translate(s[0],s[1]);g.fillStyle='rgba(8,12,20,.3)';
  if(k==='cables'){g.beginPath();g.arc(1.25*u,0,.66*u,0,7);g.fill()}
  else if(k==='grab'){g.fillRect(.45*u,-.16*u,1.6*u,.32*u);for(const x of[.7,1.25,1.8])g.fillRect((x-.25)*u,-.57*u,.5*u,1.14*u)}
@@ -3078,7 +3084,7 @@ function drawFleet(t){
  for(const c of fuelCarriers()){if(!c.e.nz)continue;const z=zoneOf(c);g.save();g.translate(z.x,z.y);g.rotate(z.a);g.fillStyle='rgba(224,68,46,.22)';g.fillRect(-z.w/2,-z.h/2,z.w,z.h);g.strokeStyle='#e0442e';g.lineWidth=1.5;g.setLineDash([10,7]);g.lineDashOffset=-t/50;g.strokeRect(-z.w/2,-z.h/2,z.w,z.h);g.setLineDash([]);g.lineDashOffset=0;g.restore();txt('REFUEL',z.x,z.y+3,'#ff9a8a','bold 8px sans-serif')}
  const drawV=drawKind;
  const reachV=v=>!v.on&&Object.values(trl).some(t=>rampCorr(v,v.x,v.y,v.a,t)&&!roomV(t,v));
- const top=rampTop,vw=VW/2/Z+240,vh=VH/2/Z+240,vis=o=>Math.abs(o.x-cam.x)<vw&&Math.abs(o.y-cam.y)<vh;   // what is out of sight is not drawn
+ const top=rampTop,vw=CHW+240,vh=CHH+240,vis=o=>Math.abs(o.x-cam.x)<vw&&Math.abs(o.y-cam.y)<vh;   // what is out of sight is not drawn
  {const L=[];for(const v of Object.values(veh))if(v.out&&vis(v)&&!top(v))shapesOf(v,L);for(const x of Object.values(trl))if(x.out&&!isGlue(x)&&vis(x)&&!x.ld&&!rigRider(x)&&!trOnRamp(x))shapesOf(x,L);cast(L)}   // every shadow on the ground goes down first, under all the vehicles
  for(const v of Object.values(veh))if(v.out&&vis(v)&&!top(v)&&!v.fk)drawV(v);
  for(const pass of[1,0])for(const x of Object.values(trl))if(x.out&&!isGlue(x)&&vis(x)&&!x.ld&&!rigRider(x)&&!trOnRamp(x)&&!x.onF&&!x.fk&&(TRL[x.kind].cls==='dolly')===!!pass)drawTrailer(x);
@@ -3191,9 +3197,9 @@ function tickClock(dt){CLK+=dt;if(CLK>=CYCLE){CLK-=CYCLE;DAYN++}const el=documen
 const LC=document.createElement('canvas'),lg=LC.getContext('2d');
 // the night: a dark blue layer over the world with holes where light falls: headlights of vehicles in use, a glow round each person, lit buildings and yards, the work lamps of a working crane
 function drawNight(){const D=darkness();if(D<.01||LIVEMAP)return;const W=Math.round(VW*dpr),H=Math.round(VH*dpr);if(LC.width!==W||LC.height!==H){LC.width=W;LC.height=H}
- const q=dpr*Z,x0=cam.x-VW/Z/2-400,x1=cam.x+VW/Z/2+400,y0=cam.y-VH/Z/2-400,y1=cam.y+VH/Z/2+400,see=(x,y)=>x>x0&&x<x1&&y>y0&&y<y1,u=S;
+ const q=dpr*Z,x0=cam.x-CHW-400,x1=cam.x+CHW+400,y0=cam.y-CHH-400,y1=cam.y+CHH+400,see=(x,y)=>x>x0&&x<x1&&y>y0&&y<y1,u=S;
  lg.globalCompositeOperation='source-over';lg.setTransform(1,0,0,1,0,0);lg.clearRect(0,0,W,H);lg.fillStyle='rgba(6,12,34,'+(.8*D)+')';lg.fillRect(0,0,W,H);
- lg.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q));lg.globalCompositeOperation='destination-out';
+ if(VROT()){lg.setTransform(dpr,0,0,dpr,0,0);lg.translate(VW/2,VH/2);lg.scale(Z,Z);lg.rotate(VROT());lg.translate(-cam.x,-cam.y)}else lg.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q));lg.globalCompositeOperation='destination-out';
  const glow=(x,y,r,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.55,'rgba(0,0,0,'+k*.6+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.arc(x,y,r,0,7);lg.fill()};
  const cone=(x,y,a,len,ha,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,len);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.6,'rgba(0,0,0,'+k*.7+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.moveTo(x,y);lg.arc(x,y,len,a-ha,a+ha);lg.closePath();lg.fill()};
  for(const o of OFFICES){const r=offRect(o),cx=(r.x0+r.x1)/2,cy=(r.y0+r.y1)/2;glow(cx,cy,Math.max(r.x1-r.x0,r.y1-r.y0)*.95,.75)}   // lit windows
@@ -3212,7 +3218,7 @@ function drawNight(){const D=darkness();if(D<.01||LIVEMAP)return;const W=Math.ro
 function draw(t){
  if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
  g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
- g.save();if(IROT()){g.translate(VW/2,VH/2);g.scale(Z,Z);g.rotate(IROT());g.translate(-cam.x,-cam.y)}else{const q=dpr*Z;g.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q))}   // the camera moves in whole device pixels: the picture stays crisp, and the ground chunks are copied straight across
+ g.save();if(VROT()){g.translate(VW/2,VH/2);g.scale(Z,Z);g.rotate(VROT());g.translate(-cam.x,-cam.y)}else{const q=dpr*Z;g.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q))}   // the camera moves in whole device pixels: the picture stays crisp, and the ground chunks are copied straight across
  if(IN){drawInterior(t);drawPads(t);drawReach();drawPlayer();if(IN.o.inw){const r=offRect0(IN.o),gm=interiorGeo(IN.o);drawTestGrid(r.x0-gm.X0,r.y0-gm.Y0)}else drawTestGrid();g.restore();drawCrateWin();return}
  drawGround();drawBuildings(t);drawInfo(t);drawPads(t);
  drawGrid();drawLogs();for(const o of ATT)if(!o.fk&&!o.on&&!o.onP)drawAtt(o);
@@ -3260,7 +3266,7 @@ function drawMap(mx,my,mw,mh,s,big,full){
   for(const o of OFFICES){const r=offRect(o);mk((r.x0+r.x1)/2,(r.y0+r.y1)/2,BCOL[o.n],{mine:'M','power plant':'P',lumberyard:'L',sawmill:'S',quarry:'Q','iron mine':'I',crusher:'C',factory:'W',foundry:'Y',shop:'$',garage:'G',fuel:'F'}[o.n],{mine:'Coal mine','power plant':'Power plant',lumberyard:'Lumberyard',sawmill:'Sawmill',quarry:'Quarry','iron mine':'Iron mine',crusher:'Crusher',factory:'Factory',foundry:'Foundry',shop:'Shop',garage:'Garage',fuel:'Fuel station'}[o.n])}
   
   // the player's view
-  if(!IN)g.strokeStyle='#ffffffaa',g.lineWidth=1,g.strokeRect((cam.x-VW/Z/2)*s,(cam.y-VH/Z/2)*s,VW/Z*s,VH/Z*s);
+  if(!IN){g.strokeStyle='#ffffffaa';g.lineWidth=1;g.save();g.translate(cam.x*s,cam.y*s);g.rotate(-VROT());g.strokeRect(-VW/Z/2*s,-VH/Z/2*s,VW/Z*s,VH/Z*s);g.restore()}
   // vehicles out on the map, and the player (an arrow showing where he looks)
   for(const k in veh){const v=veh[k];if(v.out&&v!==T){g.save();g.translate(v.x*s,v.y*s);g.rotate(v.a);g.scale(sc,sc);g.fillStyle='#d8dbe2';g.fillRect(-2.5,-1.4,5,2.8);g.restore()}}
   if(NET.room)for(const p of NET.room.peers()){if(p.sameTab||p.kind!=='viewer'||!p.presence||p.presence.in||typeof p.presence.x!=='number')continue;g.save();g.translate(p.presence.x*s,p.presence.y*s);g.rotate(p.presence.a||0);g.scale(sc,sc);g.fillStyle='hsl('+(p.presence.hue||200)+',80%,60%)';g.strokeStyle='#0b120c';g.lineWidth=1;g.beginPath();g.moveTo(5,0);g.lineTo(-3.5,3.4);g.lineTo(-1.6,0);g.lineTo(-3.5,-3.4);g.closePath();g.fill();g.stroke();g.restore()}   // the other players on the maps
@@ -3578,7 +3584,7 @@ function drawPerson(px,py,pa,hue,seated){const r=S*.55,ca=Math.cos(pa),sa=Math.s
  g.beginPath();g.ellipse(px+ca*r*.3,py+sa*r*.3,r*.44,r*.5,pa,0,7);inked('#d39f12',1);
  g.beginPath();g.arc(px+ca*r*.06,py+sa*r*.06,r*.5,0,7);inked('#f7c927',1.1)}
 // the other players: a character on foot, or the vehicle (and trailer) he drives, eased from the last positions heard
-function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=VW/2/Z+240,vh=VH/2/Z+240;
+function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=CHW+240,vh=CHH+240;
  for(const p of r.peers()){if(p.sameTab||p.kind!=='viewer')continue;const q=p.presence;if(!q||typeof q.x!=='number'||typeof q.y!=='number')continue;seen.add(p.peer);
   let h=NET.gh.get(p.peer);if(!h){h={x:q.x,y:q.y,a:q.a||0,t:t,v:null,vk:'',tr:null,tk:''};NET.gh.set(p.peer,h)}
   const k=1-Math.exp(-Math.min(.25,(t-h.t)/1000)*14);h.t=t;h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;h.a=angLerp(h.a,q.a||0,k);
@@ -3759,7 +3765,7 @@ function saveMenu(){let o=document.getElementById('gmenu');if(o){o.remove();retu
 let lastDraw=0;
 function loop(n){if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
+ syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
  requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
