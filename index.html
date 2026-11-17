@@ -742,10 +742,10 @@ function itemIcon(k){const key='i|'+k;if(k.startsWith('tank:')&&!ICONS[key]){con
  return ICONS[key]=c.toDataURL()}
 function icon(kind,isT,col,bed,bcol,nose){const key=(isT?'t':'v')+kind+'|'+(col||'')+'|'+(bed||'')+'|'+(bcol||'')+'|'+(nose?1:0);if(ICONS[key])return ICONS[key];
  const W=150,H=64,c=document.createElement('canvas');c.width=W*2;c.height=H*2;const g0=g;g=c.getContext('2d');
- try{let x0,x1;if(isT){const d=TRL[kind];x0=d.co-d.hw;x1=Math.max(d.co+d.hw,d.bar)}else{const d=kdOf(kind,0,nose);x0=d.b0;x1=d.b1}
+ try{let x0,x1;if(isT){const d=TRL[kind];x0=d.co-d.hw;x1=Math.max(d.co+d.hw,d.bar)}else{const d=kdOf(kind,0,nose);x0=d.b0;x1=d.b1;if(kind==='crane'){x0=-1.95;x1=5.7}}   /* the crane's counterweight and its boom reach past both ends of the truck */
   const sc=Math.min((W-12)/((x1-x0)*S),(H-8)/(2.4*S));g.setTransform(2*sc,0,0,2*sc,W-2*sc*((x0+x1)/2)*S,H);
   const cg={type:null,amt:0};
-  if(isT){const o={x:0,y:0,b:0,kind,cargo:cg,coupled:true,color:col};cast(shapesOf(o,[],.6));drawTrailer(o)}else{const v={x:0,y:0,a:0,st:0,cargo:cg,kind,color:col,bed,bedColor:bcol,nose,forks:kind==='forklift'&&bed==='logs'?'logs':null,kd:kdOf(kind,0,nose)};cast(shapesOf(v,[],.6));drawKind(v)}
+  if(isT){const o={x:0,y:0,b:0,kind,cargo:cg,coupled:true,color:col};cast(shapesOf(o,[],.6));drawTrailer(o)}else{const v={x:0,y:0,a:0,st:0,cargo:cg,kind,color:col,bed,bedColor:bcol,nose,forks:kind==='forklift'&&bed==='logs'?'logs':null,cslot:kind==='crane'?'cables':null,kd:kdOf(kind,0,nose)};cast(shapesOf(v,[],.6));drawKind(v)}
  }finally{g=g0}
  return ICONS[key]=c.toDataURL()}
 // ---------- garage (spawn, park), garage upgrades (slots) and shop (buy, sell): separate buildings ----------
@@ -1184,7 +1184,7 @@ const forkPt=v=>v.kind==='crane'?hookPt(v):wld(1.25*S,0,v.x,v.y,v.a);
 const craneRun=v=>P.pass===v&&P.seatSd===CSEAT;
 const crHeld=v=>PALS.find(p=>p.fk===v)||LG.find(l=>l.fk===v)||ATT.find(o=>o.fk===v);
 // the 4 feet in the truck's frame: a beam (x±.13, from .7 out to .9+1.25 ft) and a pad (x±.3, y±.25 around the end). Where they would end up fully out is checked before they go down, and a crane with its feet down is a solid thing for other vehicles
-const FOOTX=[-.95,2.45],footRects=ft=>{const o=[],y1=.9+1.25*ft;for(const x of FOOTX)for(const sg of[-1,1]){o.push({x0:x-.13,x1:x+.13,y0:Math.min(sg*.7,sg*y1),y1:Math.max(sg*.7,sg*y1)});o.push({x0:x-.3,x1:x+.3,y0:sg*y1-.25,y1:sg*y1+.25})}return o};
+const FOOTX=[-1.2,2.45],footRects=ft=>{const o=[],y1=.9+1.25*ft;for(const x of FOOTX)for(const sg of[-1,1]){o.push({x0:x-.13,x1:x+.13,y0:Math.min(sg*.7,sg*y1),y1:Math.max(sg*.7,sg*y1)});o.push({x0:x-.3,x1:x+.3,y0:sg*y1-.25,y1:sg*y1+.25})}return o};
 const feetFullBlock=v=>{for(const r of footRects(1)){for(let x=r.x0;x<=r.x1+1e-6;x+=Math.max(.1,(r.x1-r.x0)/2))for(let y=r.y0;y<=r.y1+1e-6;y+=.25){const w=wld(x*S,y*S,v.x,v.y,v.a);
    if(obstAt(w[0],w[1]))return'a barrier or a cone';
    for(const q of WALLS)if(inBox(q,w[0],w[1],0))return'a wall';for(const q of BLDS)if(inBox(q,w[0],w[1],0))return'a building';for(const q of OFFICES)if(inBox(offRect(q),w[0],w[1],0))return'a building';
@@ -2876,36 +2876,141 @@ function drawContainer(t){const u=S,d=TRL[t.kind],CC=t.color||'#2f6db5',L=d.hw*2
  g.beginPath();g.rect(-L/2*u,-H/2*u,L*u,H*u);inked(CC,1.4);g.fillStyle='rgba(0,0,0,.16)';for(let x=-L/2+.25;x<L/2-.1;x+=.3)g.fillRect(x*u,(-H/2+.12)*u,.12*u,(H-.24)*u);
  g.fillStyle='rgba(255,255,255,.14)';g.fillRect(-L/2*u,-H/2*u,L*u,.1*u);g.fillStyle='#2a2d33';for(const x of[-L/2,L/2-.18])for(const y of[-H/2,H/2-.18])g.fillRect(x*u,y*u,.18*u,.18*u);
  g.fillStyle='rgba(0,0,0,.3)';g.fillRect((L/2-.08)*u,-H/2*u,.08*u,H*u);g.restore()}
-function drawTool(v){const c=crOf(v),k=v.ctool;if(!k)return;const q=hookPt(v),u=S;
- if(k==='cables'){const ld=Object.values(veh).find(o=>o.fk===v)||Object.values(trl).find(t=>t.fk===v);if(ld){const isT='b' in ld,d=isT?TRL[ld.kind]:KOF(ld),x0=isT?d.co-d.hw:d.b0,x1=isT?d.co+d.hw:d.b1,h=isT?d.hh:(d.hw||1);   // the cables run to the 4 corners of the load
-  g.strokeStyle='#2a2d33';g.lineWidth=1.6;for(const[x,y]of[[x0+.2,-h+.15],[x1-.2,-h+.15],[x0+.2,h-.15],[x1-.2,h-.15]]){const w=wld(x*S,y*S,ld.x,ld.y,isT?ld.b:ld.a);g.beginPath();g.moveTo(q[0],q[1]);g.lineTo(w[0],w[1]);g.stroke();g.beginPath();g.arc(w[0],w[1],.1*u,0,7);inked('#ffd166',.8)}g.beginPath();g.arc(q[0],q[1],.2*u,0,7);inked('#8d929b',1);return}}g.save();g.translate(q[0],q[1]);g.rotate(liftA(v));   // the tool on the crane's hook
- if(k==='forks'){g.beginPath();g.rect(-.75*u,-.65*u,.16*u,1.3*u);inked('#3a3d44',1);for(const y of[-.38,.38]){g.beginPath();g.rect(-.65*u,(y-.08)*u,1.45*u,.16*u);inked('#55595f',1)}}
- else if(k==='claw'){g.translate(-1.25*u,0);attDraw('claw',LG.some(l=>l.fk===v))}
- else if(k==='grab'){g.beginPath();g.rect(-1.55*u,-.12*u,3.1*u,.24*u);inked('#c0392b',1);for(const x of[-1,0,1])for(const sg of[-1,1]){g.beginPath();g.rect((x-.07)*u,(sg>0?.1:-1.05)*u,.14*u,.95*u);inked('#55595f',1)}}
- else{g.strokeStyle='#2a2d33';g.lineWidth=1.6;for(const[x,y]of[[-1.2,-.6],[1.2,-.6],[-1.2,.6],[1.2,.6]]){g.beginPath();g.moveTo(0,0);g.lineTo(x*u,y*u);g.stroke();g.beginPath();g.arc(x*u,y*u,.1*u,0,7);inked('#ffd166',.8)}g.beginPath();g.arc(0,0,.18*u,0,7);inked('#8d929b',1)}
+// ---------- the crane truck and its tools: how they are drawn ----------
+// warning stripes at 45° in two colours, each s wide, filling the box x,y,w,h (px): on the feet, the counterweight and the boxes the feet slide out of
+function hazard(x,y,w,h,s,c1='#f2c230',c2='#1d1f23'){g.save();g.beginPath();g.rect(x,y,w,h);g.clip();g.fillStyle=c1;g.fillRect(x,y,w,h);g.fillStyle=c2;
+ for(let k=-h-2*s;k<w+2*s;k+=2*s){g.beginPath();g.moveTo(x+k,y+h);g.lineTo(x+k+s,y+h);g.lineTo(x+k+s+h,y);g.lineTo(x+k+h,y);g.fill()}g.restore()}
+// a wire rope from one point to another (px), w thick: dark steel with the glint of its strands
+function wireRope(x0,y0,x1,y1,w){g.lineCap='round';g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.strokeStyle=INK;g.lineWidth=w+1.3;g.stroke();g.strokeStyle='#666b74';g.lineWidth=w;g.stroke();
+ g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=w*.45;g.setLineDash([w*1.1,w*1.5]);g.stroke();g.setLineDash([]);g.lineCap='butt'}
+// a steel ring (the eye a hook takes, the master ring of the cables)
+const ringGfx=(x,y,r,w)=>{g.beginPath();g.arc(x,y,r,0,7);g.strokeStyle=INK;g.lineWidth=w+1.3;g.stroke();g.strokeStyle='#c9ced6';g.lineWidth=w;g.stroke()};
+// the yellow hook on the end of a lifting cable, at (x,y) and pointing along a
+function slingHook(x,y,a,u){g.save();g.translate(x,y);g.rotate(a);g.beginPath();g.roundRect(-.1*u,-.085*u,.27*u,.17*u,.07*u);inked('#f2c230',.9);g.fillStyle='#1d1f23';g.beginPath();g.arc(.07*u,0,.035*u,0,7);g.fill();g.restore()}
+// the set of 4 lifting cables coiled up (on the crane's deck, on the ground, in the hands): rings of wire rope, the master ring in the middle, a yellow hook on each end
+function cablesGfx(x,y,u){g.save();g.translate(x,y);
+ for(const r of[.58,.44,.3]){g.beginPath();g.arc(0,0,r*u,0,7);g.strokeStyle=INK;g.lineWidth=.14*u;g.stroke();g.strokeStyle='#666b74';g.lineWidth=.09*u;g.stroke();
+  g.strokeStyle='rgba(255,255,255,.34)';g.lineWidth=.035*u;g.setLineDash([.07*u,.1*u]);g.lineDashOffset=r*u;g.stroke();g.setLineDash([]);g.lineDashOffset=0}
+ ringGfx(0,0,.12*u,.05*u);
+ for(const k of[.35,1.85,3.5,5])slingHook(Math.cos(k)*.6*u,Math.sin(k)*.6*u,k+Math.PI/2,u);
  g.restore()}
-function cablesGfx(x,y,u){g.strokeStyle='#2a2d33';g.lineWidth=1.4;for(const r of[.62,.44,.26]){g.beginPath();g.arc(x,y,r*u,0,7);g.stroke()}g.fillStyle='#ffd166';for(const k of[0,1.6,3.2,4.7]){g.beginPath();g.arc(x+Math.cos(k)*.62*u,y+Math.sin(k)*.62*u,.08*u,0,7);g.fill()}}   // a coil of cables with 4 shackles
-function drawCrane(v){const u=S,a=v.a,CC=v.color||'#e0a21c',c=crOf(v),ft=v.ft||0;
+function drawCrane(v){const u=S,a=v.a,CC=v.color||'#e0a21c',ft=v.ft||0,K=KOF(v);
  g.save();g.translate(v.x,v.y);g.rotate(a);
- for(const x of[-.95,2.45])for(const sg of[-1,1]){const y0=.7,y1=.9+1.25*ft;g.beginPath();g.rect((x-.13)*u,Math.min(sg*y0,sg*y1)*u,.26*u,Math.abs(y1-y0)*u);inked('#3a3d44',.8);g.fillStyle='#ffd166';for(let y=y0+.15;y<y1;y+=.3)g.fillRect((x-.13)*u,sg*y*u-.04*u,.26*u,.08*u);   // the 4 feet: beams slide out sideways, a pad goes down at each end
-  if(ft>.05){g.beginPath();g.rect((x-.3)*u,(sg*y1-.25)*u,.6*u,.5*u);inked(ft>=1?'#2a2d33':'#55595f',1)}}
- const K=KOF(v);for(const y of[-.83,.83]){wheel(0,y,0,.7);wheel(-.75,y,0,.7);wheel(K.wb,y,v.st)}
+ // the 4 feet: a striped box beam slides out of the frame to each side and a bright one out of that; at its end a jack sets a pad on the ground
+ if(ft>.02)for(const x of FOOTX)for(const sg of[-1,1]){const y1=.9+1.25*ft,ym=.9+.6*ft,dn=ft>=1,s=sunL(a,dn?1.2:3.5);
+  g.fillStyle='rgba(8,12,20,.26)';g.beginPath();g.roundRect((x-.3)*u+s[0],(sg*y1-.25)*u+s[1],.6*u,.5*u,.07*u);g.fill();   // the pad's shadow: it hangs in the air until the jack is down
+  g.save();g.scale(1,sg);
+  g.beginPath();g.rect((x-.09)*u,(ym-.06)*u,.18*u,(y1-ym+.06)*u);inked('#a3a9b3',.8);g.fillStyle=WHT[9];g.fillRect((x-.09)*u,(ym-.06)*u,.05*u,(y1-ym+.06)*u);
+  hazard((x-.13)*u,.7*u,.26*u,(ym-.7)*u,.1*u);g.strokeStyle=INK;g.lineWidth=.9;g.strokeRect((x-.13)*u,.7*u,.26*u,(ym-.7)*u);
+  g.beginPath();g.roundRect((x-.3)*u,(y1-.25)*u,.6*u,.5*u,.07*u);inked(dn?'#3a3d44':'#737882',1);g.strokeStyle=dn?WHT[4]:WHT[7];g.lineWidth=.8;g.strokeRect((x-.22)*u,(y1-.17)*u,.44*u,.34*u);
+  g.beginPath();g.arc(x*u,y1*u,.13*u,0,7);inked(dn?'#f2c230':'#b9bec6',.9);g.fillStyle='#2a2d33';g.beginPath();g.arc(x*u,y1*u,.05*u,0,7);g.fill();   // the jack over the pad: yellow once it stands
+  g.restore()}
+ for(const y of[-.83,.83]){wheel(0,y,0,.7);wheel(-.75,y,0,.7);wheel(K.wb,y,v.st)}
  hull(2.9,4.6,1,[3.6]);inked(CC);rim(a,2.9,4.6,1,[3.6]);   // the truck cab, as on the dump truck
  g.beginPath();g.roundRect(3.2*u,-.8*u,.66*u,1.6*u,.1*u);g.fillStyle=WHT[5];g.fill();g.strokeStyle=BLK[7];g.lineWidth=.8;g.stroke();glass(3.9,.76,4.24,.88);
  g.fillStyle='#2a2d33';g.fillRect(4.45*u,-.94*u,.11*u,1.88*u);lamp(4.44,-.92,.13,.3,'#fff3b0');lamp(4.44,.62,.13,.3,'#fff3b0');
- g.beginPath();g.rect(-1.4*u,-.92*u,4.3*u,1.84*u);inked('#4a4e56');g.fillStyle='rgba(255,255,255,.08)';for(let x=-1.2;x<2.8;x+=.4)g.fillRect(x*u,-.9*u,.05*u,1.8*u);   // the deck
- g.beginPath();g.roundRect(2.4*u,-.55*u,.5*u,1.1*u,.1*u);inked('#3a3d44',1);g.fillStyle='#8d929b';g.fillRect(2.48*u,-.4*u,.34*u,.8*u);   // the boom rest, just behind the cab
- lamp(-1.4,-.9,.08,.28,'#e23b2e');lamp(-1.4,.62,.08,.28,'#e23b2e');hitchGfx(v);if(v.cslot){g.fillStyle='rgba(0,0,0,.25)';g.fillRect((CSLOT-.75)*u,-.75*u,1.5*u,1.5*u);cablesGfx(CSLOT*u,0,u)}   // the cables' place on the deck   // the hitch, in the truck's frame (the crane turns above it)
+ for(const y of[-.76,.58])lamp(3.26,y,.2,.18,'#ff9a1f');   // amber beacons on the roof
+ // the deck: chequer plate between the two boxes the feet slide out of, yellow along the edges
+ g.beginPath();g.rect(-1.4*u,-.92*u,4.3*u,1.84*u);inked('#474b53');
+ g.save();g.beginPath();g.rect(-1.4*u,-.92*u,4.3*u,1.84*u);g.clip();g.lineWidth=.6;
+ g.strokeStyle='rgba(255,255,255,.08)';g.beginPath();for(let x=-3.4;x<3;x+=.2){g.moveTo(x*u,-.92*u);g.lineTo((x+1.84)*u,.92*u)}g.stroke();
+ g.strokeStyle='rgba(0,0,0,.16)';g.beginPath();for(let x=-1.4;x<5;x+=.2){g.moveTo(x*u,-.92*u);g.lineTo((x-1.84)*u,.92*u)}g.stroke();g.restore();
+ bevel(a,-1.4*u,-.92*u,4.3*u,1.84*u,.05*u);
+ g.strokeStyle='#f2c230';g.lineWidth=.045*u;g.beginPath();for(const y of[-.83,.83]){g.moveTo((FOOTX[0]+.2)*u,y*u);g.lineTo((FOOTX[1]-.2)*u,y*u)}g.stroke();
+ for(const x of FOOTX){g.beginPath();g.rect((x-.2)*u,-.92*u,.4*u,1.84*u);inked('#33363d',1);g.fillStyle=WHT[3];g.fillRect((x-.2)*u,-.92*u,.07*u,1.84*u);
+  for(const y of[-.92,.7]){hazard((x-.2)*u,y*u,.4*u,.22*u,.09*u);g.strokeStyle=INK;g.lineWidth=.8;g.strokeRect((x-.2)*u,y*u,.4*u,.22*u)}}
+ g.beginPath();g.arc(CPIV*u,0,.9*u,0,7);inked('#2b2e34',1);g.fillStyle='#8d929b';for(let k=0;k<16;k++){const t=k*Math.PI/8+.2;g.beginPath();g.arc((CPIV+Math.cos(t)*.82)*u,Math.sin(t)*.82*u,.028*u,0,7);g.fill()}   // the slewing ring the crane turns on, bolted to the frame
+ {const x0=CSLOT-.66,w=1.32;g.fillStyle='#2b2e34';g.fillRect(x0*u,-.66*u,w*u,w*u);sunk(a,x0*u,-.66*u,w*u,w*u,.06*u);g.strokeStyle=INK;g.lineWidth=.8;g.strokeRect(x0*u,-.66*u,w*u,w*u);   // the tray the cables ride in, between the cabs
+  if(v.cslot)cablesGfx(CSLOT*u,0,u);else{g.strokeStyle='rgba(255,255,255,.14)';g.lineWidth=1;g.setLineDash([3,3]);g.beginPath();g.arc(CSLOT*u,0,.44*u,0,7);g.stroke();g.setLineDash([])}}
+ g.beginPath();g.roundRect(2.52*u,-.52*u,.34*u,1.04*u,.06*u);inked('#33363d',1);g.fillStyle='#17191c';g.fillRect(2.58*u,-.34*u,.22*u,.68*u);   // the boom rest behind the cab: a rubber saddle between two yellow posts
+ for(const y of[-.52,.36]){g.beginPath();g.rect(2.56*u,y*u,.26*u,.16*u);inked('#f2c230',.8)}
+ lamp(-1.4,-.9,.08,.28,'#e23b2e');lamp(-1.4,.62,.08,.28,'#e23b2e');hitchGfx(v);   // the hitch, in the truck's frame (the crane turns above it)
  g.restore()}
-function drawCraneTop(v){const u=S,a=v.a,CC=v.color||'#e0a21c',c=crOf(v);g.save();g.translate(v.x,v.y);g.rotate(a);
- g.translate(CPIV*u,0);g.rotate(c.rot);   // the crane turns on its turntable: drawn after everything it may lift over
- g.beginPath();g.arc(0,0,.78*u,0,7);inked('#55595f',1);
- g.beginPath();g.roundRect(-1.35*u,-.62*u,.75*u,1.24*u,.12*u);inked('#3a3d44',1);g.fillStyle='rgba(255,255,255,.1)';g.fillRect(-1.3*u,-.55*u,.65*u,.12*u);   // the counterweight behind
- g.beginPath();g.roundRect(-.55*u,-1.02*u,.85*u,.6*u,.1*u);inked(CC,1);glass(.12,-.98,.28,-.48);   // the crane cab, left of the boom
- const L=boomL(v)/u,d=(L-5.4)/3;
- for(let k=0;k<4;k++){const x0=-.35+k*.3+k*d,x1=5.3+k*d,w=.46-k*.06,col=['#f2b632','#eaab26','#e1a01c','#d89614'][k];g.beginPath();g.rect(x0*u,-w/2*u,(x1-x0)*u,w*u);inked(col,1);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(x0*u,(w/2-.07)*u,(x1-x0)*u,.07*u);g.fillStyle='rgba(255,255,255,.22)';g.fillRect(x0*u,-w/2*u,(x1-x0)*u,.05*u)}   // the telescopic boom: 4 sections, each slides out of the one below; the tip section ends at the hook
- g.fillStyle='#2a2d33';for(const k of[.6,1.4,2.2])g.fillRect(k*u,-.24*u,.06*u,.48*u);
- g.beginPath();g.arc(L*u,0,.22*u,0,7);inked('#ffd166',1);g.fillStyle='#2a2d33';g.beginPath();g.arc(L*u,0,.08*u,0,7);g.fill();   // the hook block at the tip
+// what turns on the truck: the turntable with the counterweight behind, the crane cab on the left, the engine on the right, the winch and the telescopic boom between them. Drawn after everything the crane may lift over
+function drawCraneTop(v){const u=S,CC=v.color||'#e0a21c',c=crOf(v),A=v.a+c.rot,L=boomL(v)/u,d=(L-5.4)/3;
+ const W=[.62,.52,.43,.35],E=k=>L-.45-(3-k)*(.14+d),K=KOF(v),sh=sunL(v.a,4);
+ g.save();g.translate(v.x,v.y);g.rotate(v.a);g.beginPath();g.rect(K.b0*u,-u,(K.b1-K.b0)*u,2*u);g.clip();g.translate(sh[0]+CPIV*u,sh[1]);g.rotate(c.rot);   // the shadow the crane throws on its own truck (the one on the ground is cast with all the others)
+ g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.roundRect(-1.46*u,-.86*u,2.1*u,1.72*u,.3*u);g.rect(-.72*u,-u,1.22*u,2*u);g.rect(-.52*u,-.31*u,(E(0)+.52)*u,.62*u);for(let k=1;k<4;k++)g.rect(E(k-1)*u,-W[k]/2*u,(E(k)-E(k-1))*u,W[k]*u);g.rect((L-.5)*u,-.29*u,.72*u,.58*u);g.fill();g.restore();
+ g.save();g.translate(v.x,v.y);g.rotate(v.a);g.translate(CPIV*u,0);g.rotate(c.rot);
+ const edge=(x0,y0,x1,y1,nx,ny,t=.06)=>{g.strokeStyle=tone(lit(A,nx,ny));g.lineWidth=t*u;g.beginPath();g.moveTo(x0*u,y0*u);g.lineTo(x1*u,y1*u);g.stroke()};   // a lit or shaded edge
+ g.beginPath();g.roundRect(-.98*u,-.8*u,1.66*u,1.6*u,.1*u);inked('#4f545c',1);   // the turntable
+ const cw=()=>{g.beginPath();g.moveTo(-.76*u,-.86*u);g.lineTo(-1.16*u,-.86*u);g.arcTo(-1.46*u,-.86*u,-1.46*u,-.5*u,.3*u);g.lineTo(-1.46*u,.5*u);g.arcTo(-1.46*u,.86*u,-1.16*u,.86*u,.3*u);g.lineTo(-.76*u,.86*u);g.closePath()};
+ cw();inked('#33363d',1.2);g.save();cw();g.clip();hazard(-1.46*u,-.3*u,.14*u,.6*u,.1*u);edge(-1.3,-.82,-.76,-.82,0,-1);edge(-1.3,.82,-.76,.82,0,1);edge(-.8,-.86,-.8,.86,1,0);g.restore();   // the counterweight: two cast slabs, warning paint along the back
+ cw();g.strokeStyle=INK;g.lineWidth=1.2;g.stroke();g.strokeStyle=BLK[10];g.lineWidth=.8;g.beginPath();g.moveTo(-1.32*u,0);g.lineTo(-.76*u,0);g.stroke();
+ for(const y of[-.48,.48])ringGfx(-1.05*u,y*u,.065*u,.03*u);for(const y of[-.62,.36])lamp(-1.455,y,.09,.26,'#e23b2e');   // its lifting eyes; its red lamps are the tail lamps while the crane lies folded over the truck's own
+ g.beginPath();g.roundRect(-.72*u,.38*u,1.2*u,.6*u,.08*u);inked(CC,1.1);bevel(A,-.72*u,.38*u,1.2*u,.6*u,.06*u);   // the engine housing on the right: a grille over the fan, the exhaust
+ g.fillStyle='#22252a';g.fillRect(-.6*u,.5*u,.52*u,.36*u);g.strokeStyle='#5d626b';g.lineWidth=.03*u;g.beginPath();for(let x=-.54;x<-.1;x+=.09){g.moveTo(x*u,.52*u);g.lineTo(x*u,.84*u)}g.stroke();
+ g.beginPath();g.arc(.2*u,.68*u,.1*u,0,7);inked('#2a2d33',.9);g.beginPath();g.arc(.2*u,.68*u,.05*u,0,7);g.fillStyle='#0b0c0f';g.fill();
+ g.beginPath();g.rect(-.73*u,-.26*u,.3*u,.52*u);inked('#7d828b',.9);g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=.02*u;g.beginPath();for(let y=-.2;y<.25;y+=.065){g.moveTo(-.73*u,y*u);g.lineTo(-.43*u,y*u)}g.stroke();   // the winch behind the boom: the rope wound on its drum
+ for(const y of[-.33,.26]){g.beginPath();g.rect(-.77*u,y*u,.38*u,.07*u);inked('#2a2d33',.8)}
+ g.beginPath();g.roundRect(-.72*u,-1.0*u,1.22*u,.6*u,.1*u);inked(CC,1.1);bevel(A,-.72*u,-1.0*u,1.22*u,.6*u,.06*u);   // the crane cab on the left: windscreen to the front, a window in the roof to look up the boom
+ g.save();g.translate(0,-.7*u);glass(.14,.21,.44,.25);g.restore();
+ g.beginPath();g.roundRect(-.46*u,-.88*u,.4*u,.36*u,.05*u);inked('#74bfe2',.8);g.fillStyle='rgba(255,255,255,.5)';g.fillRect(-.42*u,-.85*u,.3*u,.07*u);g.fillStyle='rgba(20,50,80,.28)';g.fillRect(-.42*u,-.64*u,.32*u,.09*u);
+ lamp(-.68,-.78,.1,.16,'#ff9a1f');
+ for(const y of[-.41,.32]){g.beginPath();g.rect(-.62*u,y*u,.5*u,.09*u);inked('#2b2e34',.9)}   // the boom's foot between two plates, on its pin
+ // the telescopic boom: 4 sections, each slides out of the mouth of the one before; a collar at each mouth
+ const col=[CC,shd(CC,.95),shd(CC,.9),shd(CC,.85)];
+ for(let k=3;k>=0;k--){const x0=k?E(k-1)-.3:-.52,x1=E(k),w=W[k];
+  g.beginPath();g.rect(x0*u,-w/2*u,(x1-x0)*u,w*u);inked(col[k],1.1);edge(x0+.03,-w/2+.055,x1-.03,-w/2+.055,0,-1,.07);edge(x0+.03,w/2-.055,x1-.03,w/2-.055,0,1,.07);
+  if(k<3){g.beginPath();g.rect((x1-.2)*u,(-w/2-.04)*u,.2*u,(w+.08)*u);inked(shd(CC,.55),1);g.fillStyle=WHT[5];g.fillRect((x1-.2)*u,(-w/2-.04)*u,.05*u,(w+.08)*u)}}
+ g.fillStyle=BLK[3];g.fillRect(.1*u,-.13*u,(E(0)-.45)*u,.26*u);g.fillStyle=shd(CC,.55);for(const x of[1.3,2.9])g.fillRect(x*u,-.31*u,.07*u,.62*u);   // the base section: a ridge along its top, two bands round it
+ g.fillStyle='#17191c';g.fillRect(-.52*u,-.31*u,.12*u,.62*u);for(const y of[-.355,.365]){g.beginPath();g.arc(-.4*u,y*u,.04*u,0,7);g.fillStyle='#c9ced6';g.fill()}
+ wireRope(-.5*u,0,(L-.3)*u,0,.05*u);   // the hoist rope, from the winch along the top of the boom to its head
+ g.fillStyle='#8d929b';for(const x of[1.9,3.6])g.fillRect(x*u,-.1*u,.05*u,.2*u);
+ // the boom head: a fork with the rope sheaves in it, and the yellow hook block hanging under them
+ g.beginPath();g.moveTo((L-.52)*u,-.2*u);g.lineTo((L-.26)*u,-.29*u);g.lineTo((L+.22)*u,-.29*u);g.lineTo((L+.22)*u,-.19*u);g.lineTo((L-.22)*u,-.19*u);g.lineTo((L-.22)*u,.19*u);g.lineTo((L+.22)*u,.19*u);g.lineTo((L+.22)*u,.29*u);g.lineTo((L-.26)*u,.29*u);g.lineTo((L-.52)*u,.2*u);g.closePath();inked('#33363d',1);
+ g.fillStyle='#c9ced6';for(const y of[-.24,.24]){g.beginPath();g.arc(L*u,y*u,.035*u,0,7);g.fill()}
+ g.beginPath();g.roundRect((L-.2)*u,-.16*u,.4*u,.32*u,.09*u);inked('#f2c230',1);g.fillStyle='#1d1f23';g.fillRect((L-.2)*u+.6,-.04*u,.4*u-1.2,.08*u);
+ g.beginPath();g.arc(L*u,0,.075*u,0,7);inked('#e23b2e',.7);
+ g.restore()}
+// a pair of forks from the heel x0 to the tips x1 (units), y to each side: thick at the heel, thin and chamfered at the tip, worn bright on top
+function tines(x0,x1,ys=[-.38,.38]){const u=S;for(const y of ys){g.beginPath();g.moveTo(x0*u,(y-.1)*u);g.lineTo((x1-.25)*u,(y-.08)*u);g.lineTo(x1*u,(y-.03)*u);g.lineTo(x1*u,(y+.03)*u);g.lineTo((x1-.25)*u,(y+.08)*u);g.lineTo(x0*u,(y+.1)*u);g.closePath();inked('#737882',1);
+  g.strokeStyle='rgba(255,255,255,.36)';g.lineWidth=.04*u;g.beginPath();g.moveTo((x0+.16)*u,(y-.035)*u);g.lineTo((x1-.22)*u,(y-.03)*u);g.stroke();g.fillStyle=BLK[9];g.fillRect(x0*u,(y-.1)*u,.14*u,.2*u)}}
+// the back bar forks or a claw hang on a carriage by; it lies on the ground with them
+function attBack(){const u=S;g.beginPath();g.rect(.43*u,-.62*u,.15*u,1.24*u);inked('#3a3d44',1);g.fillStyle=WHT[5];g.fillRect(.45*u,-.6*u,.04*u,1.2*u)}
+// the log grab: a red beam with three clamps along it, each gripping one log from above. cx: its middle (units), sp: how far apart the clamps stand (1 unit on the hook, pushed together when it is put away), grip: which of the three hold a log (they close on it)
+function grabGfx(cx,sp,grip){const u=S,ro=Math.min(.46,sp/2-.03),e=sp+.25;
+ for(let i=-1;i<=1;i++){const x=cx+i*sp,rw=grip[i+1]?Math.min(ro,.4):ro;
+  g.beginPath();g.rect((x-.06)*u,-.56*u,.12*u,1.12*u);inked('#4a4e56',.9);   // each clamp: a spine along the log, two pairs of tongs across it
+  for(const y of[-.5,.5]){g.beginPath();g.roundRect((x-rw)*u,(y-.075)*u,2*rw*u,.15*u,.05*u);g.fillStyle='#7d828b';g.fill();g.fillStyle=WHT[8];g.fillRect((x-rw+.1)*u,(y-.05)*u,(2*rw-.2)*u,.035*u);g.strokeStyle=INK;g.lineWidth=1;g.stroke();
+   for(const sd of[-1,1]){g.beginPath();g.roundRect((x+sd*rw-.055)*u,(y-.115)*u,.11*u,.23*u,.04*u);inked('#2f3238',.9)}}}   // the tips of the tongs curl down round the log
+ g.beginPath();g.rect((cx-e)*u,-.095*u,2*e*u,.19*u);inked('#8f2a1e',1);   // the arms that slide out of the beam
+ g.beginPath();g.roundRect((cx-.62)*u,-.16*u,1.24*u,.32*u,.04*u);inked('#c0392b',1.1);g.fillStyle=WHT[8];g.fillRect((cx-.58)*u,-.13*u,1.16*u,.05*u);g.fillStyle=BLK[6];g.fillRect((cx-.58)*u,.08*u,1.16*u,.05*u);
+ for(const i of[-1,1]){g.beginPath();g.rect((cx+i*sp-.1)*u,-.14*u,.2*u,.28*u);inked('#33363d',.9);g.beginPath();g.rect((cx+i*e-(i>0?.06:0))*u,-.13*u,.06*u,.26*u);inked('#33363d',.8)}
+ ringGfx(cx*u,0,.1*u,.045*u)}
+// an attachment in the forklift's own frame (its grip 1.25 ahead): the forks, the log claw (hold: its jaws closed on a log), the log grab and the cables as they lie put away
+function attDraw(k,hold){const u=S;if(k==='cables')return cablesGfx(1.25*u,0,u);if(k==='grab')return grabGfx(1.25,.55,[0,0,0]);
+ if(k==='forks')return tines(.55,1.9);
+ if(k==='claw'){const fx=hold?1.62:1.95;   // the log claw: two arms reach forward under the log, a fixed jaw behind it and a moving one in front close on it; the ram between them pushes the moving jaw
+  tines(.5,fx+.2,[-.3,.3]);
+  g.beginPath();g.rect(.6*u,-.08*u,.62*u,.16*u);inked('#33363d',.9);g.beginPath();g.rect(1.22*u,-.035*u,(fx-1.22)*u,.07*u);inked('#c9ced6',.7);
+  for(const[x,sd]of[[.72,1],[fx,-1]]){g.beginPath();g.roundRect(x*u,-.56*u,.18*u,1.12*u,.05*u);inked(sd>0?'#b5561f':'#d06a1f',1.1);g.fillStyle=WHT[7];g.fillRect((x+.03)*u,-.52*u,.04*u,1.04*u);
+   g.fillStyle='#2a2d33';for(let y=-.44;y<.5;y+=.22){g.beginPath();g.moveTo((sd>0?x+.18:x)*u,(y-.07)*u);g.lineTo((sd>0?x+.25:x-.07)*u,y*u);g.lineTo((sd>0?x+.18:x)*u,(y+.07)*u);g.fill()}}}}
+// an attachment lying on the ground, on a pallet or on a flatbed, with its shadow
+function drawAtt(o){if(!o._icon&&(Math.abs(o.x-cam.x)>VW/Z/2+60||Math.abs(o.y-cam.y)>VH/Z/2+60))return;const u=S,k=o.kind,s=sunL(o.a,1.8);g.save();g.translate(o.x,o.y);g.rotate(o.a);g.translate(-1.25*u,0);
+ g.save();g.translate(s[0],s[1]);g.fillStyle='rgba(8,12,20,.3)';
+ if(k==='cables'){g.beginPath();g.arc(1.25*u,0,.66*u,0,7);g.fill()}
+ else if(k==='grab'){g.fillRect(.45*u,-.16*u,1.6*u,.32*u);for(const x of[.7,1.25,1.8])g.fillRect((x-.25)*u,-.57*u,.5*u,1.14*u)}
+ else{g.fillRect(.43*u,-.62*u,.15*u,1.24*u);if(k==='forks')for(const y of[-.38,.38])g.fillRect(.55*u,(y-.1)*u,1.35*u,.2*u);else{for(const y of[-.3,.3])g.fillRect(.5*u,(y-.1)*u,1.65*u,.2*u);for(const x of[.72,1.95])g.fillRect(x*u,-.56*u,.18*u,1.12*u)}}
+ g.restore();if(k==='forks'||k==='claw')attBack();attDraw(k,false);g.restore()}
+// the crane's tool is drawn in two goes. First what goes under the load: the forks, or the claw's arms and jaws, on their back bar
+function drawTool(v){const k=v.ctool;if(k!=='forks'&&k!=='claw')return;const q=hookPt(v),u=S;g.save();g.translate(q[0],q[1]);g.rotate(liftA(v));
+ g.translate((k==='forks'?-1.5:-1.25)*u,0);attBack();attDraw(k,k==='claw'&&LG.some(l=>l.fk===v));g.restore()}
+// then, over the load: the yellow frame that carries forks or a claw (a post behind the load, an arm over it to the eye the hook takes), the log grab, or the 4 cables running to the corners of what they lift
+function drawToolTop(v){const k=v.ctool;if(!k)return;const q=hookPt(v),u=S,A=liftA(v);
+ if(k==='cables'){const ld=Object.values(veh).find(o=>o.fk===v)||Object.values(trl).find(t=>t.fk===v),at=!ld&&ATT.some(o=>o.fk===v);let pts;
+  if(ld){const isT='b' in ld,d=isT?TRL[ld.kind]:KOF(ld),x0=isT?d.co-d.hw:d.b0,x1=isT?d.co+d.hw:d.b1,h=isT?d.hh:(d.hw||1);pts=[[x0+.2,-h+.15],[x1-.2,-h+.15],[x0+.2,h-.15],[x1-.2,h-.15]].map(p=>wld(p[0]*S,p[1]*S,ld.x,ld.y,isT?ld.b:ld.a))}
+  else{const hw=at?.66:1.05,hh=at?.5:.55;pts=[[-hw,-hh],[hw,-hh],[-hw,hh],[hw,hh]].map(p=>wld(p[0]*S,p[1]*S,q[0],q[1],A))}
+  for(const w of pts){wireRope(q[0],q[1],w[0],w[1],.07*u);slingHook(w[0],w[1],Math.atan2(w[1]-q[1],w[0]-q[0]),u)}
+  ringGfx(q[0],q[1],.15*u,.06*u);return}
+ g.save();g.translate(q[0],q[1]);g.rotate(A);
+ if(k==='grab')grabGfx(0,1,[-1,0,1].map(i=>LG.some(l=>l.fk===v&&(l.go||0)===i)));
+ else{const xm=k==='forks'?-1:-.75,s=sunL(A,2.5);
+  g.fillStyle='rgba(8,12,20,.22)';g.fillRect((xm-.11)*u+s[0],-.3*u+s[1],.22*u,.6*u);g.fillRect(xm*u+s[0],-.1*u+s[1],-xm*u,.2*u);   // its shadow on the load
+  g.beginPath();g.rect((xm-.11)*u,-.3*u,.22*u,.6*u);inked('#f2c230',1);g.fillStyle=BLK[5];g.fillRect((xm-.11)*u+.6,-.3*u+.6,.06*u,.6*u-1.2);
+  g.beginPath();g.moveTo((xm+.06)*u,-.12*u);g.lineTo(-.02*u,-.08*u);g.lineTo(-.02*u,.08*u);g.lineTo((xm+.06)*u,.12*u);g.closePath();inked('#f2c230',1);
+  g.strokeStyle=tone(lit(A,0,-1));g.lineWidth=.04*u;g.beginPath();g.moveTo((xm+.1)*u,-.085*u);g.lineTo(-.06*u,-.05*u);g.stroke();g.strokeStyle=tone(lit(A,0,1));g.beginPath();g.moveTo((xm+.1)*u,.085*u);g.lineTo(-.06*u,.05*u);g.stroke();
+  g.beginPath();g.arc(0,0,.15*u,0,7);inked('#f2c230',1);g.beginPath();g.arc(0,0,.07*u,0,7);g.fillStyle='#1d1f23';g.fill()}
  g.restore()}
 function drawDump(v){const u=S,a=v.a,CC=v.color||'#c0392b',BC=v.bedColor||'#d8a21c';
  g.save();g.translate(v.x,v.y);g.rotate(a);
@@ -2922,13 +3027,6 @@ function drawDump(v){const u=S,a=v.a,CC=v.color||'#c0392b',BC=v.bedColor||'#d8a2
  lamp(-1.4,-.96,.08,.28,'#e23b2e');lamp(-1.4,.68,.08,.28,'#e23b2e');
  hitchGfx(v);g.restore()}
 // a forklift: forks and mast at the front, the driver under an overhead guard, a heavy counterweight at the back; the rear wheels steer
-function attDraw(k,hold){const u=S;if(k==='cables')return cablesGfx(1.25*u,0,u);if(k==='grab'){g.beginPath();g.rect(.55*u,-.15*u,1.4*u,.3*u);inked('#c0392b',1);for(const x of[.65,1.2,1.75])for(const sg of[-1,1]){g.beginPath();g.rect(x*u,(sg>0?.15:-.6)*u,.14*u,.45*u);inked('#55595f',1)}return}   // the attachment in the forklift's frame: forks, or the log claw with its two jaws
-if(k==='forks')for(const y of[-.38,.38]){g.beginPath();g.rect(.55*u,(y-.08)*u,1.2*u,.16*u);inked('#55595f',1);g.fillStyle=WHT[8];g.fillRect(.6*u,(y-.08)*u,1.1*u,.04*u)}   // the forks
-  if(k==='claw'){const fx=hold?1.62:1.95;   // the log claw instead of forks: two arms reach forward from the carriage to a fixed jaw and a moving one, which close on a log lying across the front
-   for(const y of[-.3,.3]){g.beginPath();g.rect(.5*u,(y-.07)*u,(fx-.5)*u,.14*u);inked('#55595f',1)}
-   g.beginPath();g.roundRect(.72*u,-.54*u,.16*u,1.08*u,.05*u);inked('#7a3d12',1.1);g.beginPath();g.roundRect(fx*u,-.54*u,.18*u,1.08*u,.05*u);inked('#a8582a',1.1);g.fillStyle='#d9d0c0';for(const y of[-.3,.3]){g.beginPath();g.arc((.62+(fx-.5)*.5)*u,y*u,.07*u,0,7);g.fill()}}
-}
-function drawAtt(o){if(!o._icon&&(Math.abs(o.x-cam.x)>VW/Z/2+60||Math.abs(o.y-cam.y)>VH/Z/2+60))return;const u=S;g.save();g.translate(o.x,o.y);g.rotate(o.a);g.translate(-1.25*u,0);g.fillStyle='rgba(8,12,20,.3)';g.fillRect(.5*u,-.55*u,.14*u,1.25*u);if(o.kind==='forks')for(const y of[-.38,.38])g.fillRect(.6*u,(y-.05)*u,1.2*u,.18*u);else{for(const y of[-.3,.3])g.fillRect(.55*u,(y-.04)*u,1.45*u,.16*u);for(const x of[.75,1.98])g.fillRect(x*u,-.5*u,.18*u,1.1*u)}attDraw(o.kind,false);g.beginPath();g.rect(.45*u,-.6*u,.12*u,1.2*u);inked('#3a3d44',1);g.restore()}   // on the ground: with its back bar
 function drawForklift(v){const u=S,a=v.a,CC=v.color||'#e0b020';
  g.save();g.translate(v.x,v.y);g.rotate(a);
  attDraw(attOf(v),LG.some(l=>l.fk===v));
@@ -2951,7 +3049,7 @@ function shapesOf(o,L,k=1){
  if('b' in o){const d=TRL[o.kind],p=o.rp||0,dl=d.cls==='dolly',h=dl?.64:d.hh;L.push([o.x,o.y,o.b,(d.co-d.hw)*S,-h*S,2*d.hw*S,2*h*S,(d.ramp||dl?4:6)*k]);
   if(dl)for(const y of[-1,.66])L.push([o.x,o.y,o.b,-.43*S,y*S,.86*S,.34*S,2*k,2]);
   if(d.ramp&&p>.02)L.push([o.x,o.y,o.b,(d.co-d.hw-d.rl*p)*S,-.9*S,d.rl*p*S,1.8*S,1.6*k,2])}
- else{const kd=KOF(o);if(o.kind==='semi'){L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.cab0-kd.b0)*S,2*S,3*k]);L.push([o.x,o.y,o.a,kd.cab0*S,-S,(kd.b1-kd.cab0)*S,2*S,8*k])}else if(o.kind==='forklift'){L.push([o.x,o.y,o.a,kd.b0*S,-.8*S,2.3*S,1.6*S,7*k]);L.push([o.x,o.y,o.a,.35*S,-.75*S,.3*S,1.5*S,10*k]);{const at=attOf(o);if(at==='forks')for(const y of[-.38,.38])L.push([o.x,o.y,o.a,.55*S,(y-.08)*S,1.2*S,.16*S,1*k]);else if(at==='claw')for(const y of[-.3,.3])L.push([o.x,o.y,o.a,.5*S,(y-.07)*S,1.45*S,.14*S,1*k])}}/* each fork (or claw arm) throws its own thin shadow; a bare forklift none */else if(o.kind==='crane'){L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.b1-kd.b0)*S,2*S,6*k,3]);const p=wld(CPIV*S,0,o.x,o.y,o.a),c=crOf(o);L.push([p[0],p[1],o.a+c.rot,-1.35*S,-.62*S,1.9*S,1.24*S,12*k]);L.push([p[0],p[1],o.a+c.rot,0,-.22*S,boomL(o),.44*S,18*k])}else if(o.kind==='atv'){L.push([o.x,o.y,o.a,-.62*S,-.6*S,2.5*S,1.2*S,3.5*k,6]);for(const x of[0,kd.wb])for(const y of[-.58,.58])L.push([o.x,o.y,o.a,(x-.38)*S,(y-.2)*S,.76*S,.4*S,2*k,2])}else L.push([o.x,o.y,o.a,kd.b0*S,-(kd.hw||1)*S,(kd.b1-kd.b0)*S,2*(kd.hw||1)*S,(kd.zh||(o.kind==='dump'?8:6.5))*k,kd.zh?7:3])}
+ else{const kd=KOF(o);if(o.kind==='semi'){L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.cab0-kd.b0)*S,2*S,3*k]);L.push([o.x,o.y,o.a,kd.cab0*S,-S,(kd.b1-kd.cab0)*S,2*S,8*k])}else if(o.kind==='forklift'){L.push([o.x,o.y,o.a,kd.b0*S,-.8*S,2.3*S,1.6*S,7*k]);L.push([o.x,o.y,o.a,.35*S,-.75*S,.3*S,1.5*S,10*k]);{const at=attOf(o);if(at==='forks')for(const y of[-.38,.38])L.push([o.x,o.y,o.a,.55*S,(y-.09)*S,1.35*S,.18*S,1*k]);else if(at==='claw'){const n=LG.some(l=>l.fk===o)?1.3:1.63;for(const y of[-.3,.3])L.push([o.x,o.y,o.a,.5*S,(y-.09)*S,n*S,.18*S,1*k])}}}/* each fork (or claw arm) throws its own thin shadow; a bare forklift none */else if(o.kind==='crane'){L.push([o.x,o.y,o.a,kd.b0*S,-S,(kd.b1-kd.b0)*S,2*S,6*k,3]);const p=wld(CPIV*S,0,o.x,o.y,o.a),c=crOf(o),A=o.a+c.rot,Lb=boomL(o)/S,d=(Lb-5.4)/3;L.push([p[0],p[1],A,-1.46*S,-S,1.96*S,2*S,11*k,5]);[.62,.52,.43,.35].forEach((w,i)=>{const x0=i?Lb-.45-(4-i)*(.14+d):-.52,x1=i<3?Lb-.45-(3-i)*(.14+d):Lb+.2;L.push([p[0],p[1],A,x0*S,-w/2*S,(x1-x0)*S,w*S,18*k,2])})}   /* the crane on its turntable, and the boom high over the ground: each section throws its own strip */else if(o.kind==='atv'){L.push([o.x,o.y,o.a,-.62*S,-.6*S,2.5*S,1.2*S,3.5*k,6]);for(const x of[0,kd.wb])for(const y of[-.58,.58])L.push([o.x,o.y,o.a,(x-.38)*S,(y-.2)*S,.76*S,.4*S,2*k,2])}else L.push([o.x,o.y,o.a,kd.b0*S,-(kd.hw||1)*S,(kd.b1-kd.b0)*S,2*(kd.hw||1)*S,(kd.zh||(o.kind==='dump'?8:6.5))*k,kd.zh?7:3])}
  return L}
 function drawFleet(t){
  for(const c of fuelCarriers()){if(!c.e.nz)continue;const z=zoneOf(c);g.save();g.translate(z.x,z.y);g.rotate(z.a);g.fillStyle='rgba(224,68,46,.22)';g.fillRect(-z.w/2,-z.h/2,z.w,z.h);g.strokeStyle='#e0442e';g.lineWidth=1.5;g.setLineDash([10,7]);g.lineDashOffset=-t/50;g.strokeRect(-z.w/2,-z.h/2,z.w,z.h);g.setLineDash([]);g.lineDashOffset=0;g.restore();txt('REFUEL',z.x,z.y+3,'#ff9a8a','bold 8px sans-serif')}
@@ -3075,7 +3173,7 @@ function draw(t){
  for(const v of Object.values(veh))if(v.out&&v.fk)drawKind(v);for(const t of Object.values(trl))if(t.out&&t.fk)drawTrailer(t);   // a vehicle or container on a crane's cables, under the boom
  for(const v of Object.values(veh))if(v.out&&v.kind==='crane')drawTool(v);   // the crane's tool under what it holds (a pallet sits on the forks), the boom over both
  for(const p of PALS)if(p.fk)drawPallet(p);for(const o of ATT)if(o.onP)drawAtt(o);for(const l of LG)if(l.fk)drawLog(l);for(const o of ATT)if(o.fk)drawAtt(o);for(const it of GI)if(it.fk){if(it.type==='barrier'||it.type==='cone')drawObst(it);else{g.save();g.translate(it.x,it.y);g.rotate(it.a||0);itemSprite(it,0,0,it.type==='canister'?S*.46:S*.38);g.restore()}}
- for(const v of Object.values(veh))if(v.out&&v.kind==='crane')drawCraneTop(v);if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
+ for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
  drawSeats();drawPlayer();drawTop();drawTestGrid();
