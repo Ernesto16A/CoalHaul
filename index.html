@@ -320,6 +320,14 @@ const applyGarage=applyUnits;
 let WALLSTYLE='both';   // the thick wall's colour: 'plain' grey, 'stripe' (the building's colour along the capping), 'panels', 'pillars' (coloured corner pillars), 'both' (stripe and corner pillars)
 const THICKW=new Set([1]),WT_=S,thickSegs=l=>{const o=[];for(const[a,b]of sideSegs(l,'N',l.x0,l.x1))o.push({x0:a,y0:l.y0,x1:b,y1:l.y0+WT_});for(const[a,b]of sideSegs(l,'S',l.x0,l.x1))o.push({x0:a,y0:l.y1-WT_,x1:b,y1:l.y1});
  for(const[a,b]of sideSegs(l,'W',l.y0,l.y1))o.push({x0:l.x0,y0:a,x1:l.x0+WT_,y1:b});for(const[a,b]of sideSegs(l,'E',l.y0,l.y1))o.push({x0:l.x1-WT_,y0:a,x1:l.x1,y1:b});return o};
+// a corner pillar where walled lots meet at one point: it takes up every wall square round the point (1 for a lone lot's corner, 2 side by side, an L for 3, a square for 4), each square in the colour of the lot it stands in
+function pillarQs(cx,cy){const q=[];for(const[dx,dy]of[[-1,-1],[0,-1],[-1,0],[0,0]]){const x=cx+dx*WT_,y=cy+dy*WT_,px=x+WT_/2,py=y+WT_/2;let j=-1;
+  for(let k=0;k<LOTS.length&&j<0;k++)if(THICKW.has(k)&&thickSegs(LOTS[k]).some(r=>px>r.x0&&px<r.x1&&py>r.y0&&py<r.y1))j=k;if(j>=0)q.push({x,y,j})}return q}
+function cornerPillar(cx,cy,ST){const Q=pillarQs(cx,cy);if(!Q.length)return;const m=2,rc=q=>[q.x-(q.x<cx?m:0),q.y-(q.y<cy?m:0),WT_+m,WT_+m],col=j=>ST==='pillars'||ST==='both'?LOTS[j].col:'#f0c63a';
+ cast(Q.map(q=>{const r=rc(q);return[0,0,0,r[0],r[1],r[2],r[3],20,3]}));
+ for(const q of Q){const r=rc(q);g.fillStyle=col(q.j);g.fillRect(...r);bevel(0,...r,3.5)}
+ g.strokeStyle=INK;g.lineWidth=1.3;for(const q of Q)g.strokeRect(...rc(q));
+ g.fillStyle='#1d1d1f';if(Q.length===1)g.fillRect(Q[0].x+WT_/2-4,Q[0].y+WT_/2-4,8,8);else g.fillRect(cx-4,cy-4,8,8)}
 function buildWalls(){WALLS.length=0;const add=(x0,y0,x1,y1)=>WALLS.push({x0:Math.min(x0,x1)-4,y0:Math.min(y0,y1)-4,x1:Math.max(x0,x1)+4,y1:Math.max(y0,y1)+4});
  LOTS.forEach((l,i)=>{if(THICKW.has(i))for(const r of thickSegs(l))WALLS.push(r)});
  for(const l of LOTS){if(THICKW.has(LOTS.indexOf(l)))continue;const post=(x,y)=>add(x-4,y-4,x+4,y+4);
@@ -2123,8 +2131,10 @@ function paintLot(l,i,c0,r0,c1,r1,fine){const sq=siteOfLot(l),W=l.x1-l.x0,H=l.y1
    g.fillStyle=jc;if(w>h){for(let x=Math.ceil(r.x0/(2*S))*2*S;x<r.x1;x+=2*S)g.fillRect(x-.6,r.y0+1,1.2,h-2)}else{for(let y=Math.ceil(r.y0/(2*S))*2*S;y<r.y1;y+=2*S)g.fillRect(r.x0+1,y-.6,w-2,1.2)}
    g.strokeStyle='rgba(20,22,26,.55)';g.lineWidth=1;g.strokeRect(r.x0+.5,r.y0+.5,w-1,h-1)}
   const ps=GATES(l).flatMap(q=>q.side==='S'||q.side==='N'?[[q.a,q.side==='S'?l.y1-WT_/2:l.y0+WT_/2,-1],[q.b,q.side==='S'?l.y1-WT_/2:l.y0+WT_/2,1]]:[[q.side==='W'?l.x0+WT_/2:l.x1-WT_/2,q.a,-1],[q.side==='W'?l.x0+WT_/2:l.x1-WT_/2,q.b,1]]);   // the gate posts end the wall
-  const cn=[[l.x0+WT_/2,l.y0+WT_/2],[l.x1-WT_/2,l.y0+WT_/2],[l.x0+WT_/2,l.y1-WT_/2],[l.x1-WT_/2,l.y1-WT_/2]],pc=ST==='pillars'||ST==='both'?l.col:'#f0c63a';   // a pillar at each corner, like the gate posts
-  cast([...ps,...cn].map(p=>[0,0,0,p[0]-12,p[1]-12,24,24,20,4]));for(const[x,y,k]of[...ps.map(p=>[p[0],p[1],0]),...cn.map(p=>[p[0],p[1],1])]){g.beginPath();g.roundRect(x-12,y-12,24,24,4);inked(k?pc:'#f0c63a',1.3);bevel(0,x-12,y-12,24,24,4);g.fillStyle='#1d1d1f';g.fillRect(x-4,y-4,8,8)}
+  cast(ps.map(p=>[0,0,0,p[0]-12,p[1]-12,24,24,20,4]));for(const[x,y]of ps){g.beginPath();g.roundRect(x-12,y-12,24,24,4);inked('#f0c63a',1.3);bevel(0,x-12,y-12,24,24,4);g.fillStyle='#1d1d1f';g.fillRect(x-4,y-4,8,8)}
+  // the corner pillars: every corner of a walled lot that lies on this lot's edge (its own, and a neighbour's that meets it), so a pillar shared by lots is drawn whole again over each of them
+  const cp=new Set();LOTS.forEach((m,j)=>{if(!THICKW.has(j))return;for(const[x,y]of[[m.x0,m.y0],[m.x1,m.y0],[m.x0,m.y1],[m.x1,m.y1]])if(x>=l.x0&&x<=l.x1&&y>=l.y0&&y<=l.y1)cp.add(x+','+y)});
+  for(const k of cp){const[x,y]=k.split(',').map(Number);cornerPillar(x,y,ST)}
   return}
  g.lineCap='square';g.strokeStyle='rgba(8,12,20,.3)';g.lineWidth=7;kerb(2.4,3.2);g.strokeStyle=shade(l.wc,.62);kerb(0,0);g.strokeStyle=l.wc;g.lineWidth=4.5;kerb(-.6,-.8);g.strokeStyle=WHT[9];g.lineWidth=1.2;kerb(-2,-2.4);g.lineCap='butt';
  {const ps=GATES(l).flatMap(q=>q.side==='S'||q.side==='N'?[[q.a,q.side==='S'?l.y1:l.y0],[q.b,q.side==='S'?l.y1:l.y0]]:[[q.side==='W'?l.x0:l.x1,q.a],[q.side==='W'?l.x0:l.x1,q.b]]);   // the gate posts
