@@ -327,7 +327,8 @@ function cornerPillar(cx,cy,ST){const Q=pillarQs(cx,cy);if(!Q.length)return;cons
  cast(Q.map(q=>{const r=rc(q);return[0,0,0,r[0],r[1],r[2],r[3],20,3]}));
  for(const q of Q){const r=rc(q);g.fillStyle=col(q.j);g.fillRect(...r);bevel(0,...r,3.5)}
  g.strokeStyle=INK;g.lineWidth=1.3;for(const q of Q)g.strokeRect(...rc(q));
- g.fillStyle='#1d1d1f';if(Q.length===1)g.fillRect(Q[0].x+WT_/2-4,Q[0].y+WT_/2-4,8,8);else g.fillRect(cx-4,cy-4,8,8)}
+ {const x0=Math.min(...Q.map(q=>q.x)),y0=Math.min(...Q.map(q=>q.y)),x1=Math.max(...Q.map(q=>q.x))+WT_,y1=Math.max(...Q.map(q=>q.y))+WT_,w=(x1-x0)*.4,h=(y1-y0)*.4;   // the dark cap grows with the pillar: 2/5 of it each way (a square, a long bar, an L)
+  g.save();g.beginPath();for(const q of Q)g.rect(q.x,q.y,WT_,WT_);g.clip();g.fillStyle='#1d1d1f';g.fillRect((x0+x1)/2-w/2,(y0+y1)/2-h/2,w,h);g.restore()}}
 function buildWalls(){WALLS.length=0;const add=(x0,y0,x1,y1)=>WALLS.push({x0:Math.min(x0,x1)-4,y0:Math.min(y0,y1)-4,x1:Math.max(x0,x1)+4,y1:Math.max(y0,y1)+4});
  LOTS.forEach((l,i)=>{if(THICKW.has(i))for(const r of thickSegs(l))WALLS.push(r)});
  for(const l of LOTS){if(THICKW.has(LOTS.indexOf(l)))continue;const post=(x,y)=>add(x-4,y-4,x+4,y+4);
