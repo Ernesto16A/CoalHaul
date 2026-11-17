@@ -727,7 +727,8 @@ $('tbed').onchange=()=>{bedCust=$('tbed').checked;$('tmsg').textContent='Bed typ
  $('ttpgo').onclick=()=>{const o=OFFICES[+sel.value];if(!o)return;if(IN){IN=null;Z=Zsave}P.driving=false;if(o.rot){P.x=o.X-28;P.y=o.Y+75;P.a=Math.PI}else[P.x,P.y,P.a]=doorOut(o);cam.x=P.x;cam.y=P.y;$('tmsg').textContent='Player moved to the '+o.n+'.'}}
 $('goal').onclick=()=>{toggleGoals();$('goal')._h=null};
 {const UN=[['Mine',MS,'mine',0],['Power plant',PS,'power plant',1],['Garage',GS,'garage',2],['Lumberyard',LS,'lumberyard',3],['Sawmill',SWS,'sawmill',4],['Quarry',QS,'quarry',7],['Iron mine',IRS,'iron mine',8],['Crusher',CRS,'crusher',9],['Factory',FCS,'factory',10],['Foundry',FNS,'foundry',11],['Shop',SS,'shop',5],['Fuel station',FS,'fuel',6]];$('ttu').innerHTML=UN.map((u,i)=>'<option value="'+i+'">'+u[0]+'</option>').join('');$('ttugo').onclick=()=>{const u=UN[+$('ttu').value];turnUnit(u[1],u[2],u[3],u[0])}}
-$('tbuild').onclick=()=>{const todo=SITES.filter(q=>!q.b.built);for(const q of todo){q.b.got=q.b.need;if(q.b.reqs)q.b.reqs.forEach(r=>r.got=r.need);q.b.built=true}$('tmsg').textContent=todo.length?'Built: '+todo.map(q=>q.off).join(' and ')+'.':'Nothing is under construction.';if(todo.length)flash(todo.map(q=>q.off).join(' and ')+(todo.length>1?' are':' is')+' built.')};   // finish every building that is still a site: what delivering the materials would do
+$('tbuild').onclick=()=>buildSites('all');
+function buildSites(which){const todo=SITES.filter(q=>!q.b.built&&(which==='all'||q.off===which));for(const q of todo){q.b.got=q.b.need;if(q.b.reqs)q.b.reqs.forEach(r=>r.got=r.need);q.b.built=true}$('tmsg').textContent=todo.length?'Built: '+todo.map(q=>q.off).join(' and ')+'.':'Nothing is under construction.';if(todo.length)flash(todo.map(q=>q.off).join(' and ')+(todo.length>1?' are':' is')+' built.')};   // finish every building that is still a site: what delivering the materials would do
 $('tset').onclick=()=>{const v=parseFloat($('tcash').value);if(isNaN(v))return $('tmsg').textContent='Enter a number.';cash=v;$('tmsg').textContent='Cash set to $'+Math.floor(v)+'.'};
 
 // the game starts with one vehicle: a flatbed pickup with the most powerful engine, in the garage lot (nose to the east gate) with the player beside it. Nothing else is owned
@@ -3630,6 +3631,8 @@ function chatSend(t){t=(t||'').trim();if(!t)return;if(t[0]==='/')return chatCmd(
  if(!NET.room)chatLine('Nobody else is connected: only you can read this.',1)}
 // messages that arrived in the other players' presence
 function chatPoll(){const r=NET.room;if(!r)return;try{for(const p of r.peers()){if(p.sameTab)continue;const q=p.presence;if(!q||!q.ch)continue;for(const m of q.ch){if(!m||CHAT.seen.has(m.id))continue;CHAT.seen.add(m.id);chatLine(chatWho(q.nm,q.hue)+': '+esc(m.t))}}}catch(e){}}
+// kits for /kit: each sets out a set of things to try at the garage. More are added here
+const KITS={crane:()=>$('tcrane').click()};
 const CMDS={
  help:['','list the commands',()=>{const L=t=>Object.entries(CMDS).filter(([k,v])=>t===v[1].startsWith('test: ')).map(([k,v])=>'/'+k+(v[0]?' '+v[0]:'')+' – '+v[1].replace('test: ',''));chatLine('Commands: '+esc(L(false).join(' · ')),1);chatLine('Test: '+esc(L(true).join(' · ')),1)}],
  name:['<name>','set the name the others see',a=>{const n=a.trim().slice(0,20);if(!n)return chatLine('Your name is '+(CHAT.name||'not set')+'. Use /name Joe.',1);CHAT.name=n;try{localStorage.setItem('coalhaul.name',n)}catch(e){}NET.last=0;chatLine('You are now '+esc(n)+'.',1)}],
@@ -3642,13 +3645,11 @@ const CMDS={
  dusk:['','test: jump to dusk',()=>{$('tdusk').click();chatLine('Dusk.',1)}],
  night:['','test: jump to night',()=>{$('tnight').click();chatLine('Night.',1)}],
  cash:['<amount>','test: set your cash',a=>{$('tcash').value=a;$('tset').click();tout()}],
- build:['','test: finish every construction site',()=>{$('tbuild').click();tout()}],
- turn:['<building>','test: turn a building 90° clockwise',a=>{const q=a.trim().toLowerCase(),o=[...$('ttu').options].find(x=>q&&x.text.toLowerCase().includes(q));if(!o)return chatLine('Turn which? '+[...$('ttu').options].map(x=>x.text).join(', '),1);$('ttu').value=o.value;$('ttugo').click();tout()}],
+ build:['<building>|all','test: finish a construction site, or all of them',a=>{const q=a.trim().toLowerCase();if(!q)return chatLine('Build what? all, '+SITES.map(x=>x.off).join(', '),1);const st=q==='all'?null:SITES.find(x=>x.off.includes(q));if(q!=='all'&&!st)return chatLine('No construction site called '+esc(q)+'. Sites: '+SITES.map(x=>x.off).join(', '),1);if(st&&st.b.built)return chatLine('The '+st.off+' is already built.',1);buildSites(st?st.off:'all');tout()}],
  tp:['<building>','test: go to a building',a=>{const q=a.trim().toLowerCase(),o=[...$('ttp').options].find(x=>q&&x.text.toLowerCase().includes(q));if(!o)return chatLine('Go where? '+[...$('ttp').options].map(x=>x.text).join(', '),1);$('ttp').value=o.value;$('ttpgo').click();chatLine('Teleported to the '+o.text.toLowerCase()+'.',1)}],
- crane:['','test: a crane truck with every tool at the garage',()=>{$('tcrane').click();tout()}],
+ kit:['<name>','test: set out a kit at the garage (kits: '+Object.keys(KITS).join(', ')+')',a=>{const k=KITS[a.trim().toLowerCase()];if(!k)return chatLine('Kits: '+Object.keys(KITS).join(', ')+'. Use /kit crane.',1);k();tout()}],
  collision:['[on|off]','test: collision with kerbs, walls, buildings',a=>tog('tcol',a)],
- grid:['[on|off]','test: show tiles and chunks',a=>tog('tgrid',a)],
- bedtype:['[on|off]','test: change bed types in the garage',a=>tog('tbed',a)]};
+ grid:['[on|off]','test: show tiles and chunks',a=>tog('tgrid',a)]};
 // the commands work the old test controls (hidden) and print what they report
 const tout=()=>{const t=$('tmsg').textContent;if(t)chatLine(esc(t),1);$('tmsg').textContent=''};
 const tog=(id,a)=>{const c=$(id),w=a.trim().toLowerCase();c.checked=w==='on'?true:w==='off'?false:!c.checked;c.dispatchEvent(new Event('change'));tout()};
