@@ -380,7 +380,7 @@ const padOn=q=>q.exit||q.minein||q.fshop||q.lshop?false:   /* only the shop sell
 // ---------- input ----------
 const K={};
 const keys={q:'cq',e:'ce',w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
-addEventListener('keydown',e=>{if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.target.id==='chin'){if(e.key=='Enter'){e.preventDefault();chatSend(e.target.value);chatClose()}else if(e.key=='Escape')chatClose();return}if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=e.key.toLowerCase();if((k=='enter'||k=='/')&&!e.repeat){e.preventDefault();for(const q in K)K[q]=0;chatOpen(k=='/'?'/':'');return}if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
+addEventListener('keydown',e=>{if(MENU)return;if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.target.id==='chin'){if(e.key=='Enter'){e.preventDefault();chatSend(e.target.value);chatClose()}else if(e.key=='Escape')chatClose();return}if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=e.key.toLowerCase();if((k=='enter'||k=='/')&&!e.repeat){e.preventDefault();for(const q in K)K[q]=0;chatOpen(k=='/'?'/':'');return}if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
 addEventListener('keyup',e=>{if(e.key==' ')spaceUp();{const m=MKEYS[e.key.toLowerCase()];if(m)MK[m]=0}const k=keys[e.key.toLowerCase()];if(k)K[k]=0});
 document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();K[k]=1;b.classList.add('dn');b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>{K[k]=0;b.classList.remove('dn')}));b.addEventListener('contextmenu',e=>e.preventDefault())});
 {const st=$('stick'),kn=$('knob');let pid=null;JOY.g=1;
@@ -3560,13 +3560,18 @@ let last=performance.now();
 // ---------- multiplayer: everyone who has the page open is in the one room and sees the others move on the map ----------
 // Presence only: each browser still runs its own world; what travels is where each player is, what he drives and what it carries.
 const NET={room:null,last:0,gh:new Map(),hue:Math.floor(Math.random()*360)};
-(async()=>{try{
- if(window.claude&&window.claude.use){const r=await window.claude.use('room');if(!r)return;NET.room=r;   // inside the Claude page: the page's own room
-  r.onPeers(c=>{for(const p of c.joined)if(!p.sameTab&&p.kind==='viewer')try{flash('Another player is on the map.')}catch(e){}});return}
- netPeerJS()}catch(e){}})();
+// started from the main menu: mode 'host' (a new or loaded game, open to others by its code) or 'join' (somebody else's game, by its code). cb(ok, message) reports how joining went
+const CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',newCode=()=>Array.from({length:5},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
+const IN_CLAUDE=!!(window.claude&&window.claude.use);   // inside the Claude page the game uses the page's own room: everyone who opens the page is in it, there are no codes
+function netStart(mode,code,cb){NET.mode=mode;
+ if(IN_CLAUDE){(async()=>{try{const r=await window.claude.use('room');if(!r)return;NET.room=r;
+  r.onPeers(c=>{for(const p of c.joined)if(!p.sameTab&&p.kind==='viewer')try{flash('Another player is on the map.')}catch(e){}})}catch(e){}})();cb&&cb(true);return}
+ if(mode==='host'){try{code=sessionStorage.getItem('coalhaul.code')||code}catch(e){}code=code||newCode()}
+ NET.code=code;netPeerJS(mode,code,cb)}
 // Anywhere else (GitHub Pages): browsers connect to each other (WebRTC through PeerJS's free matchmaking). The first browser to open the game claims a fixed name and is the host; every later one finds that name and joins it, so everyone lands in the one room with no code. The host passes each player's position on to the others. If the host leaves, the others race to claim the name and one takes over.
-function netPeerJS(){
- const LOBBY='coalhaul-ernesto16a-lobby-v1',qs=new URLSearchParams(location.search),ph=qs.get('peerhost'),opts=ph?{host:ph.split(':')[0],port:+ph.split(':')[1]||9000,path:'/',secure:false}:{};   // ?peerhost=localhost:9000 points it at a PeerServer of your own (testing)
+function netPeerJS(mode,code,cb){
+ let LOBBY='coalhaul-ernesto16a-'+code,first=true;const done=(ok,m)=>{if(!first)return;first=false;if(ok&&mode==='host')try{sessionStorage.setItem('coalhaul.code',code)}catch(e){}cb&&cb(ok,m)};
+ const qs=new URLSearchParams(location.search),ph=qs.get('peerhost'),opts=ph?{host:ph.split(':')[0],port:+ph.split(':')[1]||9000,path:'/',secure:false}:{};   // ?peerhost=localhost:9000 points it at a PeerServer of your own (testing)
  const load=src=>new Promise((ok,no)=>{const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=no;document.head.appendChild(e)});
  let rx=0,peer=null,myId=null,isHost=false,online=false,hostConn=null,mine={},ver=0,cache=null;const M=new Map(),conns=new Map(),subs=[];
  const now=()=>performance.now(),mk=(id,e)=>({peer:id,by:null,isMe:false,sameTab:false,kind:'viewer',guest:false,presence:e.pr,updatedAt:e.t});
@@ -3582,21 +3587,22 @@ function netPeerJS(){
  NET.dbg=()=>({isHost,online,myId,conns:conns.size,M:M.size,hc:!!hostConn});
  const stop=()=>{online=false;isHost=false;hostConn=null;conns.clear();M.clear();ver++;try{peer&&peer.destroy()}catch(e){}peer=null};
  const again=()=>{stop();setTimeout(start,300+Math.random()*1500)};
- function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;NET.world&&NET.world(true);
+ function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;NET.world&&NET.world(true);done(true);
   p.on('connection',c=>{c.on('open',()=>{conns.set(c.peer,c);setTimeout(()=>{try{room.onJoin&&room.onJoin(c.peer)}catch(e){}},50);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
    c.on('data',d=>{if(d&&d.t==='w'){try{room.onMsg&&room.onMsg(c.peer,d.d)}catch(e){}for(const o of conns.values())if(o!==c&&o.open)o.send({t:'w',f:c.peer,d:d.d});return}if(!d||d.t!=='p')return;put(c.peer,d.pr);const m={t:'p',id:c.peer,pr:d.pr};for(const o of conns.values())if(o!==c&&o.open)o.send(m)});
    const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);drop(c.peer);for(const o of conns.values())if(o.open)o.send({t:'l',id:c.peer})}};c.on('close',gone);c.on('error',gone)});
   p.on('disconnected',()=>{try{p.reconnect()}catch(e){}});p.on('error',e=>{if(e.type!=='peer-unavailable')again()})}
  function joinClient(){const p=new Peer(undefined,opts);peer=p;
   p.on('open',id=>{myId=id;const c=p.connect(LOBBY);
-   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room;NET.world&&NET.world(false)});
+   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room;NET.world&&NET.world(false);done(true)});
    c.on('data',d=>{if(!d)return;rx=now();if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id);else if(d.t==='w'){try{room.onMsg&&room.onMsg(d.f,d.d)}catch(e){}}});
    c.on('close',again);c.on('error',again)});
-  p.on('error',e=>{if(e.type==='peer-unavailable'||e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed')again()})}
+  p.on('error',e=>{if(first&&mode==='join'){stop();return done(false,e.type==='peer-unavailable'?'No game found with the code '+code+'.':'Could not reach the game server ('+e.type+').')}if(e.type==='peer-unavailable'||e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed')again()})}
  function start(){const p=new Peer(LOBBY,opts);peer=p;let opened=false;
   p.on('open',()=>{opened=true;becomeHost(p)});
-  p.on('error',e=>{if(opened)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}joinClient()}else again()})}
- load('https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js').catch(()=>load('https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js')).then(start).catch(()=>{})}
+  p.on('error',e=>{if(opened)return;if(e.type==='unavailable-id'){try{p.destroy()}catch(x){}if(first&&mode==='host'){code=newCode();NET.code=code;LOBBY='coalhaul-ernesto16a-'+code;try{sessionStorage.removeItem('coalhaul.code')}catch(x){}return start()}joinClient()}else if(first){stop();done(false,'Could not reach the game server ('+e.type+').')}else again()})}   /* the code is taken by another game: a new one */
+ setTimeout(()=>done(false,'The game did not answer. Check the code and try again.'),15000);
+ load('https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js').catch(()=>load('https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js')).then(mode==='join'?joinClient:start).catch(()=>done(false,'Could not load the multiplayer library.'))}
 // ---- chat: Enter (or /) opens a line at the bottom left; Enter sends, Esc closes. A line starting with / is a command (/help lists them).
 // Messages go out with each player's presence (the last few, each with an id), so the chat works in every way the game is shared; everyone shows each id once
 const CHAT={name:(()=>{try{return localStorage.getItem('coalhaul.name')||''}catch(e){return''}})(),out:[],seen:new Set(),n:0,lines:[]};
@@ -3615,6 +3621,7 @@ const CMDS={
  help:['','list the commands',()=>{chatLine('Commands: '+Object.entries(CMDS).map(([k,v])=>'/'+k+(v[0]?' '+v[0]:'')+' – '+v[1]).join(' · '),1)}],
  name:['<name>','set the name the others see',a=>{const n=a.trim().slice(0,20);if(!n)return chatLine('Your name is '+(CHAT.name||'not set')+'. Use /name Joe.',1);CHAT.name=n;try{localStorage.setItem('coalhaul.name',n)}catch(e){}NET.last=0;chatLine('You are now '+esc(n)+'.',1)}],
  players:['','who is on the map',()=>{const r=NET.room,o=[CHAT.name||'You'];try{if(r)for(const p of r.peers())if(!p.sameTab&&p.presence)o.push(p.presence.nm||'Player')}catch(e){}chatLine(o.length+' on the map: '+o.map(esc).join(', '),1)}],
+ code:['','the code friends join this game with',()=>chatLine(IN_CLAUDE?'In this preview there are no codes: everyone who opens the page is on this map.':NET.code?(NET.mode==='join'?'You are in the game '+NET.code+'.':'Game code: '+NET.code+'. Friends use Join game in the main menu.'):'This game is not open to others.',1)],
  time:['','the game clock',()=>chatLine('Day '+DAYN+', '+clockHM()+(darkness()>.5?' (night)':''),1)],
  clear:['','clear the chat',()=>{document.getElementById('chlog').innerHTML=''}],
  cam:['','switch the camera (same as TAB)',()=>camMode()],
@@ -3781,7 +3788,7 @@ function chooseColour(joining,then){let pre=null;try{pre=localStorage.getItem('c
   '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+PAL.map(c=>'<button data-c="'+c+'" title="'+c+'" style="height:52px;border-radius:10px;cursor:pointer;background:'+c+';border:3px solid '+(c===pre?'#ffd166':'#ffffff30')+'"></button>').join('')+'</div>'));
  o.querySelectorAll('button').forEach(b=>b.onclick=()=>{MYCOL=b.dataset.c;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(e){}o.remove();then&&then()})}
 // a new game: the starting pickup takes the colour picked
-function startColour(){chooseColour(false,()=>{for(const v of Object.values(veh))if(v.starter){v.color=MYCOL;v.bedColor=MYCOL}})}
+function startColour(then){chooseColour(false,()=>{for(const v of Object.values(veh))if(v.starter){v.color=MYCOL;v.bedColor=MYCOL}then&&then()})}
 function pickPickup(){const ov=document.getElementById('pickov');if(ov){if(ov.dataset.join)return;ov.remove();MYCOL=null}   // joined while the start window was still open: that choice starts over, as a joining player's
  const variants=()=>{const opts=[['coal','Cargo bed','5 t of cargo (coal, rock)'],['logs','Log bed','3 logs'],['fuel','Fuel tank','a tank on the bed'],['flat','Flatbed','one pallet or 4 crates']];
   const o=overlay(ovBox('Joining the game','Choose the pickup you start with. It appears at the garage, free, in your colour, and everyone in the game can use it.',opts.map(q=>'<button data-b="'+q[0]+'" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:6px 0;padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer"><img src="'+icon('pickup',0,MYCOL,q[0]==='coal'?null:q[0],MYCOL)+'" style="width:84px;height:36px;object-fit:contain"><span><b>'+q[1]+'</b><br><small style="opacity:.75">'+q[2]+'</small></span></button>').join('')));o.dataset.join=1;
@@ -3802,25 +3809,52 @@ function gameSave(){const d=netApi().snap();d.v=1;d.t=Date.now();d.me={x:P.x,y:P
 function saveTo(key){try{if(key===SAVEK+'auto'){const o=localStorage.getItem(key);if(o)localStorage.setItem(SAVEK+'prev',o)}localStorage.setItem(key,JSON.stringify(gameSave()));return true}catch(e){return false}}
 const readSave=key=>{try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch(e){return null}};
 function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;localStorage.setItem(PENDK,raw);location.reload();return true}catch(e){flash('That is not a Coal Haul save.');return false}}
-setInterval(()=>{if(sNow()>30000&&!bigMap)saveTo(SAVEK+'auto')},60000);   // not in the first seconds: a page opened by mistake must not replace a good autosave
-addEventListener('pagehide',()=>{if(sNow()>30000)saveTo(SAVEK+'auto')});
+const canAuto=()=>!MENU&&NET.mode!=='join';   // a player in somebody else's game does not autosave it over his own
+setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000);   // not in the first seconds: a page opened by mistake must not replace a good autosave
+addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 function saveMenu(){let o=document.getElementById('gmenu');if(o){o.remove();return}
  o=document.createElement('div');o.id='gmenu';o.style.cssText='position:fixed;inset:0;background:#0b120cbb;z-index:40;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';
  const row=(label,key,canSave)=>{const d=readSave(key);return'<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><div style="flex:1"><b>'+label+'</b><br><small style="opacity:.7">'+fmtT(d)+'</small></div>'+(canSave?'<button data-s="'+key+'">Save</button>':'')+'<button data-l="'+key+'"'+(d?'':' disabled')+'>Load</button></div>'};
- o.innerHTML='<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:18px 22px;color:#eee;width:min(92vw,380px);max-height:90vh;overflow:auto"><div style="font-size:18px;font-weight:700;margin-bottom:8px">Game</div>'+row('Slot 1',SAVEK+'1',1)+row('Slot 2',SAVEK+'2',1)+row('Slot 3',SAVEK+'3',1)+row('Autosave',SAVEK+'auto',0)+row('Before the last autosave',SAVEK+'prev',0)+
-  '<div style="display:flex;gap:8px;margin-top:10px"><button id="gm-ex" style="flex:1">Export to file</button><button id="gm-im" style="flex:1">Import file</button></div><div style="display:flex;gap:8px;margin-top:8px"><button id="gm-new" style="flex:1">New game</button><button id="gm-x" style="flex:1">Close</button></div><div id="gm-m" style="margin-top:8px;font-size:12px;opacity:.8;min-height:16px"></div><input id="gm-f" type="file" accept=".json,application/json" style="display:none"></div>';
+ o.innerHTML='<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:18px 22px;color:#eee;width:min(92vw,380px);max-height:90vh;overflow:auto"><div style="font-size:18px;font-weight:700;margin-bottom:8px">Game</div>'+codeLine()+row('Slot 1',SAVEK+'1',1)+row('Slot 2',SAVEK+'2',1)+row('Slot 3',SAVEK+'3',1)+row('Autosave',SAVEK+'auto',0)+row('Before the last autosave',SAVEK+'prev',0)+
+  '<div style="display:flex;gap:8px;margin-top:10px"><button id="gm-ex" style="flex:1">Export to file</button><button id="gm-im" style="flex:1">Import file</button></div><div style="display:flex;gap:8px;margin-top:8px"><button id="gm-new" style="flex:1">Main menu</button><button id="gm-x" style="flex:1">Close</button></div><div id="gm-m" style="margin-top:8px;font-size:12px;opacity:.8;min-height:16px"></div><input id="gm-f" type="file" accept=".json,application/json" style="display:none"></div>';
  document.body.appendChild(o);const say=t=>{o.querySelector('#gm-m').textContent=t};
  o.querySelectorAll('button').forEach(b=>{b.style.cssText+=';padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer'});
  o.querySelectorAll('button[data-s]').forEach(b=>b.onclick=()=>{say(saveTo(b.dataset.s)?'Saved.':'Could not save (the browser storage is full or blocked).');setTimeout(()=>{o.remove();saveMenu()},600)});
  o.querySelectorAll('button[data-l]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(b.dataset.l);if(r&&!loadFrom(r))say('Not loaded.')});
  o.querySelector('#gm-ex').onclick=()=>{const blob=new Blob([JSON.stringify(gameSave())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='coalhaul-save.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);say('Exported.')};
  const fi=o.querySelector('#gm-f');o.querySelector('#gm-im').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))say('Not loaded.')};rd.readAsText(f)};
- o.querySelector('#gm-new').onclick=()=>{if(othersHere()){say('Other players are connected.');return}if(confirm('Start a new game? The autosave will be replaced.')){try{localStorage.removeItem(SAVEK+'auto')}catch(e){}location.reload()}};
+ o.querySelector('#gm-new').onclick=()=>{if(!confirm(NET.mode==='join'?'Leave this game and go back to the main menu?':'Go back to the main menu? The game is autosaved first.'+(othersHere()?' The other players lose their host for a moment: one of them takes over.':'')))return;if(canAuto())saveTo(SAVEK+'auto');try{sessionStorage.removeItem('coalhaul.code')}catch(e){}location.reload()};
  o.querySelector('#gm-x').onclick=()=>o.remove();o.addEventListener('pointerdown',e=>{if(e.target===o)o.remove()})}
 {const b=document.createElement('button');b.id='gmbtn';b.textContent='Menu';b.style.cssText='position:fixed;right:76px;top:calc(env(safe-area-inset-top,0px) + 20px + var(--gh,32px));z-index:6;background:var(--panel);color:var(--ink);border:1px solid #fff4;border-radius:6px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;touch-action:auto';b.onclick=saveMenu;document.body.appendChild(b)}
+// ---------- the main menu: every player starts here ----------
+let MENU=true;
+function codeLine(){if(IN_CLAUDE)return'<div style="font-size:12px;opacity:.75;margin-bottom:8px">In this preview everyone who opens the page plays on the same map.</div>';if(!NET.code)return'';
+ return'<div style="background:#243645;border-radius:8px;padding:8px 10px;margin-bottom:10px">'+(NET.mode==='join'?'In the game <b>':'Game code: <b style="font-size:18px;letter-spacing:3px;color:#ffd166">')+NET.code+'</b>'+(NET.mode==='join'?'</b>':'<br><small style="opacity:.75">Friends join with this code (Join game in the main menu).</small>')+'</div>'}
+function mainMenu(view,msg){MENU=true;let o=document.getElementById('mmenu');if(!o){o=document.createElement('div');o.id='mmenu';o.style.cssText='position:fixed;inset:0;background:radial-gradient(ellipse at center,#0b120c99,#0b120cf2);z-index:60;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';document.body.appendChild(o)}
+ const B=(id,t,sub,dis)=>'<button id="'+id+'"'+(dis?' disabled':'')+' style="display:block;width:100%;text-align:left;margin:7px 0;padding:11px 14px;border-radius:9px;border:1px solid #ffffff30;background:'+(dis?'#1f2c36':'#243645')+';color:'+(dis?'#fff6':'#fff')+';font-size:15px;cursor:'+(dis?'default':'pointer')+'"><b>'+t+'</b>'+(sub?'<br><small style="opacity:.7">'+sub+'</small>':'')+'</button>';
+ const auto=readSave(SAVEK+'auto'),back='<button id="mm-back" style="margin-top:8px;padding:8px 14px;border-radius:8px;border:1px solid #ffffff30;background:#1f2c36;color:#fff;cursor:pointer">Back</button>',note='<div id="mm-m" style="min-height:18px;margin-top:8px;font-size:13px;color:#ffb4a8">'+(msg||'')+'</div>';
+ let body='';
+ if(!view)body='<div style="font-size:30px;font-weight:800;letter-spacing:1px;margin-bottom:2px">COAL HAUL</div><div style="opacity:.7;font-size:13px;margin-bottom:14px">Haul, build, grow. Alone or with friends.</div>'+
+  '<label style="font-size:12px;opacity:.75">Your name</label><input id="mm-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="display:block;width:100%;box-sizing:border-box;margin:3px 0 8px;padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px">'+
+  (auto?B('mm-cont','Continue','The autosave · '+fmtT(auto)):'')+B('mm-new','New game','A fresh map, $0, your pickup at the garage')+B('mm-load','Load game','A save slot or a file')+B('mm-join','Join game',IN_CLAUDE?'Works in the GitHub version: here everyone is on one map already':'Play in a friend\'s game with its code',IN_CLAUDE)+note;
+ else if(view==='load'){const row=(l,k)=>{const d=readSave(k);return B('mm-l-'+k.split('.').pop(),l,fmtT(d),!d)};body='<div style="font-size:20px;font-weight:700;margin-bottom:6px">Load game</div>'+row('Slot 1',SAVEK+'1')+row('Slot 2',SAVEK+'2')+row('Slot 3',SAVEK+'3')+row('Autosave',SAVEK+'auto')+row('Before the last autosave',SAVEK+'prev')+B('mm-file','From a file…','A save exported earlier')+'<input id="mm-f" type="file" accept=".json,application/json" style="display:none">'+note+back}
+ else if(view==='join')body='<div style="font-size:20px;font-weight:700;margin-bottom:6px">Join game</div><div style="opacity:.75;font-size:13px;margin-bottom:10px">Ask the host for the game code: it is in his Menu.</div><input id="mm-code" maxlength="5" autocomplete="off" spellcheck="false" placeholder="CODE" style="width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid #ffffff40;background:#0f171e;color:#ffd166;font-size:26px;letter-spacing:8px;text-align:center;text-transform:uppercase">'+B('mm-go','Join','')+note+back;
+ o.innerHTML='<div style="background:#1a2630ee;border:1px solid #ffffff30;border-radius:14px;padding:22px 26px;color:#eee;width:min(92vw,400px);max-height:92vh;overflow:auto;box-shadow:0 20px 60px #0008">'+body+'</div>';
+ const q=id=>o.querySelector('#'+id),say=t=>{const m=q('mm-m');if(m)m.textContent=t},name=()=>{const i=q('mm-name');if(!i)return;CHAT.name=i.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}};
+ if(q('mm-back'))q('mm-back').onclick=()=>mainMenu();
+ if(!view){q('mm-name').oninput=name;
+  if(q('mm-cont'))q('mm-cont').onclick=()=>{name();const r=localStorage.getItem(SAVEK+'auto');if(r&&!loadFrom(r))say('The autosave could not be loaded.')};
+  q('mm-new').onclick=()=>{name();o.remove();startColour(()=>{MENU=false;netStart('host')})};
+  q('mm-load').onclick=()=>{name();mainMenu('load')};
+  q('mm-join').onclick=()=>{name();mainMenu('join')}}
+ if(view==='load'){o.querySelectorAll('button[id^="mm-l-"]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(SAVEK+b.id.slice(5));if(r&&!loadFrom(r))say('That save could not be loaded.')});
+  const fi=q('mm-f');q('mm-file').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))say('That is not a Coal Haul save.')};rd.readAsText(f)}}
+ if(view==='join'){const ci=q('mm-code');ci.focus();const go=()=>{const c=ci.value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==5)return say('A game code has 5 letters and digits.');q('mm-go').disabled=true;say('');q('mm-m').style.color='#cfe';say('Connecting to '+c+'…');
+   netStart('join',c,(ok,m)=>{if(ok){o.remove();MENU=false;chatLine('You joined the game '+c+'.',1)}else{NET.mode=null;NET.code=null;mainMenu('join',m)}})};
+  q('mm-go').onclick=go;ci.onkeydown=e=>{if(e.key==='Enter')go()}}}
 let lastDraw=0;
-function loop(n){if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
+function loop(n){if(MENU){last=n;draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
  syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
  requestAnimationFrame(loop)}
@@ -3836,7 +3870,8 @@ function applyStartLayout(){const L=START_LAYOUT,acts=[],ns=Object.keys(L.at);
  for(const a of acts)netApplyAct(a);
  START=startAt();const v=Object.values(veh).find(q=>q.starter);   // the starting pickup and the player stand in the garage lot again
  if(v){v.x=START.x;v.y=START.y;v.a=START.a;const kd=KOF(v),ca=[Math.cos(START.a),Math.sin(START.a)],o=(kd.b1-1.2)*S;P.driving=false;P.x=START.x+ca[0]*o-ca[1]*2.1*S;P.y=START.y+ca[1]*o+ca[0]*2.1*S;P.a=START.a;cam.x=P.x;cam.y=P.y}}
-try{const raw=localStorage.getItem(PENDK);if(raw){localStorage.removeItem(PENDK);const D=JSON.parse(raw);netApi().restore(D);if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash('Game loaded.')}else{applyStartLayout();if(!WS.joined||(NET.room&&NET.room.isHost&&NET.room.isHost()))startColour();if(localStorage.getItem(SAVEK+'auto'))flash('A saved game was found: open Menu to continue it.')}}catch(e){}
+try{const raw=localStorage.getItem(PENDK);if(raw){localStorage.removeItem(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=JSON.parse(raw);netApi().restore(D);if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash('Game loaded.')}else applyStartLayout()}catch(e){}
+try{if(sessionStorage.getItem('coalhaul.loaded')){sessionStorage.removeItem('coalhaul.loaded');MENU=false;netStart('host')}else mainMenu()}catch(e){mainMenu()}
 requestAnimationFrame(loop);
 </script></body></html>
 
