@@ -55,12 +55,12 @@ html,body,#hud,#bl,#msg,#touch{-webkit-user-select:none;user-select:none;-webkit
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud">
-  <div class="p">Cash <b id="cash">$0</b></div>
+  <div class="p">Cash <b id="cash">$0</b> <span id="clk" style="margin-left:8px;opacity:.85"></span></div>
  <div class="p" id="goal"></div>
  <div class="p" id="hk"></div>
 </div>
 <button id="tbtn">Test</button>
-<div id="tp"><b>Test</b> · debug<label for="tcash">Cash (set to)</label><div class="row"><input id="tcash" type="number" step="100" inputmode="numeric" placeholder="e.g. 5000"><button id="tset">Set</button></div><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tbed" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Bed type change in the garage</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tcol" type="checkbox" checked style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Collision (kerbs, walls, buildings)</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tgrid" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Grid: tiles and chunks</span></label><label>Construction sites</label><div class="row"><button id="tbuild">Build all</button></div><label for="ttu">Turn a building (90° clockwise)</label><div class="row"><select id="ttu"></select><button id="ttugo">Turn</button></div><label>Crane test</label><div class="row"><button id="tcrane">Crane kit at the garage</button></div><label for="ttp">Teleport player to</label><div class="row"><select id="ttp"></select><button id="ttpgo">Go</button></div><div id="tmsg" style="min-height:18px;margin-top:8px;font-size:12px;color:#ffd29f"></div></div>
+<div id="tp"><b>Test</b> · debug<label>Time of day</label><div class="row"><button id="tday">Morning</button><button id="tdusk">Dusk</button><button id="tnight">Night</button></div><label for="tcash">Cash (set to)</label><div class="row"><input id="tcash" type="number" step="100" inputmode="numeric" placeholder="e.g. 5000"><button id="tset">Set</button></div><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tbed" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Bed type change in the garage</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tcol" type="checkbox" checked style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Collision (kerbs, walls, buildings)</span></label><label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer"><input id="tgrid" type="checkbox" style="flex:none;width:18px;height:18px;padding:0;margin:0"><span>Grid: tiles and chunks</span></label><label>Construction sites</label><div class="row"><button id="tbuild">Build all</button></div><label for="ttu">Turn a building (90° clockwise)</label><div class="row"><select id="ttu"></select><button id="ttugo">Turn</button></div><label>Crane test</label><div class="row"><button id="tcrane">Crane kit at the garage</button></div><label for="ttp">Teleport player to</label><div class="row"><select id="ttp"></select><button id="ttpgo">Go</button></div><div id="tmsg" style="min-height:18px;margin-top:8px;font-size:12px;color:#ffd29f"></div></div>
 <div id="gp"></div>
 <div id="bl"><div class="p" id="selp" style="display:none;align-items:center"></div><div id="vd" class="p" style="display:none"><div id="vn"></div><div id="vdrv"><div class="vr">Load <span id="cl"></span></div><div class="bar"><i id="load"></i></div><div id="dial"></div><div class="vr" style="text-align:center;margin:0 0 2px;min-height:15px"><b id="spd"></b></div></div><div class="vr">Fuel <span id="fl"></span></div><div class="bar"><i id="fbar"></i></div><div id="chang" style="display:none"></div></div></div>
 <div id="msg"></div>
@@ -691,6 +691,7 @@ function moveUnit(n,c0,r0,rot,live){const park=c0>=PARKC;const e=park?null:yardC
 let TGRID=false;$('tgrid').onchange=()=>{TGRID=$('tgrid').checked;$('tmsg').textContent='Grid: '+(TGRID?'ON':'OFF')+'.'};
 $('tbed').onchange=()=>{bedCust=$('tbed').checked;$('tmsg').textContent='Bed type change in the garage: '+(bedCust?'ON':'OFF')+'.';if(panelOpen)renderGarage()};
 {const sel=$('ttp');sel.innerHTML=OFFICES.map((o,i)=>'<option value="'+i+'">'+o.n.charAt(0).toUpperCase()+o.n.slice(1)+'</option>').join('');   /* the player appears just outside the building's door */
+ {const st=c=>{CLK=c;if(NETX.send&&NET.room&&NET.room.isHost&&NET.room.isHost())WS.ct=0};$('tday').onclick=()=>st(60);$('tdusk').onclick=()=>st(DAYLEN-70);$('tnight').onclick=()=>st(DAYLEN+30)}   // test: jump the clock
  $('tcrane').onclick=()=>{const o=OFFICES.find(q=>q.n==='garage');if(!o)return;if(IN){IN=null;Z=Zsave}P.driving=false;P.pass=null;[P.x,P.y,P.a]=doorOut(o);   // test: a crane truck with every tool, a pallet, 3 logs and a container in front of the garage
   const a=P.a,dx=Math.cos(a),dy=Math.sin(a),sx=-dy,sy=dx,at=(f,sd)=>[P.x+dx*f*S+sx*sd*S,P.y+dy*f*S+sy*sd*S];
   const c=addVeh('crane',{});const q=at(5,0);c.out=true;c.x=q[0];c.y=q[1];c.a=a+Math.PI/2;c.v=0;c.fuel=KOF(c).fuel;crOf(c);
@@ -3181,6 +3182,33 @@ function objective(){
  if(st.dest===undefined)return full?{...entr(1),c:'#7fd1ff'}:{...entr(0),c:'#f2b134'};
  if(st.coal===undefined)return{...entr(st.dest),c:'#7fd1ff'};
  return have>.4&&(full||have>=st.coal-.01)?{...entr(st.dest),c:'#7fd1ff'}:{...entr(0),c:'#f2b134'}}
+// ---- day and night: one game day lasts 20 minutes, 15 of daylight (06:00 to 21:00) and 5 of night (21:00 to 06:00). Dusk is the last minute of the day, dawn the last minute of the night ----
+const DAYLEN=900,NIGHTLEN=300,CYCLE=DAYLEN+NIGHTLEN;let CLK=60,DAYN=1;   // CLK: seconds into the current day (a new game starts at 07:00); DAYN: which day it is
+const ssm=x=>x<=0?0:x>=1?1:x*x*(3-2*x);
+const darkness=(c=CLK)=>c<DAYLEN-60?0:c<DAYLEN?ssm((c-(DAYLEN-60))/60):c<CYCLE-60?1:ssm((CYCLE-c)/60);
+const clockHM=(c=CLK)=>{const h=c<DAYLEN?6+15*c/DAYLEN:21+9*(c-DAYLEN)/NIGHTLEN,m=Math.floor(h*60)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')};
+function tickClock(dt){CLK+=dt;if(CLK>=CYCLE){CLK-=CYCLE;DAYN++}const el=document.getElementById('clk'),t=(darkness()>.5?'☾ ':'☀ ')+'Day '+DAYN+' · '+clockHM();if(el&&el.textContent!==t)el.textContent=t}
+const LC=document.createElement('canvas'),lg=LC.getContext('2d');
+// the night: a dark blue layer over the world with holes where light falls: headlights of vehicles in use, a glow round each person, lit buildings and yards, the work lamps of a working crane
+function drawNight(){const D=darkness();if(D<.01||LIVEMAP)return;const W=Math.round(VW*dpr),H=Math.round(VH*dpr);if(LC.width!==W||LC.height!==H){LC.width=W;LC.height=H}
+ const q=dpr*Z,x0=cam.x-VW/Z/2-400,x1=cam.x+VW/Z/2+400,y0=cam.y-VH/Z/2-400,y1=cam.y+VH/Z/2+400,see=(x,y)=>x>x0&&x<x1&&y>y0&&y<y1,u=S;
+ lg.globalCompositeOperation='source-over';lg.setTransform(1,0,0,1,0,0);lg.clearRect(0,0,W,H);lg.fillStyle='rgba(6,12,34,'+(.8*D)+')';lg.fillRect(0,0,W,H);
+ lg.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q));lg.globalCompositeOperation='destination-out';
+ const glow=(x,y,r,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.55,'rgba(0,0,0,'+k*.6+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.arc(x,y,r,0,7);lg.fill()};
+ const cone=(x,y,a,len,ha,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,len);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.6,'rgba(0,0,0,'+k*.7+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.moveTo(x,y);lg.arc(x,y,len,a-ha,a+ha);lg.closePath();lg.fill()};
+ for(const o of OFFICES){const r=offRect(o),cx=(r.x0+r.x1)/2,cy=(r.y0+r.y1)/2;glow(cx,cy,Math.max(r.x1-r.x0,r.y1-r.y0)*.95,.75)}   // lit windows
+ for(const y of yards){const w=y.x1-y.x0,h=y.y1-y.y0;if(w*h<4*S*S)continue;glow((y.x0+y.x1)/2,(y.y0+y.y1)/2,Math.min(w,h)*.62,.5)}   // floodlit yards
+ const lamps=[];
+ for(const v of Object.values(veh)){if(!v.out||!see(v.x,v.y))continue;const use=(P.driving&&T===v)||P.pass===v||Math.abs(v.v||0)>.05||(v.kind==='crane'&&v.ft>0);if(!use)continue;
+  const kd=KOF(v),fx=v.kind==='forklift'?.3:kd.b1,hw=(kd.hw||1)*.62;
+  for(const sd of[-1,1]){const w=wld(fx*u,sd*hw*u,v.x,v.y,v.a);cone(w[0],w[1],v.a,v.kind==='forklift'?7*u:11*u,.42,.95);lamps.push(w)}
+  glow(v.x,v.y,2.6*u,.55);
+  if(v.kind==='crane'&&v.ft>0){const h=hookPt(v);glow(h[0],h[1],4*u,.85);lamps.push(h)}}
+ if(!P.driving&&!IN)glow(P.x,P.y,3.2*u,.7);
+ if(NET.room)for(const p of NET.room.peers()){const r=p.presence;if(p.sameTab||!r||r.in||typeof r.x!=='number')continue;glow(r.x,r.y,3.2*u,.6)}
+ lg.globalCompositeOperation='source-over';
+ g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(LC,0,0);g.restore();
+ g.save();g.globalCompositeOperation='lighter';for(const w of lamps){const gr=g.createRadialGradient(w[0],w[1],0,w[0],w[1],.9*u);gr.addColorStop(0,'rgba(255,236,170,'+(.55*D)+')');gr.addColorStop(1,'rgba(255,236,170,0)');g.fillStyle=gr;g.beginPath();g.arc(w[0],w[1],.9*u,0,7);g.fill()}g.restore()}
 function draw(t){
  if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
  g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
@@ -3198,7 +3226,7 @@ function draw(t){
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
- drawSeats();drawPlayer();drawTop();drawTestGrid();
+ drawSeats();drawPlayer();drawTop();drawNight();drawTestGrid();
  const tg=objective(),O=P.driving&&T.out?T:P;
  if(tg){const dx=tg.x-O.x,dy=tg.y-O.y;if(Math.hypot(dx,dy)>170){const an=Math.atan2(dy,dx);g.save();g.translate(O.x+Math.cos(an)*100,O.y+Math.sin(an)*100);g.rotate(an);g.fillStyle=tg.c;g.beginPath();g.moveTo(16,0);g.lineTo(-8,-11);g.lineTo(-8,11);g.fill();g.restore()}}
  g.restore();
@@ -3651,17 +3679,18 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=entOf(r.id);if(cur&&!cur._s&&heldByMe(cur)){if(r.k==='v'||r.k==='t')mergeHeld(cur,r);continue}WS.ver[r.id]=r.ver;const e=(r.k==='v'||r.k==='t')?apply(r):applyX(r);if(e)ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(mk[r.k](e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
  function drop(list){for(const[id,v]of list||[]){if((WS.ver[id]||0)>v)continue;const e=entOf(id);if(!e||e===T&&P.driving)continue;WS.ver[id]=v;if(id[0]==='v'||id[0]==='t'){if(e.tr){e.tr.coupled=false;e.tr.host=null}delete veh[id];delete trl[id]}else{const A=id[0]==='p'?PALS:id[0]==='l'?LG:id[0]==='a'?ATT:GI,i=A.indexOf(e);if(i>=0)A.splice(i,1)}delete WS.last[id]}}
  if(!offline)room.onMsg=(from,d)=>{if(!d)return;
-  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;ATT.length=0;WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
+  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;ATT.length=0;WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);if(typeof d.clk==='number'){CLK=d.clk;DAYN=d.dn||1}WS.joined=true;WS.on=true;pickPickup()}else take(d.e,from);return}
   if(!WS.on)return;
   if(d.c){cash+=d.c;WS.cb+=d.c}
+  if(typeof d.clk==='number'&&!room.isHost()){CLK=d.clk;DAYN=d.dn||DAYN}   // the host's clock is the game's
   if(d.k){for(const k in d.k)if(CT[k]){CT[k].set(CT[k].get()+d.k[k]);BASE[k]=CT[k].get()}resync()}
   if(d.f)for(const k in d.f)if(FLG[k]){FLG[k].set(d.f[k]);FB[k]=FLG[k].get()}
   if(d.a)for(const a of d.a)netApplyAct(a,1);
   take(d.e,from);drop(d.x)};
- const snap=()=>{const all=[];for(const[k,e]of everything()){const r=mk[k](e);r.ver=WS.ver[r.id]||1;if(!WS.ver[r.id])WS.ver[r.id]=1;all.push(r)}const[sa,sf]=absAll();return{e:all,cash,s:sa,fl:sf,acts:NETX.acts}};
+ const snap=()=>{const all=[];for(const[k,e]of everything()){const r=mk[k](e);r.ver=WS.ver[r.id]||1;if(!WS.ver[r.id])WS.ver[r.id]=1;all.push(r)}const[sa,sf]=absAll();return{e:all,cash,s:sa,fl:sf,acts:NETX.acts,clk:CLK,dn:DAYN}};
  // a saved game is put back on a map nobody has touched yet: the same steps as joining, with the player put where the save says
  const restore=d=>{P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;ATT.length=0;WS.last={};WS.ver={};
-  take(d.e,'save');for(const r of d.e)if(r.k==='v'||r.k==='t')linkRide(r);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);
+  take(d.e,'save');for(const r of d.e)if(r.k==='v'||r.k==='t')linkRide(r);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);if(typeof d.clk==='number'){CLK=d.clk;DAYN=d.dn||1}
   const m=d.me;if(m&&m.col)MYCOL=m.col;if(m){const v=m.drv&&veh[m.drv],o=m.in&&OFFICES.find(q=>q.n===m.in);if(o){[P.x,P.y,P.a]=doorOut(o)}else{P.x=m.x;P.y=m.y;P.a=m.a}if(v){setActive(v);P.driving=true}else P.driving=false;cam.x=P.x;cam.y=P.y}};
  NET.api={snap,restore};
  if(offline)return;
@@ -3673,7 +3702,8 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
   const c=Math.round((cash-WS.cb)*1e4)/1e4;if(c)WS.cb=cash;
   const kk={},ff={};let nk=0;for(const k in CT){const v=CT[k].get(),d=Math.round((v-BASE[k])*1e4)/1e4;if(d){kk[k]=d;BASE[k]+=d;nk++}}
   for(const k in FLG){const v=FLG[k].get();if(v!==FB[k]){ff[k]=v;FB[k]=v;nk++}}
-  if(e.length||x.length||c||nk)room.msg({e,x,c,k:kk,f:ff})},66);
+  const ck=room.isHost()&&performance.now()-(WS.ct||0)>5000;if(ck)WS.ct=performance.now();
+  if(e.length||x.length||c||nk||ck)room.msg(Object.assign({e,x,c,k:kk,f:ff},ck?{clk:CLK,dn:DAYN}:{}))},66);
 };
 // what other players move eases across the screen instead of jumping
 function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const e of[...Object.values(veh),...Object.values(trl),...PALS,...LG]){const g=e._g;if(!g)continue;if(P.driving&&T===e){e._g=null;continue}
@@ -3729,7 +3759,7 @@ function saveMenu(){let o=document.getElementById('gmenu');if(o){o.remove();retu
 let lastDraw=0;
 function loop(n){if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
+ syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
  requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
