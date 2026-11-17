@@ -3843,10 +3843,33 @@ const SAVEK='coalhaul.save.',PENDK='coalhaul.pending',sNow=()=>performance.now()
 const othersHere=()=>{const r=NET.room;try{return!!(r&&r.shared&&r.peers().some(p=>!p.sameTab))}catch(e){return false}};
 let SAVENM='';   // the name of the game being played: the one it was last saved or loaded under
 function gameSave(){const d=netApi().snap();d.v=1;if(SAVENM)d.name=SAVENM;d.t=Date.now();d.me={x:P.x,y:P.y,a:P.a,drv:P.driving&&T?T.id:null,in:IN?IN.o.n:null,col:MYCOL};d.story={fuel:STORY.fuel,hitch:STORY.hitch,trl:STORY.trl,d:STORY.d,made:STORY.made};return d}
-function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=localStorage.getItem(key);if(o)localStorage.setItem(SAVEK+'prev',o)}if(name)SAVENM=String(name).slice(0,32);const d=gameSave();{const p=shot();if(p)d.pic=p}localStorage.setItem(key,JSON.stringify(d));return true}catch(e){return false}}
+// ---- where the saves live: the browser's database (IndexedDB), which has room to spare and says how much it may use. The game keeps a copy of every save in memory (SV), so reading is instant; writing goes to the database in the background.
+// If the database cannot be opened (some private windows, some embedded pages) the saves stay in localStorage as before (about 5 MB).
+const SV=new Map();let SVKIND='ls',SVDB=null;
+const idbReq=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const idbTx=(mode,f)=>new Promise((ok,no)=>{const t=SVDB.transaction('saves',mode);f(t.objectStore('saves'));t.oncomplete=()=>ok(true);t.onerror=t.onabort=()=>no(t.error)});
+const SVREADY=(async()=>{try{if(!window.indexedDB)throw 0;
+  SVDB=await new Promise((ok,no)=>{const r=indexedDB.open('coalhaul',1);r.onupgradeneeded=()=>r.result.createObjectStore('saves');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);r.onblocked=()=>no(0);setTimeout(()=>no(0),4000)});
+  await new Promise((ok,no)=>{const t=SVDB.transaction('saves','readonly'),st=t.objectStore('saves'),c=st.openCursor();c.onsuccess=()=>{const q=c.result;if(q){SV.set(q.key,q.value);q.continue()}else ok()};c.onerror=()=>no(c.error)});
+  SVKIND='idb';
+  // the saves from before move over once: a save already in the database wins unless the old one is newer (the autosave written as the page closed)
+  const mv=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(SAVEK)||k===PENDK))mv.push(k)}
+  for(const k of mv){const v=localStorage.getItem(k),cur=SV.get(k);let newer=!cur;if(cur&&k!==PENDK)try{newer=(JSON.parse(v).t||0)>(JSON.parse(cur).t||0)}catch(e){}if(newer){SV.set(k,v);await idbTx('readwrite',st=>st.put(v,k))}if(k!==SAVEK+'auto')localStorage.removeItem(k)}
+ }catch(e){SVKIND='ls';SVDB=null;SV.clear();try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.startsWith(SAVEK)||k===PENDK))SV.set(k,localStorage.getItem(k))}}catch(x){}}})();
+const svGet=k=>SV.has(k)?SV.get(k):null;
+// write a save: the copy in memory at once, the database behind it. A refusal (the disk full) takes the save back out and says so
+function svSet(k,v){const old=SV.get(k);SV.set(k,v);
+ if(SVKIND!=='idb'){try{localStorage.setItem(k,v);return Promise.resolve(true)}catch(e){if(old===undefined)SV.delete(k);else SV.set(k,old);return Promise.resolve(false)}}
+ return idbTx('readwrite',st=>st.put(v,k)).catch(()=>{if(old===undefined)SV.delete(k);else SV.set(k,old);flash('Could not save: the browser refused to store it (the disk may be full).');return false})}
+function svDel(k){SV.delete(k);if(SVKIND!=='idb'){try{localStorage.removeItem(k)}catch(e){}return Promise.resolve()}return idbTx('readwrite',st=>st.delete(k)).catch(()=>{})}
+let SVPERS=false;const svPersist=()=>{if(SVPERS||SVKIND!=='idb')return;SVPERS=true;try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}};   // asks the browser to keep the saves even when it runs short of space
+function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=svGet(key);if(o)svSet(SAVEK+'prev',o)}if(name)SAVENM=String(name).slice(0,32);const d=gameSave();{const p=shot();if(p)d.pic=p}const v=JSON.stringify(d);
+ if(SVKIND!=='idb'){svSet(key,v);return SV.get(key)===v}   /* localStorage writes at once: a refused save is already taken back */
+ svSet(key,v);svPersist();if(key===SAVEK+'auto'){try{localStorage.setItem(key,v)}catch(e){try{localStorage.removeItem(key)}catch(x){}}}   /* the autosave also goes to localStorage: written at once, it survives a page closed before the database has finished */
+ return true}catch(e){return false}}
 const saveName=(d,label)=>d&&d.name?esc(d.name):label;   // a slot shows the name it was saved under, or its own label
-const readSave=key=>{try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch(e){return null}};
-function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;localStorage.setItem(PENDK,raw);location.reload();return true}catch(e){flash('That is not a Coal Haul save.');return false}}
+const readSave=key=>{try{const r=svGet(key);return r?JSON.parse(r):null}catch(e){return null}};
+function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;svSet(PENDK,raw).then(ok=>{if(ok!==false)location.reload();else flash('Could not load: the browser storage refused it.')});return true}catch(e){flash('That is not a Coal Haul save.');return false}}
 const canAuto=()=>!MENU&&NET.mode!=='join';   // a player in somebody else's game does not autosave it over his own
 setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000);   // not in the first seconds: a page opened by mistake must not replace a good autosave
 addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
@@ -3869,23 +3892,27 @@ function menuPage(o,html){o.innerHTML='<div class="mbox" style="background:#1a26
 
 // ---------- saves: any number of them, each with a name, a picture of the game and the date ----------
 const SAVEID=()=>SAVEK+'s'+Date.now().toString(36);
-function saveKeys(){const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(SAVEK)&&k!==SAVEK+'auto'&&k!==SAVEK+'prev')o.push(k)}}catch(e){}
+function saveKeys(){const o=[];for(const k of SV.keys())if(k.startsWith(SAVEK)&&k!==SAVEK+'auto'&&k!==SAVEK+'prev')o.push(k);
  return o.map(k=>[k,readSave(k)]).filter(x=>x[1]).sort((a,b)=>(b[1].t||0)-(a[1].t||0))}
 const shot=()=>{try{const c=document.createElement('canvas');c.width=160;c.height=100;const x=c.getContext('2d'),s=Math.max(160/cv.width,100/cv.height);x.drawImage(cv,(160-cv.width*s)/2,(100-cv.height*s)/2,cv.width*s,cv.height*s);return c.toDataURL('image/jpeg',.6)}catch(e){return null}};
 const thumb=d=>'<div style="width:72px;height:45px;flex:none;border-radius:6px;background:#0f171e '+(d&&d.pic?'url('+d.pic+') center/cover':'')+';border:1px solid #ffffff22"></div>';
-// what the saves take of the browser's storage. A browser keeps about 5 MB per site for the page's data; a save is its text, counted in characters (≈ bytes)
-const STQ=5e6,szKey=k=>{try{const v=localStorage.getItem(k);return v?v.length+k.length:0}catch(e){return 0}};
-const fmtB=n=>n>=1e6?(n/1e6).toFixed(2)+' MB':Math.max(1,Math.round(n/1e3))+' KB';
-function storeUsed(){let a=0,sv=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),n=szKey(k);a+=n;if(k.startsWith(SAVEK))sv+=n}}catch(e){}return{all:a,saves:sv}}
-function storeBar(){const u=storeUsed(),p=Math.min(1,u.all/STQ),col=p>.85?'#e2574c':p>.6?'#f2b134':'#4caf6e';
- return'<div style="margin:2px 0 10px"><div style="display:flex;justify-content:space-between;font-size:12px;opacity:.8"><span>Browser storage</span><span>'+fmtB(u.all)+' of about 5 MB'+(u.all-u.saves>2e4?' · saves '+fmtB(u.saves):'')+'</span></div><div style="height:7px;border-radius:4px;background:#0f171e;margin-top:3px;overflow:hidden"><div style="height:100%;width:'+(p*100).toFixed(1)+'%;background:'+col+'"></div></div>'+(p>.85?'<div style="font-size:12px;color:#ffb4a8;margin-top:3px">Almost full: delete old saves, or a new save may fail.</div>':'')+'</div>'}
+// what the saves take of the browser's storage. In the database the browser says what the site uses and may use; in localStorage (the fallback) it is about 5 MB, counted in characters (≈ bytes)
+const STQ=5e6,szKey=k=>{const v=SV.get(k);return v?v.length+k.length:0};
+const fmtB=n=>n>=1e9?(n/1e9).toFixed(1)+' GB':n>=1e6?(n/1e6).toFixed(n>=1e8?0:2)+' MB':Math.max(1,Math.round(n/1e3))+' KB';
+function storeUsed(){let sv=0;for(const k of SV.keys())if(k.startsWith(SAVEK))sv+=szKey(k);let a=sv;if(SVKIND==='ls')try{a=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);a+=(localStorage.getItem(k)||'').length+k.length}}catch(e){}return{all:a,saves:sv}}
+const barHTML=(used,quota,saves,exact)=>{const p=quota?Math.min(1,used/quota):0,col=p>.85?'#e2574c':p>.6?'#f2b134':'#4caf6e';
+ return'<div style="display:flex;justify-content:space-between;font-size:12px;opacity:.8"><span>Browser storage'+(exact?'':' (small)')+'</span><span>'+fmtB(used)+' of '+(exact?'':'about ')+fmtB(quota)+(saves&&used-saves>2e4?' · saves '+fmtB(saves):'')+'</span></div><div style="height:7px;border-radius:4px;background:#0f171e;margin-top:3px;overflow:hidden"><div style="height:100%;width:'+Math.max(p*100,used>0?.6:0).toFixed(1)+'%;background:'+col+'"></div></div>'+(p>.85?'<div style="font-size:12px;color:#ffb4a8;margin-top:3px">Almost full: delete old saves, or a new save may fail.</div>':'')};
+// the bar: drawn at once from what is known, then with the browser's own figures when they come (the database only)
+function storeBar(){const u=storeUsed(),id='stb'+Math.random().toString(36).slice(2,7);
+ if(SVKIND==='idb'&&navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=document.getElementById(id);if(el&&e&&e.quota)el.innerHTML=barHTML(e.usage||u.saves,e.quota,u.saves,true)}).catch(()=>{});
+ return'<div id="'+id+'" style="margin:2px 0 10px">'+barHTML(u.all,SVKIND==='idb'?0:STQ,u.saves,SVKIND==='idb')+'</div>'}
 const sline=(d,lbl,k)=>'<div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(d&&d.name?esc(d.name):lbl||'Saved game')+'</b><small style="opacity:.7">'+(d?(d.name&&lbl?lbl+' · ':'')+'Day '+(d.dn||1)+' · '+fmtT(d)+(k?' · <span style="color:#9fd3ff">'+fmtB(szKey(k))+'</span>':''):'empty')+'</small></div>';
 // the load page (both menus): every save, newest first, then the autosaves and a file
 function pageLoad(o,back){const L=saveKeys(),au=readSave(SAVEK+'auto'),pr=readSave(SAVEK+'prev');
  const row=(k,d,lbl)=>'<div style="display:flex;gap:10px;align-items:center;margin:7px 0">'+thumb(d)+sline(d,lbl,k)+'<button data-load="'+k+'" style="'+UI.btn+'"'+(d?'':' disabled')+'>Load</button></div>';
  const P=menuPage(o,H2('Load game')+storeBar()+(L.length?L.map(([k,d])=>row(k,d,'')).join(''):'<div style="opacity:.6;font-size:13px;margin:6px 0">No saved games yet.</div>')+SEC('Autosaves')+row(SAVEK+'auto',au,'Autosave')+row(SAVEK+'prev',pr,'Before the last autosave')+
   '<div style="display:flex;gap:8px;margin-top:12px">'+MB('m-file','From a file…','flex:1')+MB('m-back','Back','flex:1')+'</div><input id="m-f" type="file" accept=".json,application/json" style="display:none">'+(NET.mode==='join'?'<div style="font-size:12px;opacity:.7;margin-top:8px">You are in somebody else\'s game: loading leaves it and starts your own.</div>':''));
- o.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(b.dataset.load);if(r&&!loadFrom(r))P.say('That save could not be loaded.')});
+ o.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const r=svGet(b.dataset.load);if(r&&!loadFrom(r))P.say('That save could not be loaded.')});
  const fi=P.q('#m-f');P.q('#m-file').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))P.say('That is not a Coal Haul save.')};rd.readAsText(f)};
  P.q('#m-back').onclick=back}
 // the save page (Esc menu): a new save with a name, or over an old one; rename and delete; export
@@ -3898,10 +3925,10 @@ function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · $'+Mat
  const doNew=()=>{const n=nm.value.trim()||def;if(!saveTo(SAVEID(),n))return P.say('Could not save: the browser storage is full or blocked. Delete an old save.');P.say('Saved.');setTimeout(again,500)};
  P.q('#m-new').onclick=doNew;nm.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')doNew();if(e.key==='Escape')back()};
  o.querySelectorAll('[data-over]').forEach(b=>b.onclick=()=>sure(b,'Replace it?',()=>{const old=readSave(b.dataset.over);if(!saveTo(b.dataset.over,(old&&old.name)||SAVENM||def))return P.say('Could not save.');P.say('Saved over it.');setTimeout(again,500)}));
- o.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>sure(b,'Delete?',()=>{try{localStorage.removeItem(b.dataset.del)}catch(e){}again()}));
+ o.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>sure(b,'Delete?',()=>{svDel(b.dataset.del).then(again)}));
  o.querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{const k=b.dataset.ren,d=readSave(k),r=o.querySelector('[data-row="'+k+'"]');if(!d)return;
   r.innerHTML=thumb(d)+'<input maxlength="32" value="'+esc(d.name||'')+'" style="'+UI.inp+';flex:1;min-width:0;padding:6px 8px;font-size:14px"><button style="'+UI.btn+';background:#2f5a3c">OK</button>';
-  const i=r.querySelector('input'),ok=()=>{d.name=i.value.trim().slice(0,32)||d.name;try{localStorage.setItem(k,JSON.stringify(d))}catch(e){}again()};i.focus();i.select();r.querySelector('button').onclick=ok;i.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')ok();if(e.key==='Escape')again()}});
+  const i=r.querySelector('input'),ok=()=>{d.name=i.value.trim().slice(0,32)||d.name;svSet(k,JSON.stringify(d)).then(again)};i.focus();i.select();r.querySelector('button').onclick=ok;i.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')ok();if(e.key==='Escape')again()}});
  P.q('#m-back').onclick=back}
 
 // ---------- settings: kept in this browser ----------
@@ -3997,7 +4024,7 @@ function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');
   BIG('mm-join','Join game',IN_CLAUDE?'Works in the GitHub version: here everyone is on one map already':'Play in a friend\'s game with its code',IN_CLAUDE)+
   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px">'+MB('mm-set','Settings')+MB('mm-how','How to play')+'</div><div style="text-align:center;font-size:11px;opacity:.45;margin-top:10px">'+VERSION+'</div>');
  if(msg)P.say(msg);const q=P.q,name=()=>{CHAT.name=q('#mm-name').value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}};q('#mm-name').oninput=name;
- if(q('#mm-cont'))q('#mm-cont').onclick=()=>{const r=localStorage.getItem(SAVEK+'auto');if(r&&!loadFrom(r))P.say('The autosave could not be loaded.')};
+ if(q('#mm-cont'))q('#mm-cont').onclick=()=>{const r=svGet(SAVEK+'auto');if(r&&!loadFrom(r))P.say('The autosave could not be loaded.')};
  q('#mm-new').onclick=()=>{o.remove();startColour(()=>{MENU=false;document.body.classList.remove('inmenu');netStart('host')})};
  q('#mm-load').onclick=()=>mainMenu('load');q('#mm-join').onclick=()=>mainMenu('join');q('#mm-set').onclick=()=>mainMenu('set');q('#mm-how').onclick=()=>mainMenu('how')}
 // ---------- sound: made in the browser (no files). The engine of what you drive, the boom's hydraulics, cargo pouring, money, clicks ----------
@@ -4050,8 +4077,10 @@ function applyStartLayout(){const L=START_LAYOUT,acts=[],ns=Object.keys(L.at);
  for(const a of acts)netApplyAct(a);
  START=startAt();const v=Object.values(veh).find(q=>q.starter);   // the starting pickup and the player stand in the garage lot again
  if(v){v.x=START.x;v.y=START.y;v.a=START.a;const kd=KOF(v),ca=[Math.cos(START.a),Math.sin(START.a)],o=(kd.b1-1.2)*S;P.driving=false;P.x=START.x+ca[0]*o-ca[1]*2.1*S;P.y=START.y+ca[1]*o+ca[0]*2.1*S;P.a=START.a;cam.x=P.x;cam.y=P.y}}
-try{const raw=localStorage.getItem(PENDK);if(raw){localStorage.removeItem(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=JSON.parse(raw);netApi().restore(D);if(D.name)SAVENM=D.name;if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash('Game loaded.')}else applyStartLayout()}catch(e){}
+SVREADY.then(()=>{
+try{const raw=svGet(PENDK);if(raw){svDel(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=JSON.parse(raw);netApi().restore(D);if(D.name)SAVENM=D.name;if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash('Game loaded.')}else applyStartLayout()}catch(e){}
 try{if(sessionStorage.getItem('coalhaul.loaded')){sessionStorage.removeItem('coalhaul.loaded');MENU=false;document.body.classList.remove('inmenu');netStart('host')}else{let bm=null;try{bm=sessionStorage.getItem('coalhaul.msg');sessionStorage.removeItem('coalhaul.msg')}catch(e){}if(bm)mainMenu(null,bm);else{const j=new URLSearchParams(location.search).get('join');if(j&&!IN_CLAUDE)mainMenu('join',null,j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5));else mainMenu()}}}catch(e){mainMenu()}
+});   // the saves are read from the database first
 requestAnimationFrame(loop);
 </script></body></html>
 
