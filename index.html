@@ -134,7 +134,7 @@ function curveHit(f,x,y,w){const px=x-f.px,py=y-f.py;
 const lz={x:5280,y:480,w:240,h:80},   /* fsz: the fuel station's ITEMS area, east of its building, 1 tile off the board, the building and the wall */
  swz={x:5280,y:2080,w:240,h:80};
 // the shop, written as it stands with its gate to the south (a 2x2-tile lot); S0 is its layout, sellZ its pink lot on the map. The office is OFFICES' 'shop'
-const S0={sell:{x:4000,y:1120,w:280,h:280},spawn:{x:3360,y:1120,w:280,h:280},lot:{x0:3200,y0:640,x1:4160,y1:1600},gates:[{side:'S',a:11*TS,b:12*TS}]};   // the shop, written with its gate to the south: a 3 x 3 lot with one gate in the middle front chunk. The shop (14 x 14) stands in the middle chunk, its door facing the gate. Going counterclockwise round it from the gate the first pad is the SELL / UNLOAD pad (east in this frame): what is fully on it shows under Sell in the shop menu. On the other side is the NEW PURCHASES pad (west): what is bought appears there, and it cannot be sold from there
+const S0={sell:{x:3990,y:1120,w:260,h:280},spawn:{x:3370,y:1120,w:260,h:280},lot:{x0:3200,y0:640,x1:4160,y1:1600},gates:[{side:'S',a:11*TS,b:12*TS}]};   // the shop, written with its gate to the south: a 3 x 3 lot with one gate in the middle front chunk. The shop (14 x 14) stands in the middle chunk, its door facing the gate. Going counterclockwise round it from the gate the first pad is the SELL / UNLOAD pad (east in this frame): what is fully on it shows under Sell in the shop menu. On the other side is the NEW PURCHASES pad (west): what is bought appears there, and it cannot be sold from there
 let sellZ=S0.sell,spawnZ=S0.spawn;
 // ---- the garage as one unit. Everything of it is written once, as it stands with its gate to the east (G0 and the numbers in its code);
 // GS says where its lot is and how many quarter turns (clockwise) it is turned. gRot takes a point of that layout to the map, gInv brings it back
@@ -318,7 +318,7 @@ function applyUnits(){lotsFit();garage=gRect(G0.garage);gUnl=gRect(G0.gUnl);gPan
 const applyGarage=applyUnits;
 // lots with a thick wall: a wall one square (S) thick standing on the outer ring of squares inside the lot, with an opening at each gate. The others keep the thin kerb on their edge
 let WALLSTYLE='both';   // the thick wall's colour: 'plain' grey, 'stripe' (the building's colour along the capping), 'panels', 'pillars' (coloured corner pillars), 'both' (stripe and corner pillars)
-const THICKW=new Set([1]),WT_=S,thickSegs=l=>{const o=[];for(const[a,b]of sideSegs(l,'N',l.x0,l.x1))o.push({x0:a,y0:l.y0,x1:b,y1:l.y0+WT_});for(const[a,b]of sideSegs(l,'S',l.x0,l.x1))o.push({x0:a,y0:l.y1-WT_,x1:b,y1:l.y1});
+const THICKW=new Set(LOTS.map((l,i)=>i)),WT_=S,thickSegs=l=>{const o=[];for(const[a,b]of sideSegs(l,'N',l.x0,l.x1))o.push({x0:a,y0:l.y0,x1:b,y1:l.y0+WT_});for(const[a,b]of sideSegs(l,'S',l.x0,l.x1))o.push({x0:a,y0:l.y1-WT_,x1:b,y1:l.y1});
  for(const[a,b]of sideSegs(l,'W',l.y0,l.y1))o.push({x0:l.x0,y0:a,x1:l.x0+WT_,y1:b});for(const[a,b]of sideSegs(l,'E',l.y0,l.y1))o.push({x0:l.x1-WT_,y0:a,x1:l.x1,y1:b});return o};
 // a corner pillar where walled lots meet at one point: it takes up every wall square round the point (1 for a lone lot's corner, 2 side by side, an L for 3, a square for 4), each square in the colour of the lot it stands in
 function pillarQs(cx,cy){const q=[];for(const[dx,dy]of[[-1,-1],[0,-1],[-1,0],[0,0]]){const x=cx+dx*WT_,y=cy+dy*WT_,px=x+WT_/2,py=y+WT_/2;let j=-1;
