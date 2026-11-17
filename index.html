@@ -2134,7 +2134,7 @@ function paintLot(l,i,c0,r0,c1,r1,fine){const sq=siteOfLot(l),W=l.x1-l.x0,H=l.y1
    g.fillStyle=jc;if(w>h){for(let x=Math.ceil(r.x0/(2*S))*2*S;x<r.x1;x+=2*S)g.fillRect(x-.6,r.y0+1,1.2,h-2)}else{for(let y=Math.ceil(r.y0/(2*S))*2*S;y<r.y1;y+=2*S)g.fillRect(r.x0+1,y-.6,w-2,1.2)}
    g.strokeStyle='rgba(20,22,26,.55)';g.lineWidth=1;g.strokeRect(r.x0+.5,r.y0+.5,w-1,h-1)}
   const ps=GATES(l).flatMap(q=>q.side==='S'||q.side==='N'?[[q.a,q.side==='S'?l.y1-WT_/2:l.y0+WT_/2,-1],[q.b,q.side==='S'?l.y1-WT_/2:l.y0+WT_/2,1]]:[[q.side==='W'?l.x0+WT_/2:l.x1-WT_/2,q.a,-1],[q.side==='W'?l.x0+WT_/2:l.x1-WT_/2,q.b,1]]);   // the gate posts end the wall
-  cast(ps.map(p=>[0,0,0,p[0]-12,p[1]-12,24,24,20,4]));for(const[x,y]of ps){g.beginPath();g.roundRect(x-12,y-12,24,24,4);inked('#f0c63a',1.3);bevel(0,x-12,y-12,24,24,4);g.fillStyle='#1d1d1f';g.fillRect(x-4,y-4,8,8)}
+  cast(ps.map(p=>[0,0,0,p[0]-12,p[1]-12,24,24,20,4]));for(const[x,y]of ps){g.beginPath();g.roundRect(x-12,y-12,24,24,4);inked(ST==='pillars'||ST==='both'?l.col:'#f0c63a',1.3);bevel(0,x-12,y-12,24,24,4);g.fillStyle='#1d1d1f';g.fillRect(x-4,y-4,8,8)}
   // the corner pillars: every corner of a walled lot that lies on this lot's edge (its own, and a neighbour's that meets it), so a pillar shared by lots is drawn whole again over each of them
   const cp=new Set();LOTS.forEach((m,j)=>{if(!THICKW.has(j))return;for(const[x,y]of[[m.x0,m.y0],[m.x1,m.y0],[m.x0,m.y1],[m.x1,m.y1]])if(x>=l.x0&&x<=l.x1&&y>=l.y0&&y<=l.y1)cp.add(x+','+y)});
   for(const k of cp){const[x,y]=k.split(',').map(Number);cornerPillar(x,y,ST)}
