@@ -1186,12 +1186,14 @@ function craneFeet(){const v=T;if(Math.abs(v.v)>.3)return flash('Stop the truck 
  if(!v.ftOn){if(v.on||v.fk)return flash('The feet cannot go down while the crane truck rides on a trailer or hangs on cables: drive it off first. The crane cannot be used from there.');v.ftOn=true;return flash('Feet going down. Climb into the crane cab at the back (click it) to work the crane.')}
  if(crHeldAny(v))return flash('Set the load down first: the crane cannot fold with something on the hook.');
  v.ftOn=false;flash('Folding the crane and lifting the feet…')}
+// swing speed (rad/s) falls with the boom's length so the hook's tip never moves faster than about 3 units a second: ~26 deg/s folded, ~10 deg/s fully out. Extension: 0.13 of the stroke a second (~1.6 units/s)
+const CREXSP=.13,crRotSp=v=>Math.max(.17,Math.min(.45,3.2/(boomL(v)/S)));
 function craneTick(v,dt){const c=crOf(v);v.ft=v.ft||0;
  if(v.ftOn){v.ft=Math.min(1,v.ft+dt*.8);
   if(craneRun(v)&&v.ft>=1){const kk=K.left||K.right||K.up||K.down||K.ce||K.cq;   // the crane works off the truck's engine: while the boom or the hook is being moved it burns CRANEBURN litres a second, and with an empty tank it stands still
    if(kk&&!(v.fuel>0)){if(performance.now()-crSay>2500){crSay=performance.now();flash('The tank is empty: the crane cannot move.')}}
-   else{c.rot=ang(c.rot+((K.right?1:0)-(K.left?1:0))*.7*dt);c.ext=Math.max(0,Math.min(1,c.ext+((K.up?1:0)-(K.down?1:0))*.2*dt));c.hr=ang(c.hr+((K.ce?1:0)-(K.cq?1:0))*1.4*dt);if(kk)v.fuel=Math.max(0,v.fuel-CRANEBURN*dt)}}}
- else{const tw=(x,r)=>Math.abs(x)<r?0:x-Math.sign(x)*r;c.rot=tw(c.rot,.9*dt);c.ext=Math.max(0,c.ext-.3*dt);c.hr=tw(c.hr,1.6*dt);   // folding: the boom turns back over the truck and slides in, then the feet come up
+   else{c.rot=ang(c.rot+((K.right?1:0)-(K.left?1:0))*crRotSp(v)*dt);c.ext=Math.max(0,Math.min(1,c.ext+((K.up?1:0)-(K.down?1:0))*CREXSP*dt));c.hr=ang(c.hr+((K.ce?1:0)-(K.cq?1:0))*1.0*dt);if(kk)v.fuel=Math.max(0,v.fuel-CRANEBURN*dt)}}}
+ else{const tw=(x,r)=>Math.abs(x)<r?0:x-Math.sign(x)*r;c.rot=tw(c.rot,crRotSp(v)*1.2*dt);c.ext=Math.max(0,c.ext-CREXSP*1.4*dt);c.hr=tw(c.hr,1.2*dt);   // folding: the boom turns back over the truck and slides in, then the feet come up
   if(c.rot||c.ext||c.hr)v.fuel=Math.max(0,v.fuel-CRANEBURN*dt);   // folding the boom back burns fuel too
   if(!c.rot&&!c.ext&&!c.hr)v.ft=Math.max(0,v.ft-dt*.8)}
  const q=hookPt(v),a=liftA(v);for(const o of ATT)if(o.fk===v&&v.ctool==='cables'){o.x=q[0];o.y=q[1];o.a=a}   // what hangs on the cables follows the hook (pallets, attachments on the forks and logs follow through syncPallets / syncLogs)
