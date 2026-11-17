@@ -1757,8 +1757,9 @@ function step(dt){
  for(const v of Object.values(veh))if(v.kind==='crane'&&v.out)craneTick(v,dt);
  if(P.driving&&T.out&&T.kind==='crane'&&(T.ftOn||T.ft>0)){if((thr||stIn)&&performance.now()-crSay>2500){crSay=performance.now();flash(T.ftOn?'The feet are down. Press Space to fold the crane and lift them.':'Wait: the crane is folding.')}thr=0;stIn=0;T.v=0}
  if(JOY.on&&P.driving&&T.out){   /* touch: the vehicle goes where the stick points; pointing the opposite way means reverse (steering still works, mirrored) */
-  const d=ang(JOY.a-T.a),ad=Math.abs(d);if(JOY.g>0&&ad>2.3)JOY.g=-1;else if(JOY.g<0&&ad<1.9)JOY.g=1;   /* a gap between the two limits stops it flipping at the side */
-  if(JOY.g>0){thr=1;stIn=ad<.06?0:Math.sign(d)}else{thr=-1;const e=ang(JOY.a-(T.a+Math.PI));stIn=Math.abs(e)<.06?0:-Math.sign(e)}}
+  if(CAMMODE==='follow'&&VROT()){}   /* the camera turns with the vehicle: the stick is the keys (up forward, down back, left and right steer), already set from it */
+  else{const ja=JOY.a-VROT(),d=ang(ja-T.a),ad=Math.abs(d);if(JOY.g>0&&ad>2.3)JOY.g=-1;else if(JOY.g<0&&ad<1.9)JOY.g=1;   /* north up: the vehicle goes where the stick points on the map. A gap between the two limits stops it flipping at the side */
+  if(JOY.g>0){thr=1;stIn=ad<.06?0:Math.sign(d)}else{thr=-1;const e=ang(ja-(T.a+Math.PI));stIn=Math.abs(e)<.06?0:-Math.sign(e)}}}
  if(P.pass){const v=P.pass;if(!v.out)P.pass=null;else{const q=seatPos(v,P.seatSd);P.x=q[0];P.y=q[1];P.a=v.a+(v.kind==='crane'&&P.seatSd===CSEAT?crOf(v).rot:0)}}   // in the crane cab you face along the boom
  if(panelOpen){const an=panelAnchor;if(P.driving||(an&&!(Math.abs(P.x-an.x)<an.w/2&&Math.abs(P.y-an.y)<an.h/2)))closeGarage()}
  if(P.driving&&T.out&&T.on){deckDrive(dt,thr)}
