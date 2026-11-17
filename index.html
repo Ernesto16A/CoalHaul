@@ -72,7 +72,7 @@ body.inmenu #touch,body.inmenu #tside,body.inmenu #gmbtn,body.inmenu #tbtn{displ
 <script>
 const cv=document.getElementById('c'),$=id=>document.getElementById(id);let g=cv.getContext('2d');
 let VW,VH,dpr;
-function rs(){dpr=Math.min(devicePixelRatio||1,1.5);VW=innerWidth;VH=innerHeight;cv.width=VW*dpr;cv.height=VH*dpr}
+var LOWG=false;function rs(){dpr=Math.min(devicePixelRatio||1,LOWG?1:1.5);VW=innerWidth;VH=innerHeight;cv.width=VW*dpr;cv.height=VH*dpr}
 addEventListener('resize',rs);rs();
 
 // ---------- world: an endless grid of grass tiles; the streets are tiles too ----------
@@ -383,8 +383,8 @@ const padOn=q=>q.exit||q.minein||q.fshop||q.lshop?false:   /* only the shop sell
 // ---------- input ----------
 const K={};
 const keys={q:'cq',e:'ce',w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
-addEventListener('keydown',e=>{if(MENU)return;if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.target.id==='chin'){if(e.key=='Enter'){e.preventDefault();chatSend(e.target.value);chatClose()}else if(e.key=='Escape')chatClose();return}if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=e.key.toLowerCase();if((k=='enter'||k=='/')&&!e.repeat){e.preventDefault();for(const q in K)K[q]=0;chatOpen(k=='/'?'/':'');return}if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(k=='escape'){if(!panelOpen&&!CW&&!document.getElementById('pickov'))saveMenu();return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
-addEventListener('keyup',e=>{if(e.key==' ')spaceUp();{const m=MKEYS[e.key.toLowerCase()];if(m)MK[m]=0}const k=keys[e.key.toLowerCase()];if(k)K[k]=0});
+addEventListener('keydown',e=>{if(MENU)return;if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.target.id==='chin'){if(e.key=='Enter'){e.preventDefault();chatSend(e.target.value);chatClose()}else if(e.key=='Escape')chatClose();return}if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=keyMap(e.key.toLowerCase());if(k===null)return;if((k=='enter'||k=='/')&&!e.repeat){e.preventDefault();for(const q in K)K[q]=0;chatOpen(k=='/'?'/':'');return}if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(k=='escape'){if(!panelOpen&&!CW&&!document.getElementById('pickov'))saveMenu();return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
+addEventListener('keyup',e=>{const kk=keyMap(e.key.toLowerCase());if(kk===null)return;if(kk==' ')spaceUp();{const m=MKEYS[kk];if(m)MK[m]=0}const k=keys[kk];if(k)K[k]=0});
 document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();K[k]=1;b.classList.add('dn');b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>{K[k]=0;b.classList.remove('dn')}));b.addEventListener('contextmenu',e=>e.preventDefault())});
 {const st=$('stick'),kn=$('knob');let pid=null;JOY.g=1;
  const setK=(l,rt,u,d)=>{K.left=l?1:0;K.right=rt?1:0;K.up=u?1:0;K.down=d?1:0};
@@ -397,7 +397,7 @@ document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset
  JOY.start=e=>{if(pid!==null)return;pid=e.pointerId;t0=performance.now();x0=e.clientX;y0=e.clientY;far=false;const R=st.offsetWidth/2||70;st.style.left=(e.clientX-R)+'px';st.style.top=(e.clientY-R)+'px';st.classList.add('on');move(e)};
  JOY.cancel=()=>{if(pid!==null)end({pointerId:pid})};
  addEventListener('pointermove',e=>{if(e.pointerId!==pid)return;if(Math.hypot(e.clientX-x0,e.clientY-y0)>12)far=true;move(e)});
- ['pointerup','pointercancel'].forEach(t=>addEventListener(t,e=>{if(e.pointerId!==pid)return;const tap=t==='pointerup'&&!far&&performance.now()-t0<320;end(e);if(tap){MX=e.clientX;MY=e.clientY;clickAct()}}))}
+ ['pointerup','pointercancel'].forEach(t=>addEventListener(t,e=>{if(e.pointerId!==pid)return;const tap=t==='pointerup'&&!far&&performance.now()-t0<SET.tap;end(e);if(tap){MX=e.clientX;MY=e.clientY;clickAct()}}))}
 $('hb').addEventListener('pointerdown',()=>spaceDown());['pointerup','pointercancel','pointerleave'].forEach(t=>$('hb').addEventListener(t,()=>spaceUp()));addEventListener('blur',()=>{SPK.down=false});$('cb').addEventListener('pointerdown',()=>couple());$('vb').addEventListener('pointerdown',()=>cycleTrailer());$('gb').addEventListener('pointerdown',()=>dumpCargo());$('rb').addEventListener('pointerdown',()=>{if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}});
 $('mnb').addEventListener('click',()=>saveMenu());$('chb').addEventListener('click',()=>{const c=document.getElementById('chat');if(c.classList.contains('open'))chatClose();else chatOpen('')});$('cmb').addEventListener('click',()=>{if(!bigMap)camMode()});   // touch: the chat and the camera (TAB)
 
@@ -1504,7 +1504,7 @@ let CW=null,DRAG=null;   // CW: the open crate; DRAG: {i} the cell being dragged
 let CAMMODE='north',CAMCTX='foot',CAMR=0,CHW=400,CHH=300;   // each time you get into the crane cab the view starts from the cab (the boom up); anywhere else it starts north up. TAB switches from there
 const VROT=()=>IN?IROT():(bigMap||LIVEMAP)?0:CAMR;
 function camMode(){CAMMODE=CAMMODE==='follow'?'north':'follow';if(CAMCTX==='foot')return flash('On foot the map stays north up. TAB turns the camera while you drive or sit in a vehicle.');flash(CAMMODE==='follow'?(P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?'Camera: from the crane cab (the boom points up). TAB to switch.':'Camera: follows the vehicle (it always points up). TAB to switch.'):'Camera: north up. TAB to switch.')}
-function camTurn(dt){const v=P.pass&&P.pass.out?P.pass:P.driving&&T.out?T:null,cab=v&&v.kind==='crane'&&P.pass===v&&P.seatSd===CSEAT,cx=IN?'in':cab?'cab':v?'veh':'foot';if(cx!==CAMCTX){CAMCTX=cx;CAMMODE=cab?'follow':'north'}const tg=CAMMODE==='follow'&&v&&!IN?-(cab?v.a+crOf(v).rot:v.a)-Math.PI/2:0;   /* in the crane cab the camera looks along the boom: turning the crane turns the view */let d=ang(tg-CAMR);CAMR=ang(CAMR+d*Math.min(1,dt*(v?9:4)));if(Math.abs(ang(tg-CAMR))<1e-4)CAMR=ang(tg);}
+function camTurn(dt){const v=P.pass&&P.pass.out?P.pass:P.driving&&T.out?T:null,cab=v&&v.kind==='crane'&&P.pass===v&&P.seatSd===CSEAT,cx=IN?'in':cab?'cab':v?'veh':'foot';if(cx!==CAMCTX){CAMCTX=cx;CAMMODE=cab?'follow':cx==='veh'?SET.cam:'north'}const tg=CAMMODE==='follow'&&v&&!IN?-(cab?v.a+crOf(v).rot:v.a)-Math.PI/2:0;   /* in the crane cab the camera looks along the boom: turning the crane turns the view */let d=ang(tg-CAMR);CAMR=ang(CAMR+d*Math.min(1,dt*(v?9:4)));if(Math.abs(ang(tg-CAMR))<1e-4)CAMR=ang(tg);}
 const viewHalf=()=>{if(Math.abs(VROT())>1e-3){CHW=CHH=Math.hypot(VW,VH)/2/Z}else{CHW=VW/2/Z;CHH=VH/2/Z}};   // half the size of what is on screen, in world units (turned: the half-diagonal), for skipping what is off it. Worked out at the start of every picture (also the live big map's)
 const w2s=(x,y)=>{const r=VROT(),dx=x-cam.x,dy=y-cam.y,c=Math.cos(r),s=Math.sin(r);return[(dx*c-dy*s)*Z+VW/2,(dx*s+dy*c)*Z+VH/2]};
 const s2w=(sx,sy)=>{const ux=(sx-VW/2)/Z,uy=(sy-VH/2)/Z,r=VROT(),c=Math.cos(r),s=Math.sin(r);return[cam.x+ux*c+uy*s,cam.y-ux*s+uy*c]};
@@ -3248,7 +3248,7 @@ const LC=document.createElement('canvas'),lg=LC.getContext('2d');
 // the night: a dark blue layer over the world with holes where light falls: headlights of vehicles in use, a glow round each person, lit buildings and yards, the work lamps of a working crane
 function drawNight(){const D=darkness();if(D<.01||LIVEMAP)return;const W=Math.round(VW*dpr),H=Math.round(VH*dpr);if(LC.width!==W||LC.height!==H){LC.width=W;LC.height=H}
  const q=dpr*Z,x0=cam.x-CHW-400,x1=cam.x+CHW+400,y0=cam.y-CHH-400,y1=cam.y+CHH+400,see=(x,y)=>x>x0&&x<x1&&y>y0&&y<y1,u=S;
- lg.globalCompositeOperation='source-over';lg.setTransform(1,0,0,1,0,0);lg.clearRect(0,0,W,H);lg.fillStyle='rgba(6,12,34,'+(.8*D)+')';lg.fillRect(0,0,W,H);
+ lg.globalCompositeOperation='source-over';lg.setTransform(1,0,0,1,0,0);lg.clearRect(0,0,W,H);lg.fillStyle='rgba(6,12,34,'+(.8*D*SET.night)+')';lg.fillRect(0,0,W,H);
  if(VROT()){lg.setTransform(dpr,0,0,dpr,0,0);lg.translate(VW/2,VH/2);lg.scale(Z,Z);lg.rotate(VROT());lg.translate(-cam.x,-cam.y)}else lg.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q));lg.globalCompositeOperation='destination-out';
  const glow=(x,y,r,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.55,'rgba(0,0,0,'+k*.6+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.arc(x,y,r,0,7);lg.fill()};
  const cone=(x,y,a,len,ha,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,len);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.6,'rgba(0,0,0,'+k*.7+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.moveTo(x,y);lg.arc(x,y,len,a-ha,a+ha);lg.closePath();lg.fill()};
@@ -3584,6 +3584,7 @@ const NET={room:null,last:0,gh:new Map(),hue:Math.floor(Math.random()*360)};
 // started from the main menu: mode 'host' (a new or loaded game, open to others by its code) or 'join' (somebody else's game, by its code). cb(ok, message) reports how joining went
 const CODECH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',newCode=()=>Array.from({length:5},()=>CODECH[Math.floor(Math.random()*CODECH.length)]).join('');
 const IN_CLAUDE=!!(window.claude&&window.claude.use);   // inside the Claude page the game uses the page's own room: everyone who opens the page is in it, there are no codes
+function kicked(m){const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:70;background:#0b120cdd;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif';o.innerHTML='<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:20px 24px;color:#eee;max-width:340px;text-align:center"><div style="font-size:18px;font-weight:700;margin-bottom:8px">'+esc(m)+'</div><button style="padding:9px 16px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer">Main menu</button></div>';o.querySelector('button').onclick=()=>location.reload();document.body.appendChild(o)}
 function netStart(mode,code,cb){NET.mode=mode;
  if(IN_CLAUDE){(async()=>{try{const r=await window.claude.use('room');if(!r)return;NET.room=r;
   r.onPeers(c=>{for(const p of c.joined)if(!p.sameTab&&p.kind==='viewer')try{flash('Another player is on the map.')}catch(e){}})}catch(e){}})();cb&&cb(true);return}
@@ -3602,21 +3603,23 @@ function netPeerJS(mode,code,cb){
   peers:()=>{const t=now();for(const[k,e]of M)if(t-e.t>6000)M.delete(k);cache=[...M].map(([k,e])=>mk(k,e));return cache},
   onPeers:f=>{subs.push(f);return()=>{const i=subs.indexOf(f);if(i>=0)subs.splice(i,1)}},connected:()=>online,emit:async()=>{},on:()=>()=>{},shared:true,
   msg:d=>{if(isHost){for(const c of conns.values())if(c.open)c.send({t:'w',f:LOBBY,d})}else if(hostConn&&hostConn.open)hostConn.send({t:'w',d})},
-  sendTo:(id,d)=>{const c=conns.get(id);if(c&&c.open)c.send({t:'w',f:LOBBY,d})},onMsg:null,onJoin:null,isHost:()=>isHost,myId:()=>myId};
+  sendTo:(id,d)=>{const c=conns.get(id);if(c&&c.open)c.send({t:'w',f:LOBBY,d})},
+  kick:id=>{const c=conns.get(id);if(!c)return;try{c.send({t:'x',m:'The host removed you from the game.'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},300)},onMsg:null,onJoin:null,isHost:()=>isHost,myId:()=>myId};
  room.onPeers(c=>{for(const p of c.joined)try{flash('Another player is on the map.')}catch(e){}});
  setInterval(()=>{if(isHost){for(const c of conns.values())if(c.open)c.send({t:'h'})}else if(hostConn&&online&&now()-rx>4000)again()},1000);
  NET.dbg=()=>({isHost,online,myId,conns:conns.size,M:M.size,hc:!!hostConn});
  const stop=()=>{online=false;isHost=false;hostConn=null;conns.clear();M.clear();ver++;try{peer&&peer.destroy()}catch(e){}peer=null};
- const again=()=>{stop();setTimeout(start,300+Math.random()*1500)};
+ let gone=false;const again=()=>{if(gone)return;stop();setTimeout(start,300+Math.random()*1500)};   /* removed or refused: no coming back */
  function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;NET.world&&NET.world(true);done(true);
-  p.on('connection',c=>{c.on('open',()=>{conns.set(c.peer,c);setTimeout(()=>{try{room.onJoin&&room.onJoin(c.peer)}catch(e){}},50);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
+  p.on('connection',c=>{c.on('open',()=>{if(NET.closed){try{c.send({t:'x',m:'That game is closed to new players.'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},300);return}   /* the host closed the game: nobody new */
+   conns.set(c.peer,c);setTimeout(()=>{try{room.onJoin&&room.onJoin(c.peer)}catch(e){}},50);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
    c.on('data',d=>{if(d&&d.t==='w'){try{room.onMsg&&room.onMsg(c.peer,d.d)}catch(e){}for(const o of conns.values())if(o!==c&&o.open)o.send({t:'w',f:c.peer,d:d.d});return}if(!d||d.t!=='p')return;put(c.peer,d.pr);const m={t:'p',id:c.peer,pr:d.pr};for(const o of conns.values())if(o!==c&&o.open)o.send(m)});
    const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);drop(c.peer);for(const o of conns.values())if(o.open)o.send({t:'l',id:c.peer})}};c.on('close',gone);c.on('error',gone)});
   p.on('disconnected',()=>{try{p.reconnect()}catch(e){}});p.on('error',e=>{if(e.type!=='peer-unavailable')again()})}
  function joinClient(){const p=new Peer(undefined,opts);peer=p;
   p.on('open',id=>{myId=id;const c=p.connect(LOBBY);
-   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room;NET.world&&NET.world(false);done(true)});
-   c.on('data',d=>{if(!d)return;rx=now();if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id);else if(d.t==='w'){try{room.onMsg&&room.onMsg(d.f,d.d)}catch(e){}}});
+   c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room;NET.world&&NET.world(false);setTimeout(()=>{if(!gone)done(true)},1200)});   /* joined once the host has not turned us away straight off */
+   c.on('data',d=>{if(!d)return;rx=now();if(d.t==='x'){gone=true;stop();if(first){first=false;try{sessionStorage.setItem('coalhaul.msg',d.m)}catch(e){}location.reload();return}NET.status='offline';kicked(d.m);return}   /* turned away while joining: back to a clean main menu that says why */if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id);else if(d.t==='w'){try{room.onMsg&&room.onMsg(d.f,d.d)}catch(e){}}});
    c.on('close',again);c.on('error',again)});
   p.on('error',e=>{if(first&&mode==='join'){stop();return done(false,e.type==='peer-unavailable'?'No game found with the code '+code+'.':'Could not reach the game server ('+e.type+').')}if(e.type==='peer-unavailable'||e.type==='network'||e.type==='server-error'||e.type==='socket-error'||e.type==='socket-closed')again()})}
  function start(){const p=new Peer(LOBBY,opts);peer=p;let opened=false;
@@ -3836,7 +3839,7 @@ const SAVEK='coalhaul.save.',PENDK='coalhaul.pending',sNow=()=>performance.now()
 const othersHere=()=>{const r=NET.room;try{return!!(r&&r.shared&&r.peers().some(p=>!p.sameTab))}catch(e){return false}};
 let SAVENM='';   // the name of the game being played: the one it was last saved or loaded under
 function gameSave(){const d=netApi().snap();d.v=1;if(SAVENM)d.name=SAVENM;d.t=Date.now();d.me={x:P.x,y:P.y,a:P.a,drv:P.driving&&T?T.id:null,in:IN?IN.o.n:null,col:MYCOL};d.story={fuel:STORY.fuel,hitch:STORY.hitch,trl:STORY.trl,d:STORY.d,made:STORY.made};return d}
-function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=localStorage.getItem(key);if(o)localStorage.setItem(SAVEK+'prev',o)}if(name)SAVENM=String(name).slice(0,32);const d=gameSave();localStorage.setItem(key,JSON.stringify(d));return true}catch(e){return false}}
+function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=localStorage.getItem(key);if(o)localStorage.setItem(SAVEK+'prev',o)}if(name)SAVENM=String(name).slice(0,32);const d=gameSave();{const p=shot();if(p)d.pic=p}localStorage.setItem(key,JSON.stringify(d));return true}catch(e){return false}}
 const saveName=(d,label)=>d&&d.name?esc(d.name):label;   // a slot shows the name it was saved under, or its own label
 const readSave=key=>{try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch(e){return null}};
 function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;localStorage.setItem(PENDK,raw);location.reload();return true}catch(e){flash('That is not a Coal Haul save.');return false}}
@@ -3845,67 +3848,188 @@ setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000
 addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-function saveMenu(){let o=document.getElementById('gmenu');if(o){o.remove();PAUSED=false;return}PAUSED=!othersHere();   // alone the game stops while the menu is open; with others it goes on
- o=document.createElement('div');o.id='gmenu';o.style.cssText='position:fixed;inset:0;background:#0b120cbb;z-index:40;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';
- const row=(label,key,canSave)=>{const d=readSave(key);return'<div data-row="'+key+'" style="display:flex;gap:8px;align-items:center;margin:6px 0"><div style="flex:1;min-width:0"><b>'+saveName(d,label)+'</b><br><small style="opacity:.7">'+(d&&d.name?label+' · ':'')+fmtT(d)+'</small></div>'+(canSave?'<button data-s="'+key+'">Save</button>':'')+'<button data-l="'+key+'"'+(d?'':' disabled')+'>Load</button></div>'};
- o.innerHTML='<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:18px 22px;color:#eee;width:min(92vw,380px);max-height:90vh;overflow:auto"><div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px"><span style="font-size:22px;font-weight:800;letter-spacing:1px">COAL HAUL</span><small style="opacity:.6">'+(PAUSED?'paused':'the game goes on')+' · Esc</small></div><button id="gm-x" style="width:100%;margin-bottom:10px;font-weight:700">Resume</button>'+codeLine()+'<div style="font-size:13px;opacity:.7;margin:4px 0 2px">Save and load</div>'+row('Slot 1',SAVEK+'1',1)+row('Slot 2',SAVEK+'2',1)+row('Slot 3',SAVEK+'3',1)+row('Autosave',SAVEK+'auto',0)+row('Before the last autosave',SAVEK+'prev',0)+
-  '<div style="display:flex;gap:8px;margin-top:10px"><button id="gm-ex" style="flex:1">Export to file</button><button id="gm-im" style="flex:1">Import file</button></div><div style="display:flex;gap:8px;margin-top:8px"><button id="gm-set" style="flex:1">Settings</button><button id="gm-new" style="flex:1">Quit to main menu</button></div><div id="gm-m" style="margin-top:8px;font-size:12px;opacity:.8;min-height:16px"></div><input id="gm-f" type="file" accept=".json,application/json" style="display:none"></div>';
- document.body.appendChild(o);const say=t=>{o.querySelector('#gm-m').textContent=t};
- o.querySelectorAll('button').forEach(b=>{b.style.cssText+=';padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer'});
- o.querySelectorAll('button[data-s]').forEach(b=>b.onclick=()=>{const key=b.dataset.s,r=o.querySelector('[data-row="'+key+'"]'),old=readSave(key),def=SAVENM||(old&&old.name)||'Day '+DAYN+' · $'+Math.floor(cash);   // the name is asked in the row: what it was called, or the day and the cash
-  r.innerHTML='<input maxlength="32" value="'+esc(def)+'" style="flex:1;min-width:0;padding:7px 9px;border-radius:7px;border:1px solid #ffd16688;background:#0f171e;color:#fff;font-size:14px"><button>Save</button>';
-  const i=r.querySelector('input'),go=r.querySelector('button');go.style.cssText+=';padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#2f5a3c;color:#fff;font-size:14px;cursor:pointer';i.focus();i.select();
-  const doit=()=>{say(saveTo(key,i.value.trim()||def)?'Saved.':'Could not save (the browser storage is full or blocked).');setTimeout(()=>{o.remove();PAUSED=false;saveMenu()},600)};
-  go.onclick=doit;i.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')doit();if(e.key==='Escape'){o.remove();PAUSED=false;saveMenu()}}});
- o.querySelectorAll('button[data-l]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(b.dataset.l);if(r&&!loadFrom(r))say('Not loaded.')});
- o.querySelector('#gm-ex').onclick=()=>{const blob=new Blob([JSON.stringify(gameSave())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);const nm=SAVENM;a.download='coalhaul-'+(nm?nm.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'save':'save')+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);say('Exported.')};
- const fi=o.querySelector('#gm-f');o.querySelector('#gm-im').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))say('Not loaded.')};rd.readAsText(f)};
- o.querySelector('#gm-new').onclick=e=>{const b=e.currentTarget;if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Sure? Click again to quit';b.style.background='#7a3b2e';say(NET.mode==='join'?'You leave this game.':'The game is autosaved first.'+(othersHere()?' The other players lose their host for a moment: one of them takes over.':''));return}   /* asked inside the menu: a browser confirm box is blocked in the preview page */
- if(canAuto())saveTo(SAVEK+'auto');try{sessionStorage.removeItem('coalhaul.code')}catch(e){}location.reload()};
- o.querySelector('#gm-set').onclick=()=>{const box=o.firstElementChild;box.innerHTML=settingsHTML()+'<button id="st-back" style="width:100%;margin-top:12px;padding:9px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer">Back</button>';settingsWire(box);box.querySelector('#st-back').onclick=()=>{o.remove();PAUSED=false;saveMenu()}};
- const close=()=>{o.remove();PAUSED=false};o.querySelector('#gm-x').onclick=close;o.addEventListener('pointerdown',e=>{if(e.target===o)close()})}
-// ---------- settings (main menu and Esc menu): your name and the controls ----------
-function settingsHTML(){const row=(k,t)=>'<tr><td style="padding:3px 10px 3px 0;white-space:nowrap;color:#ffd166;font-weight:600;vertical-align:top">'+k+'</td><td style="padding:3px 0;opacity:.9">'+t+'</td></tr>';
- const keys=[['W A S D / arrows','walk · drive · in the crane cab: swing and slide the boom'],['Mouse click','use what is under the cursor: a seat, a lever, an item, a shelf…'],['Double click','off your vehicle: get out'],['Space','action: load and unload, lift and set down (forklift, crane), fold the crane'],['C','hitch a trailer · crane: put on / take off a tool'],['V','pick the trailer · crane: what hangs on the hook'],['G','dump the cargo'],['R','turn the traffic barrier you hold · on the map: turn what you place'],['Q / E','crane: turn the load on the hook'],['TAB','switch the camera'],['M','the big map (Build tab)'],['J','all goals'],['Wheel, + / −','zoom'],['Enter or /','chat · commands (/help)'],['Esc','menu, or close what is open']];
+const VERSION='v0.42 · 17 Nov 2026';
+// ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
+const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
+ inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
+const H2=t=>'<div style="font-size:20px;font-weight:700;margin-bottom:8px">'+t+'</div>';
+const SEC=t=>'<div style="font-size:13px;font-weight:700;opacity:.75;margin:14px 0 4px;text-transform:uppercase;letter-spacing:.6px">'+t+'</div>';
+const BIG=(id,t,sub,dis)=>'<button id="'+id+'"'+(dis?' disabled':'')+' style="display:block;width:100%;text-align:left;margin:7px 0;padding:11px 14px;border-radius:9px;border:1px solid #ffffff30;background:'+(dis?'#1f2c36':'#243645')+';color:'+(dis?'#fff6':'#fff')+';font-size:15px;cursor:'+(dis?'default':'pointer')+'"><b>'+t+'</b>'+(sub?'<br><small style="opacity:.7">'+sub+'</small>':'')+'</button>';
+const MB=(id,t,x)=>'<button id="'+id+'" style="'+UI.btn+';'+(x||'')+'">'+t+'</button>';
+// two clicks for anything that cannot be undone: the first turns the button red and asks
+function sure(b,ask,then){if(!b.dataset.sure){b.dataset.sure=1;b.dataset.was=b.textContent;b.textContent=ask;b.style.background='#7a3b2e';setTimeout(()=>{if(b.isConnected&&b.dataset.sure){delete b.dataset.sure;b.textContent=b.dataset.was;b.style.background=''}},4000);return}then()}
+// a menu window: the box, its pages, and a way back
+function menuWin(id,z){let o=document.getElementById(id);if(!o){o=document.createElement('div');o.id=id;o.style.cssText='position:fixed;inset:0;background:'+(id==='mmenu'?'radial-gradient(ellipse at center,#0b120c99,#0b120cf2)':'#0b120cbb')+';z-index:'+z+';display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';document.body.appendChild(o)}return o}
+function menuPage(o,html){o.innerHTML='<div class="mbox" style="background:#1a2630ee;border:1px solid #ffffff30;border-radius:14px;padding:20px 24px;color:#eee;width:min(92vw,420px);max-height:92vh;overflow:auto;box-shadow:0 20px 60px #0008">'+html+'<div id="m-msg" style="min-height:16px;margin-top:8px;font-size:13px;color:#ffcfa8"></div></div>';
+ const q=s=>o.querySelector(s);return{q,say:t=>{const m=q('#m-msg');if(m)m.textContent=t||''}}}
+
+// ---------- saves: any number of them, each with a name, a picture of the game and the date ----------
+const SAVEID=()=>SAVEK+'s'+Date.now().toString(36);
+function saveKeys(){const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(SAVEK)&&k!==SAVEK+'auto'&&k!==SAVEK+'prev')o.push(k)}}catch(e){}
+ return o.map(k=>[k,readSave(k)]).filter(x=>x[1]).sort((a,b)=>(b[1].t||0)-(a[1].t||0))}
+const shot=()=>{try{const c=document.createElement('canvas');c.width=160;c.height=100;const x=c.getContext('2d'),s=Math.max(160/cv.width,100/cv.height);x.drawImage(cv,(160-cv.width*s)/2,(100-cv.height*s)/2,cv.width*s,cv.height*s);return c.toDataURL('image/jpeg',.6)}catch(e){return null}};
+const thumb=d=>'<div style="width:72px;height:45px;flex:none;border-radius:6px;background:#0f171e '+(d&&d.pic?'url('+d.pic+') center/cover':'')+';border:1px solid #ffffff22"></div>';
+const sline=(d,lbl)=>'<div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(d&&d.name?esc(d.name):lbl||'Saved game')+'</b><small style="opacity:.7">'+(d?(d.name&&lbl?lbl+' · ':'')+'Day '+(d.dn||1)+' · '+fmtT(d):'empty')+'</small></div>';
+// the load page (both menus): every save, newest first, then the autosaves and a file
+function pageLoad(o,back){const L=saveKeys(),au=readSave(SAVEK+'auto'),pr=readSave(SAVEK+'prev');
+ const row=(k,d,lbl)=>'<div style="display:flex;gap:10px;align-items:center;margin:7px 0">'+thumb(d)+sline(d,lbl)+'<button data-load="'+k+'" style="'+UI.btn+'"'+(d?'':' disabled')+'>Load</button></div>';
+ const P=menuPage(o,H2('Load game')+(L.length?L.map(([k,d])=>row(k,d,'')).join(''):'<div style="opacity:.6;font-size:13px;margin:6px 0">No saved games yet.</div>')+SEC('Autosaves')+row(SAVEK+'auto',au,'Autosave')+row(SAVEK+'prev',pr,'Before the last autosave')+
+  '<div style="display:flex;gap:8px;margin-top:12px">'+MB('m-file','From a file…','flex:1')+MB('m-back','Back','flex:1')+'</div><input id="m-f" type="file" accept=".json,application/json" style="display:none">'+(NET.mode==='join'?'<div style="font-size:12px;opacity:.7;margin-top:8px">You are in somebody else\'s game: loading leaves it and starts your own.</div>':''));
+ o.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(b.dataset.load);if(r&&!loadFrom(r))P.say('That save could not be loaded.')});
+ const fi=P.q('#m-f');P.q('#m-file').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))P.say('That is not a Coal Haul save.')};rd.readAsText(f)};
+ P.q('#m-back').onclick=back}
+// the save page (Esc menu): a new save with a name, or over an old one; rename and delete; export
+function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · $'+Math.floor(cash);
+ const P=menuPage(o,H2('Save game')+(NET.mode==='join'?'<div style="font-size:12px;background:#243645;border-radius:8px;padding:7px 9px;margin-bottom:8px;opacity:.85">This is somebody else\'s game. A save keeps a copy of it in your browser, to play on your own later.</div>':'')+
+  '<div style="display:flex;gap:8px"><input id="m-nm" maxlength="32" value="'+esc(def)+'" style="'+UI.inp+';flex:1;min-width:0"><button id="m-new" style="'+UI.btn+';background:#2f5a3c">Save</button></div>'+
+  (L.length?SEC('Or over a save')+L.map(([k,d])=>'<div data-row="'+k+'" style="display:flex;gap:8px;align-items:center;margin:7px 0">'+thumb(d)+sline(d,'')+'<button data-over="'+k+'" style="'+UI.btn+';padding:7px 9px" title="Save over it">Save over</button><button data-ren="'+k+'" style="'+UI.btn+';padding:7px 9px" title="Rename">✎</button><button data-del="'+k+'" style="'+UI.btn+';padding:7px 9px" title="Delete">🗑</button></div>').join(''):'')+
+  '<div style="display:flex;gap:8px;margin-top:12px">'+MB('m-ex','Export to file','flex:1')+MB('m-back','Back','flex:1')+'</div>');
+ const nm=P.q('#m-nm'),again=()=>pageSave(o,back);nm.select();
+ const doNew=()=>{const n=nm.value.trim()||def;if(!saveTo(SAVEID(),n))return P.say('Could not save: the browser storage is full or blocked. Delete an old save.');P.say('Saved.');setTimeout(again,500)};
+ P.q('#m-new').onclick=doNew;nm.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')doNew();if(e.key==='Escape')back()};
+ o.querySelectorAll('[data-over]').forEach(b=>b.onclick=()=>sure(b,'Replace it?',()=>{const old=readSave(b.dataset.over);if(!saveTo(b.dataset.over,(old&&old.name)||SAVENM||def))return P.say('Could not save.');P.say('Saved over it.');setTimeout(again,500)}));
+ o.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>sure(b,'Delete?',()=>{try{localStorage.removeItem(b.dataset.del)}catch(e){}again()}));
+ o.querySelectorAll('[data-ren]').forEach(b=>b.onclick=()=>{const k=b.dataset.ren,d=readSave(k),r=o.querySelector('[data-row="'+k+'"]');if(!d)return;
+  r.innerHTML=thumb(d)+'<input maxlength="32" value="'+esc(d.name||'')+'" style="'+UI.inp+';flex:1;min-width:0;padding:6px 8px;font-size:14px"><button style="'+UI.btn+';background:#2f5a3c">OK</button>';
+  const i=r.querySelector('input'),ok=()=>{d.name=i.value.trim().slice(0,32)||d.name;try{localStorage.setItem(k,JSON.stringify(d))}catch(e){}again()};i.focus();i.select();r.querySelector('button').onclick=ok;i.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter')ok();if(e.key==='Escape')again()}});
+ P.q('#m-ex').onclick=()=>exportSave(P.say);P.q('#m-back').onclick=back}
+// export: a download link on the open web; inside the Claude page the page asks to save the file (the viewer confirms)
+async function exportSave(say){const nm=SAVENM,file='coalhaul-'+(nm?nm.replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'save':'save')+'.json',data=JSON.stringify(gameSave());
+ if(IN_CLAUDE){try{const dl=await window.claude.use('downloads');if(!dl)return say('Saving files is not available in this preview.');await dl.save({filename:file,data,mimeType:'application/json'});say('Exported.')}catch(e){say('Not exported'+(e&&e.message?': '+e.message:'.'))}return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=file;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);say('Exported as '+file+'.')}
+
+// ---------- settings: kept in this browser ----------
+const KEYDEF={up:'w',down:'s',left:'a',right:'d',action:' ',hitch:'c',select:'v',dump:'g',turn:'r',hookl:'q',hookr:'e',camera:'tab',map:'m',goals:'j'};
+const KEYN={up:'Forward / up',down:'Back / down',left:'Left',right:'Right',action:'Action',hitch:'Hitch · crane tool',select:'Pick trailer · hook',dump:'Dump cargo',turn:'Turn',hookl:'Crane hook ⟲',hookr:'Crane hook ⟳',camera:'Camera',map:'Big map',goals:'All goals'};
+const SETDEF={cam:'north',tap:320,stick:140,night:1,low:false,vol:.7,veng:.8,vfx:.8,keys:{}};
+const SET=(()=>{let s={};try{s=JSON.parse(localStorage.getItem('coalhaul.settings')||'{}')||{}}catch(e){}return Object.assign({},SETDEF,s,{keys:Object.assign({},KEYDEF,s.keys||{})})})();
+function setSave(){try{localStorage.setItem('coalhaul.settings',JSON.stringify(SET))}catch(e){}setApply()}
+function setApply(){LOWG=!!SET.low;sndVol();document.documentElement.style.setProperty('--js',SET.stick+'px');try{rs()}catch(e){}keyTable()}
+// rebound keys: the key pressed is turned into the default key of its action, so the rest of the game needs no change. A default key given to another action does nothing any more (arrows always work)
+let KREMAP={};function keyTable(){KREMAP={};for(const a in KEYDEF){const d=KEYDEF[a],k=SET.keys[a];if(k!==d){KREMAP[k]=d;if(!(d in KREMAP))KREMAP[d]=null}}for(const a in KEYDEF){const k=SET.keys[a];if(KREMAP[k]===null)KREMAP[k]=KEYDEF[a]}}
+const keyMap=k=>k in KREMAP?KREMAP[k]:k;
+const keyLabel=k=>k===' '?'Space':k==='tab'?'TAB':k.length===1?k.toUpperCase():k.replace(/^arrow/,'Arrow ');
+function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align-items:center;gap:10px;margin:6px 0"><span style="flex:1;font-size:14px">'+lab+'</span>'+ctl+'</div>';
+ const rng=(id,min,max,step,v)=>'<input id="'+id+'" type="range" min="'+min+'" max="'+max+'" step="'+step+'" value="'+v+'" style="width:150px">';
+ const sel=(id,opts,v)=>'<select id="'+id+'" style="'+UI.inp+';padding:6px 8px;font-size:14px">'+opts.map(([k,t])=>'<option value="'+k+'"'+(k==v?' selected':'')+'>'+t+'</option>').join('')+'</select>';
+ const P=menuPage(o,H2('Settings')+
+  '<label style="font-size:12px;opacity:.75">Your name</label><input id="st-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 4px">'+
+  SEC('Sound')+R('Volume',rng('st-vol',0,1,.05,SET.vol))+R('Engines',rng('st-veng',0,1,.05,SET.veng))+R('Effects',rng('st-vfx',0,1,.05,SET.vfx))+
+  SEC('Camera')+R('When driving, start in',sel('st-cam',[['north','north up'],['follow','turning with the vehicle']],SET.cam))+'<div style="font-size:12px;opacity:.6">The crane cab always starts in its own view. TAB switches.</div>'+
+  SEC('Display')+R('Night darkness',rng('st-night',0,1,.05,SET.night))+R('Lighter graphics (slow phones)','<input id="st-low" type="checkbox"'+(SET.low?' checked':'')+' style="width:20px;height:20px">')+
+  SEC('Touch')+R('Tap time (ms)<br><small style="opacity:.6">longer: easier taps, slower stick</small>',rng('st-tap',150,600,10,SET.tap)+'<small id="st-tapv" style="width:34px">'+SET.tap+'</small>')+R('Stick size',rng('st-stick',100,200,5,SET.stick))+
+  SEC('Keys')+'<div style="font-size:12px;opacity:.6;margin-bottom:4px">Click a key, then press the new one (Esc: keep it). Arrows always move.</div>'+
+  Object.keys(KEYDEF).map(a=>R(KEYN[a],'<button data-key="'+a+'" style="'+UI.btn+';min-width:86px;padding:6px 10px">'+keyLabel(SET.keys[a])+'</button>')).join('')+
+  '<div style="display:flex;gap:8px;margin-top:6px">'+MB('st-kdef','Default keys','flex:1')+'</div>'+
+  SEC('Controls')+controlsHTML()+
+  '<div style="display:flex;gap:8px;margin-top:14px">'+MB('m-back','Back','flex:1')+'</div>');
+ const q=P.q,num=(id,k,f)=>{q('#'+id).oninput=e=>{SET[k]=+e.target.value;if(f)f();setSave()}};
+ q('#st-name').oninput=e=>{CHAT.name=e.target.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(x){}NET.last=0;const m=document.getElementById('mm-name');if(m)m.value=CHAT.name};
+ q('#st-name').onkeydown=e=>e.stopPropagation();
+ num('st-vol','vol');num('st-veng','veng');num('st-vfx','vfx',()=>sfx('click'));num('st-night','night');num('st-stick','stick');num('st-tap','tap',()=>{q('#st-tapv').textContent=SET.tap});
+ q('#st-cam').onchange=e=>{SET.cam=e.target.value;setSave()};q('#st-low').onchange=e=>{SET.low=e.target.checked;setSave()};
+ o.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{b.textContent='press a key…';b.style.background='#5a4a1e';
+  const h=e=>{e.preventDefault();e.stopPropagation();removeEventListener('keydown',h,true);const k=e.key.toLowerCase();if(k!=='escape'&&!k.startsWith('arrow')&&k!=='enter'&&k!=='/'){const a=b.dataset.key,other=Object.keys(SET.keys).find(x=>x!==a&&SET.keys[x]===k);if(other)SET.keys[other]=SET.keys[a];SET.keys[a]=k;setSave()}pageSettings(o,back)};
+  addEventListener('keydown',h,true)});
+ q('#st-kdef').onclick=()=>{SET.keys=Object.assign({},KEYDEF);setSave();pageSettings(o,back)};
+ q('#m-back').onclick=back}
+function controlsHTML(){const row=(k,t)=>'<tr><td style="padding:3px 10px 3px 0;white-space:nowrap;color:#ffd166;font-weight:600;vertical-align:top">'+k+'</td><td style="padding:3px 0;opacity:.9">'+t+'</td></tr>',K=a=>keyLabel(SET.keys[a]);
+ const keys=[[K('up')+' '+K('left')+' '+K('down')+' '+K('right')+' / arrows','walk · drive · in the crane cab: swing and slide the boom'],['Mouse click','use what is under the cursor: a seat, a lever, an item, a shelf…'],['Double click','off your vehicle: get out'],[K('action'),'action: load and unload, lift and set down (forklift, crane), fold the crane'],[K('hitch'),'hitch a trailer · crane: put on / take off a tool'],[K('select'),'pick the trailer · crane: what hangs on the hook'],[K('dump'),'dump the cargo'],[K('turn'),'turn the traffic barrier you hold · on the map: turn what you place'],[K('hookl')+' / '+K('hookr'),'crane: turn the load on the hook'],[K('camera'),'switch the camera'],[K('map'),'the big map (Build tab)'],[K('goals'),'all goals'],['Wheel, + / −','zoom'],['Enter or /','chat · commands (/help)'],['Esc','menu, or close what is open']];
  const touch=[['Hold a finger on the map','the stick: slide to walk or drive, lift to stop'],['Tap','use what you tap · double tap off your vehicle: get out'],['Two fingers','zoom'],['␣ action','the big button'],['C, V, G, R, Q, E','as the keys'],['☰ 💬 🎥','menu · chat · camera'],['Tap the minimap','the big map']];
- return'<div style="font-size:20px;font-weight:700;margin-bottom:8px">Settings</div><label style="font-size:12px;opacity:.75">Your name</label><input id="st-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="display:block;width:100%;box-sizing:border-box;margin:3px 0 12px;padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px">'+
-  '<div style="font-size:15px;font-weight:700;margin:4px 0">Controls</div><table style="font-size:13px;border-collapse:collapse;width:100%">'+(TOUCHUI?touch:keys).map(r=>row(r[0],r[1])).join('')+'</table>'+
-  '<div style="font-size:13px;font-weight:700;margin:10px 0 2px;opacity:.8">'+(TOUCHUI?'With a keyboard':'On a phone or tablet')+'</div><table style="font-size:12px;border-collapse:collapse;width:100%;opacity:.75">'+(TOUCHUI?keys:touch).map(r=>row(r[0],r[1])).join('')+'</table>'}
-function settingsWire(o){const i=o.querySelector('#st-name');if(i)i.oninput=()=>{CHAT.name=i.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}NET.last=0;const m=document.getElementById('mm-name');if(m)m.value=CHAT.name}}
-// ---------- the main menu: every player starts here ----------
-let MENU=true;
-function codeLine(){if(IN_CLAUDE)return'<div style="font-size:12px;opacity:.75;margin-bottom:8px">In this preview everyone who opens the page plays on the same map.</div>';if(!NET.code)return'';
+ const T=l=>'<table style="font-size:13px;border-collapse:collapse;width:100%">'+l.map(r=>row(r[0],r[1])).join('')+'</table>';
+ return T(TOUCHUI?touch:keys)+'<div style="font-size:12px;font-weight:700;margin:10px 0 2px;opacity:.7">'+(TOUCHUI?'With a keyboard':'On a phone or tablet')+'</div><div style="opacity:.7">'+T(TOUCHUI?keys:touch)+'</div>'}
+// ---------- how to play ----------
+function pageHowto(o,back){const p=t=>'<p style="margin:6px 0;font-size:14px;line-height:1.45;opacity:.92">'+t+'</p>';
+ const P=menuPage(o,H2('How to play')+
+  p('You start with <b>$0</b>, a small pickup and a town of building sites. Haul cargo, earn money, and build the town up one site at a time.')+
+  SEC('The first hauls')+p('Drive to the <b>coal mine</b>, park on its loading pad and hold <b>action</b> to load. Unload on the <b>power plant</b> site\'s pad the same way. Every building runs on the power plant\'s coal, so it comes first.')+
+  SEC('Earning and building')+p('Sites pay for what you deliver. Other goods sell at the <b>shop</b>. Buy bigger trucks, trailers, a forklift and a crane truck there; new purchases appear on the NEW PURCHASES pad. Fuel up at the <b>fuel station</b>.')+
+  p('Each building site lists what it needs: coal, rock, logs, planks, gravel… Built, it makes the next material: the lumberyard logs, the sawmill planks, the quarry rock, the crusher sand and gravel, the iron mine ore, the factory pallets, crates and hitches, the foundry iron, steel and glass.')+
+  SEC('Tools')+p('A <b>forklift</b> lifts pallets and, with the claw, logs. The <b>crane truck</b> puts its feet down and lifts anything with forks, a log claw, a log grab or cables, even vehicles.')+
+  p('The <b>goals</b> panel (top right) always says what to do next. The big map (M, or tap the minimap) has the Build tab to lay roads and move buildings.')+
+  SEC('Together')+p('A game you start is open to friends: the Esc menu shows its code and an invite link. Chat with Enter.')+
+  '<div style="display:flex;gap:8px;margin-top:12px">'+MB('m-back','Back','flex:1')+'</div>');P.q('#m-back').onclick=back}
+
+// ---------- multiplayer in the Esc menu: the code, the invite link, who is here ----------
+const inviteLink=()=>{const u=location.href.split('#')[0].split('?')[0],qs=new URLSearchParams(location.search);qs.delete('join');qs.set('join',NET.code);return u+'?'+qs.toString()};
+async function copyText(t,say,what){try{await navigator.clipboard.writeText(t);say(what+' copied.')}catch(e){const i=document.createElement('textarea');i.value=t;document.body.appendChild(i);i.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}i.remove();say(ok?what+' copied.':what+': '+t)}}
+function gameBox(){if(IN_CLAUDE)return'<div style="font-size:12px;opacity:.75;margin-bottom:8px">In this preview everyone who opens the page plays on the same map.</div>';if(!NET.code)return'';
  if(NET.status==='offline')return'<div style="background:#3a2a24;border-radius:8px;padding:8px 10px;margin-bottom:10px"><b>Offline</b>: friends can\'t join<br><small style="opacity:.75">The multiplayer server could not be reached. You play alone; Quit and start again to retry.</small></div>';
  if(NET.status==='connecting'&&NET.mode!=='join')return'<div style="background:#243645;border-radius:8px;padding:8px 10px;margin-bottom:10px;opacity:.85">Opening the game to friends…</div>';
- return'<div style="background:#243645;border-radius:8px;padding:8px 10px;margin-bottom:10px">'+(NET.mode==='join'?'In the game <b>':'Game code: <b style="font-size:18px;letter-spacing:3px;color:#ffd166">')+NET.code+'</b>'+(NET.mode==='join'?'</b>':'<br><small style="opacity:.75">Friends join with this code (Join game in the main menu).</small>')+'</div>'}
-function mainMenu(view,msg){MENU=true;document.body.classList.add('inmenu');let o=document.getElementById('mmenu');if(!o){o=document.createElement('div');o.id='mmenu';o.style.cssText='position:fixed;inset:0;background:radial-gradient(ellipse at center,#0b120c99,#0b120cf2);z-index:60;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';document.body.appendChild(o)}
- const B=(id,t,sub,dis)=>'<button id="'+id+'"'+(dis?' disabled':'')+' style="display:block;width:100%;text-align:left;margin:7px 0;padding:11px 14px;border-radius:9px;border:1px solid #ffffff30;background:'+(dis?'#1f2c36':'#243645')+';color:'+(dis?'#fff6':'#fff')+';font-size:15px;cursor:'+(dis?'default':'pointer')+'"><b>'+t+'</b>'+(sub?'<br><small style="opacity:.7">'+sub+'</small>':'')+'</button>';
- const auto=readSave(SAVEK+'auto'),back='<button id="mm-back" style="margin-top:8px;padding:8px 14px;border-radius:8px;border:1px solid #ffffff30;background:#1f2c36;color:#fff;cursor:pointer">Back</button>',note='<div id="mm-m" style="min-height:18px;margin-top:8px;font-size:13px;color:#ffb4a8">'+(msg||'')+'</div>';
- let body='';
- if(!view)body='<div style="font-size:30px;font-weight:800;letter-spacing:1px;margin-bottom:2px">COAL HAUL</div><div style="opacity:.7;font-size:13px;margin-bottom:14px">Haul, build, grow. Alone or with friends.</div>'+
-  '<label style="font-size:12px;opacity:.75">Your name</label><input id="mm-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="display:block;width:100%;box-sizing:border-box;margin:3px 0 8px;padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px">'+
-  (auto?B('mm-cont','Continue','The autosave · '+fmtT(auto)):'')+B('mm-new','New game','A fresh map, $0, your pickup at the garage')+B('mm-load','Load game','A save slot or a file')+B('mm-join','Join game',IN_CLAUDE?'Works in the GitHub version: here everyone is on one map already':'Play in a friend\'s game with its code',IN_CLAUDE)+B('mm-set','Settings','Your name and the controls')+note;
- else if(view==='load'){const row=(l,k)=>{const d=readSave(k);return B('mm-l-'+k.split('.').pop(),saveName(d,l),(d&&d.name?l+' · ':'')+fmtT(d),!d)};body='<div style="font-size:20px;font-weight:700;margin-bottom:6px">Load game</div>'+row('Slot 1',SAVEK+'1')+row('Slot 2',SAVEK+'2')+row('Slot 3',SAVEK+'3')+row('Autosave',SAVEK+'auto')+row('Before the last autosave',SAVEK+'prev')+B('mm-file','From a file…','A save exported earlier')+'<input id="mm-f" type="file" accept=".json,application/json" style="display:none">'+note+back}
- else if(view==='set')body=settingsHTML()+back;
- else if(view==='join')body='<div style="font-size:20px;font-weight:700;margin-bottom:6px">Join game</div><div style="opacity:.75;font-size:13px;margin-bottom:10px">Ask the host for the game code: it is in his Menu.</div><input id="mm-code" maxlength="5" autocomplete="off" spellcheck="false" placeholder="CODE" style="width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid #ffffff40;background:#0f171e;color:#ffd166;font-size:26px;letter-spacing:8px;text-align:center;text-transform:uppercase">'+B('mm-go','Join','')+note+back;
- o.innerHTML='<div style="background:#1a2630ee;border:1px solid #ffffff30;border-radius:14px;padding:22px 26px;color:#eee;width:min(92vw,400px);max-height:92vh;overflow:auto;box-shadow:0 20px 60px #0008">'+body+'</div>';
- const q=id=>o.querySelector('#'+id),say=t=>{const m=q('mm-m');if(m)m.textContent=t},name=()=>{const i=q('mm-name');if(!i)return;CHAT.name=i.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}};
- if(q('mm-back'))q('mm-back').onclick=()=>mainMenu();
- if(!view){q('mm-name').oninput=name;
-  if(q('mm-cont'))q('mm-cont').onclick=()=>{name();const r=localStorage.getItem(SAVEK+'auto');if(r&&!loadFrom(r))say('The autosave could not be loaded.')};
-  q('mm-new').onclick=()=>{name();o.remove();startColour(()=>{MENU=false;document.body.classList.remove('inmenu');netStart('host')})};
-  q('mm-load').onclick=()=>{name();mainMenu('load')};
-  q('mm-join').onclick=()=>{name();mainMenu('join')};q('mm-set').onclick=()=>{name();mainMenu('set')}}
- if(view==='set')settingsWire(o)
- if(view==='load'){o.querySelectorAll('button[id^="mm-l-"]').forEach(b=>b.onclick=()=>{const r=localStorage.getItem(SAVEK+b.id.slice(5));if(r&&!loadFrom(r))say('That save could not be loaded.')});
-  const fi=q('mm-f');q('mm-file').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))say('That is not a Coal Haul save.')};rd.readAsText(f)}}
- if(view==='join'){const ci=q('mm-code');ci.focus();const go=()=>{const c=ci.value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==5)return say('A game code has 5 letters and digits.');q('mm-go').disabled=true;say('');q('mm-m').style.color='#cfe';say('Connecting to '+c+'…');
-   netStart('join',c,(ok,m)=>{if(ok){o.remove();MENU=false;document.body.classList.remove('inmenu');chatLine('You joined the game '+c+'.',1)}else{NET.mode=null;NET.code=null;mainMenu('join',m)}})};
-  q('mm-go').onclick=go;ci.onkeydown=e=>{if(e.key==='Enter')go()}}}
+ if(NET.mode==='join')return'<div style="background:#243645;border-radius:8px;padding:8px 10px;margin-bottom:10px">In the game <b>'+NET.code+'</b></div>';
+ return'<div style="background:#243645;border-radius:8px;padding:9px 10px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">Game code: <b style="font-size:19px;letter-spacing:3px;color:#ffd166">'+NET.code+'</b></span>'+MB('m-cc','Copy code','padding:6px 9px;font-size:13px')+MB('m-cl','Copy invite link','padding:6px 9px;font-size:13px')+'</div>'+
+  '<label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;cursor:pointer"><input id="m-open" type="checkbox"'+(NET.closed?'':' checked')+' style="width:18px;height:18px">Open to new players</label></div>'}
+function playersBox(){const r=NET.room;let ps=[];try{if(r)ps=r.peers().filter(p=>!p.sameTab&&p.presence)}catch(e){}
+ const me='<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span style="width:10px;height:10px;border-radius:50%;background:hsl('+NET.hue+',75%,60%)"></span><span style="flex:1">'+esc(CHAT.name||'You')+' <small style="opacity:.6">(you'+(NET.mode==='host'&&!IN_CLAUDE?', host':'')+')</small></span></div>';
+ const host=NET.mode==='host'&&r&&r.kick;
+ return SEC('Players · '+(ps.length+1))+me+ps.map(p=>'<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><span style="width:10px;height:10px;border-radius:50%;background:hsl('+(p.presence.hue||0)+',75%,60%)"></span><span style="flex:1">'+esc(p.presence.nm||'Player')+(r.isHost&&!r.isHost()&&p.peer&&String(p.peer).startsWith('coalhaul-')?' <small style="opacity:.6">(host)</small>':'')+'</span>'+(host?'<button data-kick="'+esc(p.peer)+'" style="'+UI.btn+';padding:5px 9px;font-size:12px">Remove</button>':'')+'</div>').join('')}
+// the Esc menu
+function saveMenu(page){let o=document.getElementById('gmenu');if(o&&!page){o.remove();PAUSED=false;return}PAUSED=!othersHere();   // alone the game stops while the menu is open; with others it goes on
+ o=menuWin('gmenu',40);const home=()=>saveMenu('home'),close=()=>{o.remove();PAUSED=false};o.onpointerdown=e=>{if(e.target===o)close()};
+ if(page==='save')return pageSave(o,home);if(page==='load')return pageLoad(o,home);if(page==='set')return pageSettings(o,home);if(page==='how')return pageHowto(o,home);
+ const P=menuPage(o,'<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px"><span style="font-size:22px;font-weight:800;letter-spacing:1px">COAL HAUL</span><small style="opacity:.6">'+(PAUSED?'paused':'the game goes on')+' · Esc</small></div>'+
+  '<button id="gm-x" style="'+UI.btn+';width:100%;margin-bottom:10px;font-weight:700;padding:10px">Resume</button>'+gameBox()+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+MB('gm-save','Save game')+MB('gm-load','Load game')+MB('gm-set','Settings')+MB('gm-how','How to play')+'</div>'+
+  playersBox()+'<button id="gm-new" style="'+UI.btn+';width:100%;margin-top:14px">Quit to main menu</button><div style="text-align:center;font-size:11px;opacity:.45;margin-top:8px">'+VERSION+'</div>');
+ const q=P.q;q('#gm-x').onclick=close;q('#gm-save').onclick=()=>saveMenu('save');q('#gm-load').onclick=()=>saveMenu('load');q('#gm-set').onclick=()=>saveMenu('set');q('#gm-how').onclick=()=>saveMenu('how');
+ if(q('#m-cc'))q('#m-cc').onclick=()=>copyText(NET.code,P.say,'Code');if(q('#m-cl'))q('#m-cl').onclick=()=>copyText(inviteLink(),P.say,'Invite link');
+ if(q('#m-open'))q('#m-open').onchange=e=>{NET.closed=!e.target.checked;P.say(NET.closed?'Closed: nobody new can join. Players already here stay.':'Open: friends can join with the code.')};
+ o.querySelectorAll('[data-kick]').forEach(b=>b.onclick=()=>sure(b,'Remove?',()=>{NET.room.kick(b.dataset.kick);P.say('Removed.');setTimeout(home,600)}));
+ q('#gm-new').onclick=e=>sure(e.currentTarget,'Sure? Click again to quit',()=>{if(canAuto())saveTo(SAVEK+'auto');try{sessionStorage.removeItem('coalhaul.code')}catch(x){}location.href=location.href.split('?')[0]+location.search.replace(/[?&]join=[^&]*/,'').replace(/^&/,'?')});
+ P.say(NET.mode==='join'?'':othersHere()?'Quitting autosaves first; one of the others takes over as host.':'')}
+// ---------- the main menu: every player starts here ----------
+let MENU=true;
+function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');const o=menuWin('mmenu',60),home=()=>mainMenu();o.onpointerdown=null;
+ if(view==='load')return pageLoad(o,home);if(view==='set')return pageSettings(o,home);if(view==='how')return pageHowto(o,home);
+ const auto=readSave(SAVEK+'auto');
+ if(view==='join'){const P=menuPage(o,H2('Join game')+'<div style="opacity:.75;font-size:13px;margin-bottom:10px">Ask the host for the game code or the invite link: they are in his Esc menu.</div><input id="mm-code" maxlength="5" autocomplete="off" spellcheck="false" placeholder="CODE" value="'+esc(pre||'')+'" style="width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid #ffffff40;background:#0f171e;color:#ffd166;font-size:26px;letter-spacing:8px;text-align:center;text-transform:uppercase">'+BIG('mm-go','Join','')+MB('m-back','Back'));
+  if(msg){P.say(msg)}P.q('#m-back').onclick=home;const ci=P.q('#mm-code');ci.focus();
+  const go=()=>{const c=ci.value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==5)return P.say('A game code has 5 letters and digits.');P.q('#mm-go').disabled=true;P.say('Connecting to '+c+'…');
+   netStart('join',c,(ok,m)=>{if(ok){o.remove();MENU=false;document.body.classList.remove('inmenu');chatLine('You joined the game '+c+'.',1)}else{NET.mode=null;NET.code=null;mainMenu('join',m,c)}})};
+  P.q('#mm-go').onclick=go;ci.onkeydown=e=>{if(e.key==='Enter')go()};if(pre&&!msg)go();return}
+ const P=menuPage(o,'<div style="font-size:30px;font-weight:800;letter-spacing:1px;margin-bottom:2px">COAL HAUL</div><div style="opacity:.7;font-size:13px;margin-bottom:14px">Haul, build, grow. Alone or with friends.</div>'+
+  '<label style="font-size:12px;opacity:.75">Your name</label><input id="mm-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 8px">'+
+  (auto?BIG('mm-cont','Continue',(auto.name?esc(auto.name)+' · ':'')+'the autosave · '+fmtT(auto)):'')+BIG('mm-new','New game','A fresh map, $0, your pickup at the garage')+BIG('mm-load','Load game','Your saves or a file')+
+  BIG('mm-join','Join game',IN_CLAUDE?'Works in the GitHub version: here everyone is on one map already':'Play in a friend\'s game with its code',IN_CLAUDE)+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px">'+MB('mm-set','Settings')+MB('mm-how','How to play')+'</div><div style="text-align:center;font-size:11px;opacity:.45;margin-top:10px">'+VERSION+'</div>');
+ if(msg)P.say(msg);const q=P.q,name=()=>{CHAT.name=q('#mm-name').value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}};q('#mm-name').oninput=name;
+ if(q('#mm-cont'))q('#mm-cont').onclick=()=>{const r=localStorage.getItem(SAVEK+'auto');if(r&&!loadFrom(r))P.say('The autosave could not be loaded.')};
+ q('#mm-new').onclick=()=>{o.remove();startColour(()=>{MENU=false;document.body.classList.remove('inmenu');netStart('host')})};
+ q('#mm-load').onclick=()=>mainMenu('load');q('#mm-join').onclick=()=>mainMenu('join');q('#mm-set').onclick=()=>mainMenu('set');q('#mm-how').onclick=()=>mainMenu('how')}
+// ---------- sound: made in the browser (no files). The engine of what you drive, the boom's hydraulics, cargo pouring, money, clicks ----------
+const AUD={ctx:null,m:null,eng:null,fx:null,lastCash:null,cashT:0};
+function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;try{
+ const c=AUD.ctx=new AC(),m=AUD.m=c.createGain(),eng=AUD.eng=c.createGain(),fx=AUD.fx=c.createGain();m.connect(c.destination);eng.connect(m);fx.connect(m);
+ // the engine: two buzzing oscillators through a low filter, louder with the throttle
+ const o1=c.createOscillator(),o2=c.createOscillator(),lp=c.createBiquadFilter(),eg=c.createGain();o1.type='sawtooth';o2.type='square';o2.detune.value=-1200;lp.type='lowpass';lp.frequency.value=420;lp.Q.value=4;eg.gain.value=0;
+ o1.connect(lp);o2.connect(lp);lp.connect(eg);eg.connect(eng);o1.start();o2.start();AUD.e={o1,o2,lp,g:eg};
+ // a noise source shared by the hydraulics and the cargo
+ const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=nb.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
+ const mk=(type,f,q)=>{const s=c.createBufferSource();s.buffer=nb;s.loop=true;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.value=0;s.connect(bp);bp.connect(g);g.connect(fx);s.start();return g};
+ AUD.pour=mk('bandpass',260,.8);   // cargo pouring in or out: a rumble
+ const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(fx);ho.start();AUD.hyd={o:ho,g:hg,n:mk('highpass',1800,.5)};   // the boom's hydraulics: a whine and a hiss
+ sndVol()}catch(e){AUD.ctx=null}}
+function sndVol(){if(!AUD.ctx)return;const t=AUD.ctx.currentTime;AUD.m.gain.setTargetAtTime(SET.vol,t,.05);AUD.eng.gain.setTargetAtTime(SET.veng,t,.05);AUD.fx.gain.setTargetAtTime(SET.vfx,t,.05)}
+['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{sndInit();if(AUD.ctx&&AUD.ctx.state==='suspended')AUD.ctx.resume()},true));   // browsers only allow sound after a click or a key
+// a short sound: a click, a coin, a clunk
+function sfx(k){if(!AUD.ctx||SET.vol<=0)return;const c=AUD.ctx,t=c.currentTime,b=(f,dur,type,v,at=0,to)=>{const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t+at);if(to)o.frequency.exponentialRampToValueAtTime(to,t+at+dur);g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(v,t+at+.005);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);o.connect(g);g.connect(AUD.fx);o.start(t+at);o.stop(t+at+dur+.02)};
+ if(k==='click')b(1400,.04,'square',.05);else if(k==='coin'){b(1318,.09,'sine',.18);b(1975,.22,'sine',.16,.07)}else if(k==='clunk')b(140,.12,'triangle',.3,0,60);else if(k==='msg')b(880,.07,'sine',.06)}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('click')},true);
+// every frame: what you drive, what pours, the money
+let sndCargo=null;
+function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
+ const v=run&&P.driving&&T&&T.out?T:null,cab=run&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null;
+ {const e=AUD.e,heavy=v&&/semi|crane|dump/.test(v.kind)?.7:v&&v.kind==='forklift'?1.25:1,thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,sp=v?Math.abs(v.v||0):0,f=(32+sp*5.5+thr*14)*heavy;
+  e.o1.frequency.setTargetAtTime(f,t,.08);e.o2.frequency.setTargetAtTime(f,t,.08);e.lp.frequency.setTargetAtTime(260+sp*45+thr*260,t,.1);e.g.gain.setTargetAtTime(v&&(v.fuel===undefined||v.fuel>0)?.05+.05*thr+Math.min(.04,sp*.004):cab&&cab.ftOn?.035:0,t,.12)}
+ {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.05:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
+ {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
+  const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;AUD.pour.gain.setTargetAtTime(d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
+ {const r=Math.round(cash);if(AUD.lastCash!==null&&r>AUD.lastCash&&performance.now()-AUD.cashT>1200){AUD.cashT=performance.now();sfx('coin')}AUD.lastCash=r}}
+setApply();
 let lastDraw=0;
-function loop(n){if(MENU||PAUSED){last=n;draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
+function loop(n){if(MENU||PAUSED){last=n;sndTick(0);draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
+ syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);sndTick(dt);/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
  requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
@@ -3920,7 +4044,7 @@ function applyStartLayout(){const L=START_LAYOUT,acts=[],ns=Object.keys(L.at);
  START=startAt();const v=Object.values(veh).find(q=>q.starter);   // the starting pickup and the player stand in the garage lot again
  if(v){v.x=START.x;v.y=START.y;v.a=START.a;const kd=KOF(v),ca=[Math.cos(START.a),Math.sin(START.a)],o=(kd.b1-1.2)*S;P.driving=false;P.x=START.x+ca[0]*o-ca[1]*2.1*S;P.y=START.y+ca[1]*o+ca[0]*2.1*S;P.a=START.a;cam.x=P.x;cam.y=P.y}}
 try{const raw=localStorage.getItem(PENDK);if(raw){localStorage.removeItem(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=JSON.parse(raw);netApi().restore(D);if(D.name)SAVENM=D.name;if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash('Game loaded.')}else applyStartLayout()}catch(e){}
-try{if(sessionStorage.getItem('coalhaul.loaded')){sessionStorage.removeItem('coalhaul.loaded');MENU=false;document.body.classList.remove('inmenu');netStart('host')}else mainMenu()}catch(e){mainMenu()}
+try{if(sessionStorage.getItem('coalhaul.loaded')){sessionStorage.removeItem('coalhaul.loaded');MENU=false;document.body.classList.remove('inmenu');netStart('host')}else{let bm=null;try{bm=sessionStorage.getItem('coalhaul.msg');sessionStorage.removeItem('coalhaul.msg')}catch(e){}if(bm)mainMenu(null,bm);else{const j=new URLSearchParams(location.search).get('join');if(j&&!IN_CLAUDE)mainMenu('join',null,j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5));else mainMenu()}}}catch(e){mainMenu()}
 requestAnimationFrame(loop);
 </script></body></html>
 
