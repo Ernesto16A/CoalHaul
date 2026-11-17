@@ -334,7 +334,7 @@ const doorOut=(o,back)=>{const p=[P.x<-3000&&o.doors&&!back?o.X+o.doors.reduce((
 const inBox=(r,x,y,m)=>x>r.x0-m&&x<r.x1+m&&y>r.y0-m&&y<r.y1+m;
 const APRON=114;   // trailers may run over the kerb and the pavement at a bend (a truck apron), but never onto the grass
 const bldAt=(x,y)=>!IN&&(WALLS.some(r=>inBox(r,x,y,0))||BLDS.some(r=>inBox(r,x,y,0))||OFFICES.some(o=>inBox(offRect(o),x,y,0)));   // a square under a building or wall: nothing can be left there (roads and anywhere else are fine)
-const envSolid=(x,y,W)=>{if(obstAt(x,y))return true;   /* the verge is no wall any more: vehicles may leave the road (half speed, double fuel); walls and buildings still stop them */ 
+const envSolid=(x,y,W)=>{if(obstAt(x,y)||craneFeetSolid(x,y))return true;   /* the verge is no wall any more: vehicles may leave the road (half speed, double fuel); walls and buildings still stop them */ 
  for(const r of WALLS)if(inBox(r,x,y,3))return true;for(const r of BLDS)if(inBox(r,x,y,3))return true;for(const o of OFFICES)if(inBox(offRect(o),x,y,3))return true;return false};
 function envBad(tx,ty,ta,pz){const ch=chain();
  for(const[bi,b]of[vBody(T,tx,ty,ta),...ch.map((t,i)=>tBody(t,pz[i][0],pz[i][1],pz[i][2]))].entries())for(const[u,v]of rectPts(b.x0,b.x1,b.h)){const w=wld(u*S,v*S,b.ox,b.oy,b.a);if(envSolid(w[0],w[1],bi?APRON:ROADW))return true}
@@ -1182,8 +1182,17 @@ let CROP=0,crSay=0;
 const forkPt=v=>v.kind==='crane'?hookPt(v):wld(1.25*S,0,v.x,v.y,v.a);
 const craneRun=v=>P.pass===v&&P.seatSd===CSEAT;
 const crHeld=v=>PALS.find(p=>p.fk===v)||LG.find(l=>l.fk===v)||ATT.find(o=>o.fk===v);
+// the 4 feet in the truck's frame: a beam (x±.13, from .7 out to .9+1.25 ft) and a pad (x±.3, y±.25 around the end). Where they would end up fully out is checked before they go down, and a crane with its feet down is a solid thing for other vehicles
+const FOOTX=[-.95,2.45],footRects=ft=>{const o=[],y1=.9+1.25*ft;for(const x of FOOTX)for(const sg of[-1,1]){o.push({x0:x-.13,x1:x+.13,y0:Math.min(sg*.7,sg*y1),y1:Math.max(sg*.7,sg*y1)});o.push({x0:x-.3,x1:x+.3,y0:sg*y1-.25,y1:sg*y1+.25})}return o};
+const feetFullBlock=v=>{for(const r of footRects(1)){for(let x=r.x0;x<=r.x1+1e-6;x+=Math.max(.1,(r.x1-r.x0)/2))for(let y=r.y0;y<=r.y1+1e-6;y+=.25){const w=wld(x*S,y*S,v.x,v.y,v.a);
+   if(obstAt(w[0],w[1]))return'a barrier or a cone';
+   for(const q of WALLS)if(inBox(q,w[0],w[1],0))return'a wall';for(const q of BLDS)if(inBox(q,w[0],w[1],0))return'a building';for(const q of OFFICES)if(inBox(offRect(q),w[0],w[1],0))return'a building';
+   for(const o of Object.values(veh)){if(o===v||!o.out||o.on||o.fk)continue;const b=vBody(o),l=loc(w[0],w[1],b.ox,b.oy,b.a);if(l[0]>b.x0*S&&l[0]<b.x1*S&&Math.abs(l[1])<b.h*S)return'another vehicle'}
+   for(const t of Object.values(trl)){if(t.fk||t.on)continue;const b=tBody(t),l=loc(w[0],w[1],b.ox,b.oy,b.a);if(l[0]>b.x0*S&&l[0]<b.x1*S&&Math.abs(l[1])<b.h*S)return'a trailer'}}}
+ return null};
+const craneFeetSolid=(x,y)=>{for(const v of Object.values(veh)){if(v.kind!=='crane'||!v.out||!(v.ft>0)||v===T)continue;const l=loc(x,y,v.x,v.y,v.a);for(const r of footRects(v.ft))if(l[0]>r.x0*S&&l[0]<r.x1*S&&l[1]>r.y0*S&&l[1]<r.y1*S)return true}return false};
 function craneFeet(){const v=T;if(Math.abs(v.v)>.3)return flash('Stop the truck first.');
- if(!v.ftOn){if(v.on||v.fk)return flash('The feet cannot go down while the crane truck rides on a trailer or hangs on cables: drive it off first. The crane cannot be used from there.');v.ftOn=true;return flash('Feet going down. Climb into the crane cab at the back (click it) to work the crane.')}
+ if(!v.ftOn){if(v.on||v.fk)return flash('The feet cannot go down while the crane truck rides on a trailer or hangs on cables: drive it off first. The crane cannot be used from there.');const bl=feetFullBlock(v);if(bl)return flash('Not enough room to put the feet down: '+bl+' is in the way of a foot. Move the crane truck to open ground (the feet reach about 2 squares out to each side).');v.ftOn=true;return flash('Feet going down. Climb into the crane cab at the back (click it) to work the crane.')}
  if(crHeldAny(v))return flash('Set the load down first: the crane cannot fold with something on the hook.');
  v.ftOn=false;flash('Folding the crane and lifting the feet…')}
 // swing speed (rad/s) falls with the boom's length so the hook's tip never moves faster than about 3 units a second: ~26 deg/s folded, ~10 deg/s fully out. Extension: 0.13 of the stroke a second (~1.6 units/s)
