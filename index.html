@@ -3027,22 +3027,44 @@ function drawDump(v){const u=S,a=v.a,CC=v.color||'#c0392b',BC=v.bedColor||'#d8a2
  lamp(-1.4,-.96,.08,.28,'#e23b2e');lamp(-1.4,.68,.08,.28,'#e23b2e');
  hitchGfx(v);g.restore()}
 // a forklift: forks and mast at the front, the driver under an overhead guard, a heavy counterweight at the back; the rear wheels steer
-function drawForklift(v){const u=S,a=v.a,CC=v.color||'#e0b020';
+function drawForklift(v){const u=S,a=v.a,CC=v.color||'#e0b020',lf=LG.some(l=>l.fk===v);
  g.save();g.translate(v.x,v.y);g.rotate(a);
- attDraw(attOf(v),LG.some(l=>l.fk===v));
- g.beginPath();g.rect(.5*u,-.6*u,.1*u,1.2*u);inked('#3a3d44',1);   // the carriage plate
- g.beginPath();g.roundRect(.3*u,-.75*u,.24*u,1.5*u,.04*u);inked('#2f3238',1.1);g.strokeStyle='#8d929b';g.lineWidth=.7;g.beginPath();g.moveTo(.42*u,-.68*u);g.lineTo(.42*u,.68*u);g.stroke();   // the mast
+ attDraw(attOf(v),lf);
+ // the carriage the forks hang on, with its load backrest: a grid of bars behind the load
+ g.beginPath();g.rect(.5*u,-.64*u,.1*u,1.28*u);inked('#3a3d44',1);g.fillStyle=WHT[5];g.fillRect(.51*u,-.62*u,.03*u,1.24*u);
+ g.beginPath();g.rect(.6*u,-.66*u,.05*u,1.32*u);inked('#2a2d33',.8);g.fillStyle='#55595f';for(let y=-.56;y<.6;y+=.28)g.fillRect(.6*u,(y-.02)*u,.05*u,.04*u);
+ // the mast: two uprights (channels) with a crossbar, the lift cylinder in the middle, a chain over a sprocket on each side
+ g.beginPath();g.rect(.32*u,-.5*u,.18*u,1*u);inked('#2f3238',1);
+ for(const y of[-.58,.58]){g.beginPath();g.rect(.28*u,(y-.1)*u,.26*u,.2*u);inked('#3a3d44',1);g.fillStyle='#17191c';g.fillRect(.33*u,(y-.05)*u,.16*u,.1*u);g.fillStyle=WHT[6];g.fillRect(.29*u,(y-.09)*u,.24*u,.03*u)}
+ for(const y of[-.3,.3]){g.beginPath();g.arc(.41*u,y*u,.07*u,0,7);inked('#55595f',.8);g.strokeStyle='#1d1f23';g.lineWidth=.025*u;g.setLineDash([.03*u,.025*u]);g.beginPath();g.moveTo(.41*u,(y-.07)*u);g.lineTo(.62*u,(y-.07)*u);g.stroke();g.setLineDash([])}
+ g.beginPath();g.arc(.41*u,0,.11*u,0,7);inked('#c9ced6',1);g.fillStyle='rgba(255,255,255,.6)';g.beginPath();g.arc(.38*u,-.03*u,.04*u,0,7);g.fill();
+ for(const y of[-.42,.42]){g.strokeStyle=INK;g.lineWidth=.1*u;g.beginPath();g.moveTo(.1*u,y*u);g.lineTo(.32*u,y*u);g.stroke();g.strokeStyle='#c9ced6';g.lineWidth=.055*u;g.stroke()}   // the tilt cylinders, from the body to the mast
  for(const y of[-.64,.64])wheel(0,y,0,.62,.32);for(const y of[-.62,.62])wheel(-1.6,y,-v.st,.5,.3);   // drive wheels in front, steering wheels at the back: they stand out past the narrow body
- g.beginPath();g.roundRect(-1.8*u,-.5*u,2.12*u,1.0*u,.14*u);inked(CC,1.3);bevel(a,-1.8*u,-.5*u,2.12*u,1*u,.07*u);   // the body
- for(const x of[-.42,-.28])g.fillStyle=INK,g.fillRect(-.42*u,(x<-.3?-.5:.42)*u,.84*u,.08*u);   // the steps on each side
- g.beginPath();g.roundRect(-1.92*u,-.8*u,.34*u,1.6*u,[.3*u,0,0,.3*u]);inked(shd(CC,.55),1.1);g.fillStyle='rgba(255,255,255,.2)';g.fillRect(-1.86*u,-.6*u,.07*u,1.2*u);   // the counterweight, as wide as the forklift
- for(const y of[-.66,.48])lamp(-1.96,y,.07,.18,'#e23b2e');
- g.beginPath();g.roundRect(-1.1*u,-.38*u,.6*u,.76*u,.12*u);inked('#2a2c31',1);   // the seat
+ // the body, the dash in front of the driver, the rubber floor, the hood with its vents under the seat
+ g.beginPath();g.roundRect(-1.8*u,-.5*u,2.12*u,1.0*u,.14*u);inked(CC,1.3);bevel(a,-1.8*u,-.5*u,2.12*u,1*u,.07*u);
+ g.beginPath();g.roundRect(-.12*u,-.44*u,.4*u,.88*u,.08*u);inked(shd(CC,.7),1);g.fillStyle='#1d1f23';g.fillRect(.02*u,-.2*u,.16*u,.4*u);g.fillStyle='#7fe08a';g.fillRect(.05*u,-.15*u,.1*u,.1*u);g.fillStyle='#ffb347';g.fillRect(.05*u,.03*u,.1*u,.1*u);   // the dash: a small display, two warning lights
+ g.beginPath();g.rect(-.5*u,-.44*u,.38*u,.88*u);inked('#2a2c31',.8);g.strokeStyle='rgba(255,255,255,.1)';g.lineWidth=.025*u;g.beginPath();for(let y=-.38;y<.4;y+=.1){g.moveTo(-.48*u,y*u);g.lineTo(-.14*u,y*u)}g.stroke();   // ribbed rubber floor
+ for(const y of[-.5,.42]){g.beginPath();g.rect(-.48*u,y*u,.36*u,.08*u);inked('#1d1f23',.8);g.fillStyle='#f2c230';g.fillRect(-.46*u,(y+.025)*u,.32*u,.03*u)}   // a step on each side, a yellow nose on it
+ g.beginPath();g.roundRect(-1.46*u,-.42*u,.94*u,.84*u,.1*u);inked(shd(CC,.88),1);bevel(a,-1.46*u,-.42*u,.94*u,.84*u,.05*u);
+ g.fillStyle='rgba(0,0,0,.45)';for(const y of[-.36,.26])for(let x=-1.38;x<-.62;x+=.12)g.fillRect(x*u,y*u,.07*u,.1*u);   // the hood's vents
+ // the counterweight as wide as the forklift, warning paint on its back corners, a gas bottle lying on it, the tail lamps
+ g.beginPath();g.roundRect(-1.94*u,-.8*u,.5*u,1.6*u,[.32*u,.04*u,.04*u,.32*u]);inked(shd(CC,.72),1.2);
+ g.save();g.beginPath();g.roundRect(-1.94*u,-.8*u,.5*u,1.6*u,[.32*u,.04*u,.04*u,.32*u]);g.clip();hazard(-1.94*u,-.8*u,.1*u,1.6*u,.07*u);g.restore();
+ g.strokeStyle=INK;g.lineWidth=1.2;g.beginPath();g.roundRect(-1.94*u,-.8*u,.5*u,1.6*u,[.32*u,.04*u,.04*u,.32*u]);g.stroke();
+ g.beginPath();g.roundRect(-1.8*u,-.36*u,.26*u,.72*u,.13*u);inked('#d9dde3',1);g.fillStyle='rgba(255,255,255,.7)';g.fillRect(-1.75*u,-.27*u,.05*u,.54*u);g.fillStyle='#3a3d44';g.fillRect(-1.71*u,-.42*u,.08*u,.07*u);   // the gas bottle and its valve
+ for(const y of[-.66,.48])lamp(-1.97,y,.07,.18,'#e23b2e');
+ // the seat: a cushion, the backrest behind, an orange belt
+ g.beginPath();g.roundRect(-1.0*u,-.3*u,.46*u,.6*u,.12*u);inked('#2a2c31',1);g.fillStyle='rgba(255,255,255,.08)';g.fillRect(-.94*u,-.23*u,.34*u,.06*u);
+ g.beginPath();g.roundRect(-1.12*u,-.32*u,.16*u,.64*u,.08*u);inked('#1d1f23',1);g.fillStyle='#e0642a';g.fillRect(-.86*u,.24*u,.12*u,.05*u);
  g.restore();drawRider(v);g.save();g.translate(v.x,v.y);g.rotate(a);   // the driver sits under the guard
- g.strokeStyle=INK;g.lineWidth=.13*u;g.strokeRect(-1.3*u,-.56*u,1.4*u,1.12*u);g.strokeStyle='#4a4e56';g.lineWidth=.08*u;g.strokeRect(-1.3*u,-.56*u,1.4*u,1.12*u);   // the overhead guard: a frame of bars
- g.strokeStyle='rgba(74,78,86,.85)';g.lineWidth=.04*u;g.beginPath();for(let x=-1.1;x<0;x+=.22){g.moveTo(x*u,-.52*u);g.lineTo(x*u,.52*u)}g.stroke();
- g.beginPath();g.arc(-.25*u,-.2*u,.14*u,0,7);g.strokeStyle='#1d1f23';g.lineWidth=.06*u;g.stroke();   // the steering wheel
- lamp(.14,-.48,.12,.14,'#fff3b0');lamp(.14,.34,.12,.14,'#fff3b0');
+ g.beginPath();g.arc(-.25*u,-.18*u,.15*u,0,7);g.strokeStyle=INK;g.lineWidth=.08*u;g.stroke();g.strokeStyle='#33363d';g.lineWidth=.05*u;g.stroke();g.fillStyle='#33363d';g.beginPath();g.arc(-.25*u,-.18*u,.04*u,0,7);g.fill();g.fillStyle='#c0392b';g.beginPath();g.arc(-.25*u,-.33*u,.03*u,0,7);g.fill();   // the steering wheel and its knob
+ // the overhead guard: 4 posts, a frame of bars, slats across, work lamps on the front posts, a beacon at the back
+ const fr=()=>{g.beginPath();g.roundRect(-1.32*u,-.58*u,1.46*u,1.16*u,.08*u)};
+ fr();g.strokeStyle=INK;g.lineWidth=.12*u;g.stroke();fr();g.strokeStyle='#3e4249';g.lineWidth=.075*u;g.stroke();fr();g.strokeStyle='rgba(255,255,255,.18)';g.lineWidth=.025*u;g.stroke();
+ g.lineCap='round';for(let x=-1.02;x<0;x+=.26){g.strokeStyle=INK;g.lineWidth=.055*u;g.beginPath();g.moveTo(x*u,-.55*u);g.lineTo(x*u,.55*u);g.stroke();g.strokeStyle='#4f545c';g.lineWidth=.03*u;g.stroke()}g.lineCap='butt';
+ for(const[x,y]of[[.1,-.54],[.1,.54],[-1.28,-.54],[-1.28,.54]]){g.beginPath();g.arc(x*u,y*u,.08*u,0,7);inked('#2b2e34',.8)}
+ lamp(.12,-.52,.12,.14,'#fff3b0');lamp(.12,.38,.12,.14,'#fff3b0');
+ g.beginPath();g.arc(-1.32*u,0,.09*u,0,7);inked('#ff9a1f',.8);g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.arc(-1.34*u,-.03*u,.03*u,0,7);g.fill();
  hitchGfx(v);g.restore()}
 // the boxes of shadow a vehicle or trailer throws (for cast); k scales how high it stands
 function shapesOf(o,L,k=1){
