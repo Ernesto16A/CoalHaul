@@ -379,7 +379,8 @@ s+='<g id="dnd" transform="rotate('+DA0+' '+c+' '+cy+')"><line x1="'+(c-7)+'" y1
 s+='<text id="dnum" x="'+c+'" y="86" text-anchor="middle" font-size="16" font-weight="bold" fill="currentColor">0</text><text x="'+c+'" y="96" text-anchor="middle" font-size="7" fill="currentColor" fill-opacity=".7">km/h</text></svg>';
 const el=document.getElementById('dial');el.innerHTML=s;return{n:el.querySelector('#dnd'),p:el.querySelector('#dpr'),t:el.querySelector('#dnum')}})();
 let IN=null,Zsave=2;
-const padOn=q=>q.exit||q.minein||q.fshop||q.lshop?false:   /* only the shop sells vehicles, trailers and items: the shop corners of the other buildings are closed */q.own?!!(IN&&IN.o.n===q.own):q.up?!!(IN&&q.b)&&!(q.b&&q.b.built===false):q.inside?!!IN:!IN;
+const EMPTYROOM=new Set(['power plant']);   // rooms cleared out while they are being reworked: no boards, switch or upgrade pad inside
+const padOn=q=>IN&&EMPTYROOM.has(IN.o.n)&&q.up?false:padOn0(q),padOn0=q=>q.exit||q.minein||q.fshop||q.lshop?false:   /* only the shop sells vehicles, trailers and items: the shop corners of the other buildings are closed */q.own?!!(IN&&IN.o.n===q.own):q.up?!!(IN&&q.b)&&!(q.b&&q.b.built===false):q.inside?!!IN:!IN;
 
 // ---------- input ----------
 const K={};
@@ -1717,7 +1718,7 @@ function pour(t){const{c,v}=t,k=KOF(v);if(t.far)return flash('Too far away. Step
  flash('Poured '+q.toFixed(1)+' L into the '+entName(v)+' ('+v.fuel.toFixed(1)+' / '+k.fuel+' L). '+c.fuel.toFixed(1)+' L left in the canister.')}
 function pourHint(){const t=pourTarget();if(!t)return null;const k=KOF(t.v);return!t.v.tank?'The '+entName(t.v)+' has no fuel tank.':t.far?'Too far to reach the '+entName(t.v)+': step closer.':!(t.c.fuel>0)?'The canister is empty.':t.v.fuel>=k.fuel-.05?'The tank of the '+entName(t.v)+' is full.':'Click to pour the canister into the '+entName(t.v)+' ('+Math.round(t.v.fuel)+' / '+k.fuel+' L).'}
 const LEVER={get x(){return IN&&IN.o.doors?-4020:-3940},y:-4100,get w(){return IN&&IN.o.doors?40:20},h:20};   // 2 tiles wide in a built building (centred on the north wall)   // the lever of the power plant and of the lumberyard: 1 tile in the back corner of the building, east of the board
-const hasLever=()=>!!IN&&(IN.o.n==='power plant'||IN.o.n==='lumberyard'||IN.o.n==='sawmill'||IN.o.n==='factory'||IN.o.n==='foundry'||IN.o.n==='quarry'||IN.o.n==='iron mine'||IN.o.n==='crusher'),leverOn=()=>IN.o.n==='crusher'?crusherOn:IN.o.n==='foundry'?foundryOn:IN.o.n==='factory'?factoryOn:IN.o.n==='lumberyard'?lumberOn:IN.o.n==='sawmill'?sawOn:IN.o.n==='quarry'?quarryOn:IN.o.n==='iron mine'?ironOn:plantOn;   // the plant's lever switches the plant (no coal burnt, no power); the lumberyard's stops and starts its production, so it burns none of the plant's coal
+const hasLever=()=>!!IN&&!EMPTYROOM.has(IN.o.n)&&(IN.o.n==='power plant'||IN.o.n==='lumberyard'||IN.o.n==='sawmill'||IN.o.n==='factory'||IN.o.n==='foundry'||IN.o.n==='quarry'||IN.o.n==='iron mine'||IN.o.n==='crusher'),leverOn=()=>IN.o.n==='crusher'?crusherOn:IN.o.n==='foundry'?foundryOn:IN.o.n==='factory'?factoryOn:IN.o.n==='lumberyard'?lumberOn:IN.o.n==='sawmill'?sawOn:IN.o.n==='quarry'?quarryOn:IN.o.n==='iron mine'?ironOn:plantOn;   // the plant's lever switches the plant (no coal burnt, no power); the lumberyard's stops and starts its production, so it burns none of the plant's coal
 // the crusher's lever outside: on the ground behind its boards, where the two meet; it chooses what the loading pad loads (sand or gravel). Drawn upright, like the boards
 const CRLR=()=>{const t=T2.crusher;return uBox(CRS,{x0:t.ox+460,y0:t.oy+320,x1:t.ox+500,y1:t.oy+340})},CRLV=()=>{const r=CRLR();return[(r.x0+r.x1)/2,(r.y0+r.y1)/2]};   // 2 x 1 tiles, against the back edge of the boards where the two meet
 function crLeverT(){if(IN||P.driving||!crusher.built)return null;const m=mouseWorld(),r=CRLR();if(!m||m[0]<r.x0||m[0]>r.x1||m[1]<r.y0||m[1]>r.y1)return null;const[x,y]=CRLV();return{far:Math.hypot(P.x-x,P.y-y)>RCH()}}
@@ -2562,7 +2563,7 @@ function roomBoard(){const dr=!!IN.o.doors,rects=dr?[[-4140,-4020,60,60],[-3920,
  rects.forEach(([x,y,w,h],bi)=>{if(dr){const ts=TXTSIDE;g.save();g.translate(x+w/2,y+h/2);g.rotate(-IROT());g.translate(-x-w/2,-y-h/2);TXTSIDE=true;TXTADJ=0;try{roomBoard0(bi)}finally{TXTSIDE=ts;g.restore()}return}   // a 3 x 3 board is square: it stays upright on the screen whichever way the room is turned
  if(fl){g.save();g.translate(x+w/2,y+h/2);g.rotate(Math.PI);g.translate(-x-w/2,-y-h/2)}   /* a room turned so its board reads upward: the board is turned half a turn on itself */
  TXTADJ=fl&&!TXTSIDE?Math.PI:0;try{roomBoard0(bi)}finally{TXTADJ=0;if(fl)g.restore()}})}
-function roomBoard0(bi){const n=IN.o.n,b=IN.o.b;if(!(n==='mine'||n==='crusher'||n==='power plant'||n==='lumberyard'||n==='sawmill'||n==='factory'||n==='foundry'||n==='quarry'||n==='iron mine')||!b)return;const x=-4060,y=-4100,w=120,h=40;
+function roomBoard0(bi){const n=IN.o.n,b=IN.o.b;if(EMPTYROOM.has(n))return;if(!(n==='mine'||n==='crusher'||n==='power plant'||n==='lumberyard'||n==='sawmill'||n==='factory'||n==='foundry'||n==='quarry'||n==='iron mine')||!b)return;const x=-4060,y=-4100,w=120,h=40;
  if(IN.o.doors){const i=bi||0,bx=i?-3920:-4140;shadeBox(bx,-4020,60,60,6);g.save();g.translate(bx,-4020);g.scale(60/96,60/96);paintBoard(0,0,n,96);g.restore();drawBd(T2spec(n,i),bx,-4020,60);return}   // two 3 x 3 tile boards, in the corners right by the doors
  shadeBox(x,y,w,h,6);g.save();g.translate(x,y);g.scale(h/96,h/96);paintBoard(0,0,n,w*96/h);g.restore();
  if(n==='iron mine')return boardFace(x,y,w,h,'IRON ORE '+b.stock.toFixed(1)+' / '+b.cap+' t',b.stock/b.cap,'#c9694a',!ironOn?'switched off':power?'mining from power':'idle: power plant is off',ironOn&&power?'#ffe27a':'#ff7b66');
@@ -2598,7 +2599,22 @@ function roomShell(X0,Y0,X1,Y1,W,c,doors,wins){const w=X1-X0,h=Y1-Y0,box=(s,a,b)
   g.fillStyle='#343941';g.fillRect(dx-1.5,dy,3,dh);g.fillRect(dx+dw-1.5,dy,3,dh);g.fillStyle=shd(c,.5);g.fillRect(x-13,my,26,7);g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=.8;g.strokeRect(x-11.4,my+1.4,22.8,4.2)}   // its posts, the mat
  g.strokeStyle=INK;g.lineWidth=1.5;g.strokeRect(X0-W+.75,Y0-W+.75,w+2*W-1.5,h+2*W-1.5)}
 const roomWall=(x,y,w,h,c)=>{g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+2,y+3,w,h);g.fillStyle='#d6cfbf';g.fillRect(x,y,w,h);g.strokeStyle=shd(c,.85);g.lineWidth=2;g.strokeRect(x+1.6,y+1.6,w-3.2,h-3.2);g.strokeStyle=INK;g.lineWidth=1.2;g.strokeRect(x,y,w,h)};   // a wall that stands in a room
-function drawInterior(t){const gm=interiorGeo(IN.o),X0=gm.X0,X1=gm.X1,Y0=gm.Y0,Y1=gm.Y1,W=8,G=IN.o.n==='garage',c=BCOL[IN.o.n]||'#888888';   // a building's room from above, 1:1 with the world: the floor is its whole footprint, the walls stand just outside it
+// the power plant's floor: poured concrete in slabs of 4 x 4 squares, each a shade of its own, with saw-cut joints, trowel marks, a few stains, and a darker band where the floor meets the walls. Painted once and kept
+let PFC=null;
+function plantFloor(X0,Y0,X1,Y1){const w=X1-X0,h=Y1-Y0,k=2;
+ if(!PFC||PFC.w!==w||PFC.h!==h){const c=document.createElement('canvas');c.width=w*k;c.height=h*k;const q=c.getContext('2d');q.scale(k,k);const H=(i,j,n)=>hash(i*7+31,j*13+5,n);
+  q.fillStyle='#5f646b';q.fillRect(0,0,w,h);
+  const SL=4*S;for(let j=0;j*SL<h;j++)for(let i=0;i*SL<w;i++){const t=H(i,j,1),l=Math.round(-7+t*14);q.fillStyle='rgba('+(l>0?'255,255,255':'0,0,0')+','+(Math.abs(l)/100).toFixed(3)+')';q.fillRect(i*SL,j*SL,SL,SL);
+   q.strokeStyle='rgba(255,255,255,.02)';q.lineWidth=6;for(let m=0;m<3;m++){const cx=i*SL+H(i,j,10+m)*SL,cy=j*SL+H(i,j,20+m)*SL,rr=14+H(i,j,30+m)*22;q.beginPath();q.arc(cx,cy,rr,H(i,j,40+m)*6,H(i,j,40+m)*6+2.2);q.stroke()}}   // the trowel's sweeps
+  for(let n=0;n<900;n++){const x=H(n,1,2)*w,y=H(n,2,3)*h,d=H(n,3,4);q.fillStyle=d<.5?'rgba(0,0,0,.10)':'rgba(255,255,255,.07)';q.fillRect(x,y,1,1)}   // grit
+  for(let n=0;n<5;n++){const x=20+H(n,5,6)*(w-40),y=20+H(n,6,7)*(h-40),r=8+H(n,7,8)*16,G=q.createRadialGradient(x,y,0,x,y,r);G.addColorStop(0,'rgba(20,18,16,.16)');G.addColorStop(1,'rgba(20,18,16,0)');q.fillStyle=G;q.beginPath();q.ellipse(x,y,r,r*.7,H(n,8,9)*3,0,7);q.fill()}   // oil stains
+  q.lineWidth=1.2;for(let x=SL;x<w;x+=SL){q.strokeStyle='rgba(20,22,26,.55)';q.beginPath();q.moveTo(x,0);q.lineTo(x,h);q.stroke();q.strokeStyle='rgba(255,255,255,.08)';q.beginPath();q.moveTo(x+1,0);q.lineTo(x+1,h);q.stroke()}
+  for(let y=SL;y<h;y+=SL){q.strokeStyle='rgba(20,22,26,.55)';q.beginPath();q.moveTo(0,y);q.lineTo(w,y);q.stroke();q.strokeStyle='rgba(255,255,255,.08)';q.beginPath();q.moveTo(0,y+1);q.lineTo(w,y+1);q.stroke()}   // saw-cut joints, a lit edge on one side
+  for(const[a,b,c2,d]of[[0,0,w,10],[0,h-10,w,10],[0,0,10,h],[w-10,0,10,h]]){const G=a===0&&c2===w?q.createLinearGradient(0,b===0?0:h,0,b===0?10:h-10):q.createLinearGradient(a===0?0:w,0,a===0?10:w-10,0);G.addColorStop(0,'rgba(0,0,0,.22)');G.addColorStop(1,'rgba(0,0,0,0)');q.fillStyle=G;q.fillRect(a,b,c2,d)}   // darker where it meets the walls
+  PFC={c,w,h}}
+ g.drawImage(PFC.c,X0,Y0,w,h)}
+function drawInterior(t){const gm=interiorGeo(IN.o),X0=gm.X0,X1=gm.X1,Y0=gm.Y0,Y1=gm.Y1,W=8,G=IN.o.n==='garage',c=BCOL[IN.o.n]||'#888888';
+ if(EMPTYROOM.has(IN.o.n)){plantFloor(X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,(IN.o.doors?[-4060,-3940]:[-4000]).map(x=>[x,'S']),[]);return}   // an empty room: the floor and the walls with their doors   // a building's room from above, 1:1 with the world: the floor is its whole footprint, the walls stand just outside it
  roomFloor(IN.o.n,X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,G?[[-4000,'N'],[-4000,'S']]:(IN.o.doors?[-4060,-3940]:[-4000]).map(x=>[x,'S']),ROOMWIN[G?'g':IN.o.doors?'t2':IN.o.n==='shop'?'sh':'s']);
  if(G){
   {g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1;g.beginPath();for(let i=GSTORE.i0;i<GSTORE.i1;i++)for(let j=GSTORE.j0;j<GSTORE.j1;j++)g.rect(i*S+1.5,j*S+1.5,S-3,S-3);g.stroke()}   // the storage room: one square per tile
