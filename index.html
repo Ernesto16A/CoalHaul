@@ -3627,13 +3627,14 @@ function netPeerJS(mode,code,cb){
  const stop=()=>{online=false;isHost=false;hostConn=null;conns.clear();M.clear();ver++;try{peer&&peer.destroy()}catch(e){}peer=null};
  let gone=false;const again=()=>{if(gone)return;stop();setTimeout(start,300+Math.random()*1500)};   /* removed or refused: no coming back */
  function becomeHost(p){peer=p;myId=LOBBY;isHost=true;online=true;NET.room=room;NET.world&&NET.world(true);done(true);
-  p.on('connection',c=>{c.on('open',()=>{if(NET.closed){try{c.send({t:'x',m:'That game is closed to new players.'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},300);return}   /* the host closed the game: nobody new */
+  p.on('connection',c=>{c.on('open',()=>{const cv=c.metadata&&c.metadata.ver;if(cv!==VER){try{c.send({t:'x',m:'The host is on version '+VER+', you are on '+(cv||'an older one')+'. Reload the page so both of you have the same version, then join again.'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},300);return}   /* different versions would fall out of step: turned away */
+   if(NET.closed){try{c.send({t:'x',m:'That game is closed to new players.'})}catch(e){}setTimeout(()=>{try{c.close()}catch(e){}},300);return}   /* the host closed the game: nobody new */
    conns.set(c.peer,c);setTimeout(()=>{try{room.onJoin&&room.onJoin(c.peer)}catch(e){}},50);for(const[k,e]of M)c.send({t:'p',id:k,pr:e.pr});if(mine&&mine.x!==undefined)c.send({t:'p',id:LOBBY,pr:mine})});
    c.on('data',d=>{if(d&&d.t==='w'){try{room.onMsg&&room.onMsg(c.peer,d.d)}catch(e){}for(const o of conns.values())if(o!==c&&o.open)o.send({t:'w',f:c.peer,d:d.d});return}if(!d||d.t!=='p')return;put(c.peer,d.pr);const m={t:'p',id:c.peer,pr:d.pr};for(const o of conns.values())if(o!==c&&o.open)o.send(m)});
    const gone=()=>{if(conns.get(c.peer)===c){conns.delete(c.peer);drop(c.peer);for(const o of conns.values())if(o.open)o.send({t:'l',id:c.peer})}};c.on('close',gone);c.on('error',gone)});
   p.on('disconnected',()=>{try{p.reconnect()}catch(e){}});p.on('error',e=>{if(e.type!=='peer-unavailable')again()})}
  function joinClient(){const p=new Peer(undefined,opts);peer=p;
-  p.on('open',id=>{myId=id;const c=p.connect(LOBBY);
+  p.on('open',id=>{myId=id;const c=p.connect(LOBBY,{metadata:{ver:VER}});
    c.on('open',()=>{hostConn=c;online=true;rx=now();NET.room=room;NET.world&&NET.world(false);setTimeout(()=>{if(!gone)done(true)},1200)});   /* joined once the host has not turned us away straight off */
    c.on('data',d=>{if(!d)return;rx=now();if(d.t==='x'){gone=true;stop();if(first){first=false;try{sessionStorage.setItem('coalhaul.msg',d.m)}catch(e){}location.reload();return}NET.status='offline';kicked(d.m);return}   /* turned away while joining: back to a clean main menu that says why */if(d.t==='p')put(d.id,d.pr);else if(d.t==='l')drop(d.id);else if(d.t==='w'){try{room.onMsg&&room.onMsg(d.f,d.d)}catch(e){}}});
    c.on('close',again);c.on('error',again)});
@@ -3858,7 +3859,7 @@ const netApi=()=>{if(!NET.api)NET.world(true,{shared:true,myId:()=>'local',conne
 const SAVEK='coalhaul.save.',PENDK='coalhaul.pending',sNow=()=>performance.now();
 const othersHere=()=>{const r=NET.room;try{return!!(r&&r.shared&&r.peers().some(p=>!p.sameTab))}catch(e){return false}};
 let SAVENM='';   // the name of the game being played: the one it was last saved or loaded under
-function gameSave(){const d=netApi().snap();d.v=1;if(SAVENM)d.name=SAVENM;d.t=Date.now();d.me={x:P.x,y:P.y,a:P.a,drv:P.driving&&T?T.id:null,in:IN?IN.o.n:null,col:MYCOL};d.story={fuel:STORY.fuel,hitch:STORY.hitch,trl:STORY.trl,d:STORY.d,made:STORY.made};return d}
+function gameSave(){const d=netApi().snap();d.v=1;d.ver=VER;if(SAVENM)d.name=SAVENM;d.t=Date.now();d.me={x:P.x,y:P.y,a:P.a,drv:P.driving&&T?T.id:null,in:IN?IN.o.n:null,col:MYCOL};d.story={fuel:STORY.fuel,hitch:STORY.hitch,trl:STORY.trl,d:STORY.d,made:STORY.made};return d}
 // ---- where the saves live: the browser's database (IndexedDB), which has room to spare and says how much it may use. The game keeps a copy of every save in memory (SV), so reading is instant; writing goes to the database in the background.
 // If the database cannot be opened (some private windows, some embedded pages) the saves stay in localStorage as before (about 5 MB).
 const SV=new Map();let SVKIND='ls',SVDB=null;
@@ -3891,7 +3892,7 @@ setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000
 addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VERSION='v0.42 · 17 Nov 2026';
+const VER='0.1.0',VERSION='v'+VER+' · 18 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
@@ -3922,7 +3923,7 @@ const barHTML=(used,quota,saves,exact)=>{const p=quota?Math.min(1,used/quota):0,
 function storeBar(){const u=storeUsed(),id='stb'+Math.random().toString(36).slice(2,7);
  if(SVKIND==='idb'&&navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{const el=document.getElementById(id);if(el&&e&&e.quota)el.innerHTML=barHTML(e.usage||u.saves,e.quota,u.saves,true)}).catch(()=>{});
  return'<div id="'+id+'" style="margin:2px 0 10px">'+barHTML(u.all,SVKIND==='idb'?0:STQ,u.saves,SVKIND==='idb')+'</div>'}
-const sline=(d,lbl,k)=>'<div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(d&&d.name?esc(d.name):lbl||'Saved game')+'</b><small style="opacity:.7">'+(d?(d.name&&lbl?lbl+' · ':'')+'Day '+(d.dn||1)+' · '+fmtT(d)+(k?' · <span style="color:#9fd3ff">'+fmtB(szKey(k))+'</span>':''):'empty')+'</small></div>';
+const sline=(d,lbl,k)=>'<div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(d&&d.name?esc(d.name):lbl||'Saved game')+'</b><small style="opacity:.7">'+(d?(d.name&&lbl?lbl+' · ':'')+'Day '+(d.dn||1)+' · '+fmtT(d)+' · '+(d.ver?'v'+esc(d.ver):'before 0.1.0')+(k?' · <span style="color:#9fd3ff">'+fmtB(szKey(k))+'</span>':''):'empty')+'</small></div>';
 // the load page (both menus): every save, newest first, then the autosaves and a file
 function pageLoad(o,back){const L=saveKeys(),au=readSave(SAVEK+'auto'),pr=readSave(SAVEK+'prev');
  const row=(k,d,lbl)=>'<div style="display:flex;gap:10px;align-items:center;margin:7px 0">'+thumb(d)+sline(d,lbl,k)+'<button data-load="'+k+'" style="'+UI.btn+'"'+(d?'':' disabled')+'>Load</button></div>';
