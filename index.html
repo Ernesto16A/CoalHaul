@@ -1407,7 +1407,7 @@ function itemCarriers(){const o=[];
  for(const t of Object.values(trl))if(t.out&&t.slots){const d=TRL[t.kind];o.push({e:t,ox:t.x,oy:t.y,a:t.b,e0:d.co-d.hw,e1:d.co+d.hw})}
  return o}
 const REACH0=3.2*S,IS=1.1;   // how far the player can reach; IS: the player is drawn and moves this much bigger / faster inside buildings (so the rooms feel smaller)
-const RCH=()=>IN?REACH0*IS:REACH0;
+const RCH=()=>IN&&!seeThru(IN.o)?REACH0*IS:REACH0;
 const mouseWorld=()=>MX==null||IN&&!IN.o.inw?null:IN?s2w(MX,MY):[(MX-VW/2)/Z+cam.x,(MY-VH/2)/Z+cam.y];
 const mountPt=e=>{if('b' in e){const d=TRL[e.kind];return wld((d.co-d.hw-.2)*S,0,e.x,e.y,e.b)}return wld(hitchX(e)*S,0,e.x,e.y,e.a)};   // the removable hitch sits right on the towing pivot
 // the 2x2 slot grid of an item bed / item trailer, in vehicle units (same numbers the sprites use)
@@ -3348,7 +3348,7 @@ function worldLayers(t){
  for(const v of Object.values(veh))if(v.out&&v.kind==='crane')drawTool(v);   // the crane's tool under what it holds (a pallet sits on the forks), the boom over both
  for(const p of PALS)if(p.fk)drawPallet(p);for(const o of ATT)if(o.onP)drawAtt(o);for(const l of LG)if(l.fk)drawLog(l);for(const o of ATT)if(o.fk)drawAtt(o);for(const it of GI)if(it.fk){if(it.type==='barrier'||it.type==='cone')drawObst(it);else{g.save();g.translate(it.x,it.y);g.rotate(it.a||0);itemSprite(it,0,0,it.type==='canister'?S*.46:S*.38);g.restore()}}
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
- drawReach();drawSpaceHL();
+ if(!SEEO)drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
  drawSeats();drawPlayer();drawTop();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
 function draw(t){viewHalf();
