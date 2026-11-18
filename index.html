@@ -1154,6 +1154,7 @@ function dumpCargo(){if(!P.driving&&!P.pass)return cwG();if(!P.driving||!T.out)r
  for(const c of rigCs())if(c.cg.amt>0){c.cg.amt=0;c.cg.type=null;n++}
  for(const e of rig){if(e.slots)e.slots.forEach((x,i)=>{if(x){e.slots[i]=null;n++}});if(e.pals)e.pals.forEach((p,i)=>{if(p){drop(p);e.pals[i]=null;n++}})}
  for(const p of PALS.filter(p=>p.fk===T)){drop(p);n++}
+ if(n)sfx('tip');
  flash(n?'Emptied: the cargo, items and pallets on the '+(rig.length>1?'whole rig':entName(T))+' are gone.':'Nothing to empty.')}
 const cabOf=v=>{const d=dir(v.a),o=(KOF(v).b1-.8)*S;return[v.x+d[0]*o,v.y+d[1]*o]};
 const nearCab=()=>{let b=null,bd=3.4*S;for(const v of Object.values(veh)){const k=v.kind;if(!v.out)continue;const d=seatDist(v);if(d<bd){bd=d;b=v}}return b};
@@ -3881,8 +3882,8 @@ function svSet(k,v){const old=SV.get(k);SV.set(k,v);
 function svDel(k){SV.delete(k);if(SVKIND!=='idb'){try{localStorage.removeItem(k)}catch(e){}return Promise.resolve()}return idbTx('readwrite',st=>st.delete(k)).catch(()=>{})}
 let SVPERS=false;const svPersist=()=>{if(SVPERS||SVKIND!=='idb')return;SVPERS=true;try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}};   // asks the browser to keep the saves even when it runs short of space
 function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=svGet(key);if(o)svSet(SAVEK+'prev',o)}if(name)SAVENM=String(name).slice(0,32);const d=gameSave();{const p=shot();if(p)d.pic=p}const v=JSON.stringify(d);
- if(SVKIND!=='idb'){svSet(key,v);return SV.get(key)===v}   /* localStorage writes at once: a refused save is already taken back */
- svSet(key,v);svPersist();if(key===SAVEK+'auto'){try{localStorage.setItem(key,v)}catch(e){try{localStorage.removeItem(key)}catch(x){}}}   /* the autosave also goes to localStorage: written at once, it survives a page closed before the database has finished */
+ if(SVKIND!=='idb'){svSet(key,v);if(key!==SAVEK+'auto'&&SV.get(key)===v)sfx('saved');return SV.get(key)===v}   /* localStorage writes at once: a refused save is already taken back */
+ if(key!==SAVEK+'auto')sfx('saved');svSet(key,v);svPersist();if(key===SAVEK+'auto'){try{localStorage.setItem(key,v)}catch(e){try{localStorage.removeItem(key)}catch(x){}}}   /* the autosave also goes to localStorage: written at once, it survives a page closed before the database has finished */
  return true}catch(e){return false}}
 const saveName=(d,label)=>d&&d.name?esc(d.name):label;   // a slot shows the name it was saved under, or its own label
 const readSave=key=>{try{const r=svGet(key);return r?JSON.parse(r):null}catch(e){return null}};
@@ -4066,7 +4067,10 @@ function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkit
  const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(AUD.ch.mach);ho.start();AUD.hyd={o:ho,g:hg,n:mk('bandpass',2600,1.2,'mach')};   // the boom's hydraulics: a whine and a soft flow of oil
  AUD.wind=mk('lowpass',380,.3,'amb');   // ambience: wind always, birds by day, crickets at night (in sndTick)
  const fo=c.createOscillator(),fg=c.createGain();fo.type='triangle';fo.frequency.value=120;fg.gain.value=0;fo.connect(fg);fg.connect(AUD.ch.mach);fo.start();AUD.pumpS={o:fo,g:fg,n:mk('bandpass',900,1.4,'mach')};   // the fuel pump
- sndVol()}catch(e){AUD.ctx=null}}
+ AUD.off={rum:mk('lowpass',140,.7,'eng'),grav:mk('bandpass',2200,1.2,'eng')};   // off the road: a low rumble and gravel crunch
+ {const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=55;g.gain.value=0;o.connect(g);g.connect(AUD.ch.amb);o.start();AUD.hum={o,g,n:mk('lowpass',200,1.5,'amb')}}   // buildings at work: a low drone near them
+ {const o=c.createOscillator();o.type='sawtooth';o.frequency.value=70;const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=700;bp.Q.value=2;const am=c.createGain();am.gain.value=.5;const l=c.createOscillator();l.type='square';l.frequency.value=11;const d=c.createGain();d.gain.value=.5;l.connect(d);d.connect(am.gain);l.start();const g=c.createGain();g.gain.value=0;o.connect(bp);bp.connect(am);am.connect(g);g.connect(AUD.ch.mach);o.start();AUD.winch={o,g}}   // a ramp trailer's winch: a ratcheting whirr
+ sndVol();if(AUD.pend){const k=AUD.pend;AUD.pend=null;setTimeout(()=>sfx(k),150)}}catch(e){AUD.ctx=null}}
 // each vehicle's engine. fi: pulses a second at idle, fr: added at full revs; saw/sq/nz: how much buzz, square buzz and rumble; nf: the rumble's pitch; lp/lr/ll: the filter at idle, added by revs, added by throttle; dep: how hard it pulses; v/vr/vl: loudness at idle, added by revs, by throttle; tb: turbo
 const ENGS={
  pickup:{n:'Pickup: diesel',fi:11,fr:34,w:'sawtooth',saw:1,sq:0,nz:1.4,nf:150,nr:250,lp:180,lr:520,ll:200,q:1.2,dep:.5,v:.26,vr:.12,vl:.12,tb:0},
@@ -4090,7 +4094,7 @@ const chVol=k=>SET.sv&&k in SET.sv?SET.sv[k]:.8;
 function sndVol(){if(!AUD.ctx)return;const t=AUD.ctx.currentTime;AUD.m.gain.setTargetAtTime(SET.mute?0:SET.vol,t,.05);for(const[k]of SCH)AUD.ch[k].gain.setTargetAtTime(chVol(k),t,.05)}
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{sndInit();if(AUD.ctx&&AUD.ctx.state==='suspended')AUD.ctx.resume()},true));   // browsers only allow sound after a click or a key
 // a short sound: a click, a coin, a clunk
-const SCHOF={coin:'money',buy:'money',msg:'chat',clunk:'cargo',hitch:'mach',unhitch:'mach',lift:'mach',set:'cargo',tool:'mach',pick:'cargo',put:'cargo',door:'eng',lon:'eng',loff:'eng',enter:'ui',feet:'mach',goal:'ui',built:'ui',error:'ui',horn:'horn',beep:'horn',pump:'mach',switch:'eng'};
+const SCHOF={coin:'money',buy:'money',msg:'chat',clunk:'cargo',hitch:'mach',unhitch:'mach',lift:'mach',set:'cargo',tool:'mach',pick:'cargo',put:'cargo',door:'eng',lon:'eng',loff:'eng',start:'eng',stop:'eng',stall:'eng',lowfuel:'ui',crash:'cargo',brake:'eng',air:'eng',step:'cargo',tip:'mach',turn:'cargo',clank:'amb',dusk:'amb',dawn:'amb',place:'cargo',demolish:'cargo',saved:'ui',loaded:'ui',join:'chat',leave:'chat',enter:'ui',feet:'mach',goal:'ui',built:'ui',error:'ui',horn:'horn',beep:'horn',pump:'mach',switch:'eng'};
 function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[SCHOF[k]||'ui'];const c=AUD.ctx,t=c.currentTime,b=(f,dur,type,v,at=0,to)=>{const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t+at);if(to)o.frequency.exponentialRampToValueAtTime(to,t+at+dur);g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(v,t+at+.005);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);o.connect(g);g.connect(out);o.start(t+at);o.stop(t+at+dur+.02)};
  const nz=(dur,f,q,v,at=0,type='bandpass')=>{const n=c.createBufferSource();n.buffer=AUD.nb;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);n.connect(bp);bp.connect(g);g.connect(out);n.start(t+at);n.stop(t+at+dur+.05)};
  if(k==='click')b(1400,.04,'square',.05);
@@ -4114,6 +4118,25 @@ function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[SCHOF[
  else if(k==='horn'){b(340,.45,'sawtooth',.09);b(428,.45,'sawtooth',.08)}
  else if(k==='lon'){b(1300,.025,'square',.06);b(2600,.05,'square',.06,.035);b(3900,.03,'sine',.03,.04)}   // lights on: a bright click up
  else if(k==='loff'){b(1800,.03,'square',.05);b(700,.06,'square',.06,.035,500)}   // lights off: a duller click down
+ else if(k==='start'){for(let i=0;i<5;i++){nz(.09,260,1,.2,i*.12);b(52,.09,'square',.1,i*.12,40)}b(75,.3,'sawtooth',.16,.62,45);nz(.25,180,.8,.25,.62)}   // the starter cranking, then the engine catching
+ else if(k==='stop'){b(70,.4,'sawtooth',.12,0,28);nz(.35,170,.8,.2);b(45,.15,'square',.08,.3,30)}   // the engine shudders to a stop
+ else if(k==='stall'){for(let i=0;i<4;i++){nz(.09,240,1,.24-.05*i,i*.19+Math.random()*.05);b(48,.09,'square',.12-.025*i,i*.19,34)}}   // out of fuel: it coughs and dies
+ else if(k==='lowfuel'){b(880,.12,'square',.05);b(660,.2,'square',.05,.17)}   // the fuel is getting low
+ else if(k==='crash'){const q=AUD.crashK||1;nz(.3,320,.8,.5*q);b(68,.22,'square',.26*q,0,38);nz(.2,2600,1.5,.18*q,.02);b(900+Math.random()*500,.15,'triangle',.05*q,.03,600)}   // bumping into something: a thud and a metal clang, harder the faster
+ else if(k==='brake'){b(2300,.4,'sine',.05,0,2000);nz(.35,1700,7,.1)}   // small brakes squeal
+ else if(k==='air'){nz(.5,3600,.5,.55);nz(.15,1200,1,.15)}   // air brakes let go: pssh
+ else if(k==='step'){AUD.stepA=!AUD.stepA;nz(.05,AUD.stepA?650:780,1.4,.08);b(AUD.stepA?105:118,.04,'sine',.035)}   // a footstep, left and right a little different
+ else if(k==='tip'){b(150,.9,'triangle',.06,0,240);nz(.85,1500,.7,.04);b(110,.18,'triangle',.22,.9,55);nz(.12,500,1,.2,.9)}   // the bed tipping up, then dropping back
+ else if(k==='turn'){nz(.04,1500,2,.14);b(300,.05,'square',.05,.05)}   // something turned
+ else if(k==='clank'){const f=180+Math.random()*260;nz(.06,f*6,3,.06);b(f,.12,'triangle',.03,.01,f*.8)}   // a building at work, now and then
+ else if(k==='dusk'){[784,659,523,392].forEach((f,i)=>b(f,.9,'sine',.045,i*.32))}   // evening: a soft falling chime
+ else if(k==='dawn'){[392,523,659,784].forEach((f,i)=>b(f,.9,'sine',.045,i*.28))}   // morning: the same chime rising
+ else if(k==='place'){nz(.08,600,1,.22);b(140,.1,'square',.12,0,90);nz(.08,700,1,.2,.18);b(150,.1,'square',.1,.18,95)}   // built: two hammer knocks
+ else if(k==='demolish'){nz(.7,300,.6,.4);b(60,.45,'square',.16,0,30);for(let i=0;i<4;i++)nz(.08,1200+Math.random()*800,2,.08,.15+i*.12)}   // torn down: a crumble with bits falling
+ else if(k==='saved'){b(784,.08,'sine',.08);b(1175,.16,'sine',.08,.08)}
+ else if(k==='loaded'){b(587,.08,'sine',.08);b(880,.16,'sine',.08,.08)}
+ else if(k==='join'){b(523,.1,'sine',.07);b(784,.18,'sine',.07,.1)}
+ else if(k==='leave'){b(784,.1,'sine',.06);b(523,.18,'sine',.06,.1)}
  else if(k==='switch'){b(2400,.025,'square',.06);b(1200,.04,'square',.05,.03)}   // the light switch
  else if(k==='beep')b(1050,.22,'square',.05);   // reversing beeper
  else if(k==='pump')nz(.2,900,1.5,.08)}
@@ -4122,7 +4145,7 @@ document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest&&e.target
 let sndCargo=null;
 function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
  const v=run&&P.driving&&T&&T.out?T:null,cab=run&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null;
- {const thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn);   /* r: how fast against its top speed; the crane idles while its feet are down */
+ {const thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=(v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn))&&performance.now()>(AUD.engAt||0);   /* r: how fast against its top speed; the crane idles while its feet are down */
   engSet(v?v.kind:cab?'crane':AUD.e.k||'pickup',r,v?thr:.3,on,t)}
  {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.012:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
  {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
@@ -4136,9 +4159,14 @@ function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MEN
  // the fuel pump while fuel goes in
  {const fv=v||(P.pass||null),fu=fv&&typeof fv.fuel==='number'?fv.fuel:null,pumping=fu!==null&&AUD.lastFuel!=null&&AUD.lastFuelV===fv&&fu>AUD.lastFuel+1e-4;AUD.lastFuel=fu;AUD.lastFuelV=fv;
   AUD.pumpS.g.gain.setTargetAtTime(pumping?.05:0,t,.1);AUD.pumpS.n.gain.setTargetAtTime(pumping?.08:0,t,.1)}
+ sndMore(dt,v,t);
  // one-off sounds for what changed since the last frame
  const now=sndState();if(sndSeen){const o=sndSeen;
   if(now.drv!==o.drv||now.seat!==o.seat)sfx('door');
+  if(now.drv!==o.drv){const nv=now.drv&&veh[now.drv],ov=o.drv&&veh[o.drv];if(ov&&(ov.fuel===undefined||ov.fuel>0)&&!nv)sfx('stop');if(nv&&(nv.fuel===undefined||nv.fuel>0)){sfx('start');AUD.engAt=performance.now()+750}}   /* getting in starts the engine, getting out stops it */
+  if(now.rot!==o.rot)sfx('turn');
+  if(now.units!==o.units){if(now.gone>o.gone)sfx('demolish');else sfx('place')}else if(now.roads>o.roads)sfx('place');else if(now.roads<o.roads)sfx('demolish');
+  if(now.peers>o.peers)sfx('join');else if(now.peers<o.peers)sfx('leave');
   if(now.inB!==o.inB)sfx('enter');
   if(now.hitch>o.hitch)sfx('hitch');else if(now.hitch<o.hitch)sfx('unhitch');
   if(now.lifted>o.lifted)sfx('lift');else if(now.lifted<o.lifted)sfx('set');
@@ -4149,10 +4177,39 @@ function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MEN
   if(now.note&&now.note!==o.note&&/\b(first|cannot|can't|not enough|no room|too |full|refused|only |out of|nothing)\b/i.test(now.note))sfx('error')}
  sndSeen=now}
 let sndSeen=null;
+// the sounds that follow how things move: starter, fuel, crashes, brakes, steps, off-road, winches, buildings, dusk and dawn, music
+function sndMore(dt,v,t){const A=AUD,ms=performance.now();
+ // fuel: a warning as it gets low, a cough when it runs out
+ if(v&&typeof v.fuel==='number'){const cap=KOF(v).fuel||1;if(A.fuV===v){if(v.fuel<cap*.2&&A.fuL>=cap*.2)sfx('lowfuel');if(v.fuel<=0&&A.fuL>0)sfx('stall')}A.fuV=v;A.fuL=v.fuel}else A.fuV=null;
+ // crashes: the speed lost all at once
+ if(v){const sp=Math.abs(v.v||0);if(A.spV===v&&A.spL>1.4&&sp<A.spL-1.1&&ms-(A.crT||0)>400){A.crT=ms;A.crashK=Math.min(1,.35+A.spL/7);sfx('crash')}A.spV=v;A.spL=sp}else A.spV=null;
+ // brakes: small ones squeal as you brake hard, big ones let go of air as they stop
+ if(v){const sp=Math.abs(v.v||0),br=K.brake||(K.down&&v.v>.5)||(K.up&&v.v<-.5),big=/semi|dump|crane|minibus/.test(v.kind);
+  if(br&&!A.brk&&sp>2.5&&!big)sfx('brake');if(br&&sp>1.5)A.brkS=1;if(A.brkS&&sp<.25){if(big)sfx('air');A.brkS=0}if(!br&&sp>1.5)A.brkS=0;A.brk=br}
+ // footsteps
+ if(!P.driving&&!P.pass){const d=A.stX==null?0:Math.hypot(P.x-A.stX,P.y-A.stY);A.stD=(A.stD||0)+(d<40?d:0);if(A.stD>15){A.stD=0;sfx('step')}}else A.stD=0;A.stX=P.x;A.stY=P.y;
+ // off the road
+ {const sp=v?Math.abs(v.v||0)/(KOF(v).vmax||5):0,off=v&&sp>.02&&rigOff();A.off.rum.gain.setTargetAtTime(off?.15+sp*.3:0,t,.15);A.off.grav.gain.setTargetAtTime(off?.05+sp*.15:0,t,.15)}
+ // a ramp trailer's winch pulling a load on or off
+ {let w=false;for(const l of Object.values(trl))if(l.ld&&l.ld.go&&Math.hypot(l.x-P.x,l.y-P.y)<8*S){w=true;break}A.winch.g.gain.setTargetAtTime(w?.05:0,t,.1)}
+ // buildings at work hum near you, and clank now and then
+ {let near=0;if(!IN)for(const o of OFFICES){try{if(o.n&&YB[o.n]&&isGone(o.n))continue;const b=o.b;if(b&&b.built===false)continue;const cx=o.X+(o.w||0)/2,cy=o.Y+(o.rh||o.w||0)/2,dd=Math.hypot(cam.x-cx,cam.y-cy);near=Math.max(near,1-dd/(1.6*TS))}catch(e){}}
+  near=Math.max(0,near);A.hum.g.gain.setTargetAtTime(near*.05,t,.4);A.hum.n.gain.setTargetAtTime(near*.12,t,.4);A.clT=(A.clT||0)-dt;if(A.clT<=0){A.clT=1.2+Math.random()*3;if(near>.25)sfx('clank')}}
+ // dusk and dawn
+ {const dk=darkness()>.5;if(A.dk!=null&&dk!==A.dk)sfx(dk?'dusk':'dawn');A.dk=dk}
+ musTick(t)}
+// music: slow chords and a few plucked notes on top, made up as it goes. It rests now and then
+const MUSC=[[196,247,294],[147,185,220],[165,196,247],[131,165,196]],MUSN=[392,440,494,587,659,784];
+function musTick(t){const A=AUD,c=A.ctx;if(!c||chVol('music')<=0)return;if(A.musAt==null)A.musAt=t+4;if(t<A.musAt-.1)return;
+ A.musI=((A.musI||0)+1)%16;if(A.musI%8===7&&Math.random()<.5){A.musAt+=8;return}   /* a rest */
+ const ch=MUSC[A.musI%4],at=A.musAt,out=A.ch.music;
+ for(const f of ch){const o=c.createOscillator(),g=c.createGain(),lp=c.createBiquadFilter();o.type='triangle';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=900;g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.018,at+.8);g.gain.linearRampToValueAtTime(.012,at+3.2);g.gain.linearRampToValueAtTime(0,at+4.2);o.connect(lp);lp.connect(g);g.connect(out);o.start(at);o.stop(at+4.3)}
+ for(let i=0;i<4;i++)if(Math.random()<.55){const f=MUSN[Math.floor(Math.random()*MUSN.length)],a=at+i+(Math.random()<.3?.5:0),o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.03,a+.01);g.gain.exponentialRampToValueAtTime(.0005,a+.9);o.connect(g);g.connect(out);o.start(a);o.stop(a+1)}
+ A.musAt+=4}
 // what the sounds keep an eye on
 function sndState(){let hitch=0,lifted=0,feet=false;const tool={};for(const v of Object.values(veh)){if(!v.out)continue;for(let q=v.tr,n=0;q&&n<8;q=q.tr,n++)hitch++;if(v.kind==='crane'){if(v.ft>=1)feet=feet||(P.pass===v);tool[v.id]=String(v.ctool||'')}if(v.kind==='forklift')tool[v.id]=String(v.forks||'')}
  for(const p of PALS)if(p.fk)lifted++;for(const l of LG)if(l.fk)lifted++;for(const a of ATT)if(a.fk)lifted++;for(const o of Object.values(veh))if(o.fk)lifted++;for(const o of Object.values(trl))if(o.fk)lifted++;
- return{drv:P.driving&&T?T.id:null,seat:P.pass?P.pass.id+':'+P.seatSd:null,inB:IN?1:0,hitch,lifted,tool,hands:P.hands?P.hands.filter(Boolean).length:0,feet,built:SITES.filter(q=>q.b.built).length,goals:STORY&&STORY.d?Object.keys(STORY.d).length:0,note:note||''}}
+ return{drv:P.driving&&T?T.id:null,seat:P.pass?P.pass.id+':'+P.seatSd:null,inB:IN?1:0,hitch,lifted,tool,hands:P.hands?P.hands.filter(Boolean).length:0,feet,built:SITES.filter(q=>q.b.built).length,rot:(P.barR||0)+','+mapYRot+','+mapCurve+','+mapBT+','+mapPiece,roads:UH.length,units:Object.keys(YB).map(n=>{const u=YU(n);return u.c0+','+u.r0+','+u.rot}).join(';'),gone:Object.keys(YB).filter(isGone).length,peers:(()=>{try{const r=NET.room;return r&&r.peers?r.peers().filter(p=>!p.sameTab).length:0}catch(e){return 0}})(),goals:STORY&&STORY.d?Object.keys(STORY.d).length:0,note:note||''}}
 // touch: the lights and horn buttons show while you are in a vehicle; the lights one is lit while they are on
 let LBK='';function lightBtns(){if(!TOUCHUI)return;const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null,on=v&&(inCraneCab()?v.hl:v.lights),k=(v?v.id:'')+(on?1:0)+(inCraneCab()?'c':'');if(k===LBK)return;LBK=k;$('ltb').style.display=$('hrb').style.display=v?'':'none';$('ltb').style.background=on?'#c9a227':'';$('ltb').style.borderColor=on?'#ffd166':''}
 // L: in a vehicle's cab its lights (day or night); in the crane cab only the work light on the hook, the truck's own lights stay as they were left. Getting out on foot turns them off (lightsWatch)
@@ -4181,7 +4238,7 @@ function applyStartLayout(){const L=START_LAYOUT,acts=[],ns=Object.keys(L.at);
  if(v){v.x=START.x;v.y=START.y;v.a=START.a;const kd=KOF(v),ca=[Math.cos(START.a),Math.sin(START.a)],o=(kd.b1-1.2)*S;P.driving=false;P.x=START.x+ca[0]*o-ca[1]*2.1*S;P.y=START.y+ca[1]*o+ca[0]*2.1*S;P.a=START.a;cam.x=P.x;cam.y=P.y}}
 SVREADY.then(()=>{
 try{const raw=svGet(PENDK);if(raw){svDel(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=JSON.parse(raw);netApi().restore(D);if(D.name)SAVENM=D.name;if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash('Game loaded.')}else applyStartLayout()}catch(e){}
-try{if(sessionStorage.getItem('coalhaul.loaded')){sessionStorage.removeItem('coalhaul.loaded');MENU=false;document.body.classList.remove('inmenu');netStart('host')}else{let bm=null;try{bm=sessionStorage.getItem('coalhaul.msg');sessionStorage.removeItem('coalhaul.msg')}catch(e){}if(bm)mainMenu(null,bm);else{const j=new URLSearchParams(location.search).get('join');if(j&&!IN_CLAUDE)mainMenu('join',null,j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5));else mainMenu()}}}catch(e){mainMenu()}
+try{if(sessionStorage.getItem('coalhaul.loaded')){AUD.pend='loaded';sessionStorage.removeItem('coalhaul.loaded');MENU=false;document.body.classList.remove('inmenu');netStart('host')}else{let bm=null;try{bm=sessionStorage.getItem('coalhaul.msg');sessionStorage.removeItem('coalhaul.msg')}catch(e){}if(bm)mainMenu(null,bm);else{const j=new URLSearchParams(location.search).get('join');if(j&&!IN_CLAUDE)mainMenu('join',null,j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5));else mainMenu()}}}catch(e){mainMenu()}
 });   // the saves are read from the database first
 requestAnimationFrame(loop);
 </script></body></html>
