@@ -4090,8 +4090,8 @@ function engSet(kind,r,ld,on,t){const e=AUD.e;if(!e)return;const p=ENGS[kind]||E
  gainTo(e.g,on?p.v+r*p.vr+ld*p.vl:0,t,.15);
  aim(e.tb.frequency,1800+r*2600,t,.6);aim(e.wh.frequency,1500+r*2200,t,.6);gainTo(e.tg,on?p.tb*(r*ld*.5+r*.12):0,t,.5);gainTo(e.wg,on?p.tb*(r*.006+r*ld*.006):0,t,.5)}
 // sound settings that change every frame: only passed on when they really change, and a sound at rest is unplugged so the browser does no work for it
-function aim(prm,v,t,tc){if(prm._t!==undefined&&Math.abs(prm._t-v)<.002*(Math.abs(v)+1))return;prm._t=v;prm.setTargetAtTime(v,t,tc)}
-function gainTo(nd,v,t,tc){if(v>1e-4&&nd._park){nd.connect(nd._out);nd._park=false}const g=nd.gain;if(g._t!==undefined&&Math.abs(g._t-v)<.002*(v+.01))return;g._t=v;g.setTargetAtTime(v,t,tc);if(v<=1e-4)nd._zero=t}
+function aim(prm,v,t,tc){if(!isFinite(v))return;if(prm._t!==undefined&&Math.abs(prm._t-v)<.002*(Math.abs(v)+1))return;prm._t=v;prm.setTargetAtTime(v,t,tc)}
+function gainTo(nd,v,t,tc){if(!isFinite(v))return;if(v>1e-4&&nd._park){nd.connect(nd._out);nd._park=false}const g=nd.gain;if(g._t!==undefined&&Math.abs(g._t-v)<.002*(v+.01))return;g._t=v;g.setTargetAtTime(v,t,tc);if(v<=1e-4)nd._zero=t}
 const VOICES=()=>{const A=AUD,c=A.ch;return[[A.e.g,c.eng],[A.e.tg,c.eng],[A.e.wg,c.eng],[A.hyd.g,c.mach],[A.hyd.n,c.mach],[A.pour,c.cargo],[A.wind,c.amb],[A.pumpS.g,c.mach],[A.pumpS.n,c.mach],[A.off.rum,c.eng],[A.off.grav,c.eng],[A.hum.g,c.amb],[A.hum.n,c.amb],[A.winch.g,c.mach]]};
 function parkIdle(t){for(const[n]of VOICES())if(!n._park&&n.gain._t<=1e-4&&t-(n._zero||0)>1.5){n.disconnect();n._park=true}}
 // a bird call or a cricket chirp, made up each time
