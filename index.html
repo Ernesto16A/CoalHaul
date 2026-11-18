@@ -3812,7 +3812,7 @@ function drawPeers(t){PLBL.length=0;const r=NET.room;if(!r)return;const seen=new
     const tq=q.t;if(tq&&TRL[tq.k]){if(h.tk!==tq.k+'|'+tq.col){const o=addTrl(tq.k,tq.col);delete trl[o.id];cnt[tq.k]--;o.out=true;h.tr=o;h.tk=tq.k+'|'+tq.col}h.tr.x=tq.x;h.tr.y=tq.y;h.tr.b=tq.b;h.tr.coupled=false;h.tr.ld=null;cast(shapesOf(h.tr,[],.5));drawTrailer(h.tr)}else{h.tr=null;h.tk=''}
     v._rh=hue;cast(shapesOf(v,[],.5));drawKind(v)}   // _rh: his colour, for the figure on an open seat
    else drawPerson(h.x,h.y,h.a,hue);
-   {const nm=(q.nm&&q.nm.trim())||(q.pid&&ROSTER[q.pid]&&ROSTER[q.pid].nm!=='Player'&&ROSTER[q.pid].nm)||'Player '+p.peer.slice(0,2).toUpperCase();PLBL.push([nm,h.x,h.y-(q.d||q.s?S*3.2:S*1.7),'hsl('+hue+',80%,75%)'])}}   /* the player's name above them, also while they drive */catch(e){}}
+   {const nm=(q.nm&&q.nm.trim())||(q.pid&&ROSTER[q.pid]&&ROSTER[q.pid].nm!=='Player'&&ROSTER[q.pid].nm)||'Player '+p.peer.slice(0,2).toUpperCase();if(!q.d&&!q.s)PLBL.push([nm,h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)'])}}   /* the player's name above them, also while they drive */catch(e){}}
  for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
 
 // ---------- one shared world (browsers connected through PeerJS) ----------
