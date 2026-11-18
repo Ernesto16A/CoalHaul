@@ -4050,12 +4050,16 @@ const SCH=[['eng','Engines','vehicles you drive, their doors'],['mach','Machines
 const AUD={ctx:null,m:null,ch:{},lastCash:null,cashT:0};
 function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;try{
  const c=AUD.ctx=new AC(),m=AUD.m=c.createGain();m.connect(c.destination);for(const[k]of SCH){const g=c.createGain();g.connect(m);AUD.ch[k]=g}const eng=AUD.ch.eng;
- // the engine: two buzzing oscillators through a low filter, louder with the throttle
- const o1=c.createOscillator(),o2=c.createOscillator(),lp=c.createBiquadFilter(),eg=c.createGain();o1.type='sawtooth';o2.type='square';o2.detune.value=-1200;lp.type='lowpass';lp.frequency.value=420;lp.Q.value=4;eg.gain.value=0;
- o1.connect(lp);o2.connect(lp);lp.connect(eg);eg.connect(eng);o1.start();o2.start();AUD.e={o1,o2,lp,g:eg};
+ // the engine sound is made below, once the noise exists
  // a noise source shared by the hydraulics and the cargo
  const nb=AUD.nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=nb.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
  const mk=(type,f,q,to)=>{const s=c.createBufferSource();s.buffer=nb;s.loop=true;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.value=0;s.connect(bp);bp.connect(g);g.connect(AUD.ch[to]);s.start();return g};
+ // the engine, a diesel chug: a saw and a rumble of noise, pulsed at the firing rate (you can count the pulses at idle), through a low filter that opens as it revs
+ {const lp=c.createBiquadFilter();lp.type='lowpass';lp.Q.value=1.2;const vol=c.createGain();vol.gain.value=0;lp.connect(vol);vol.connect(eng);
+  const saw=c.createOscillator();saw.type='sawtooth';saw.start();const ns=c.createBufferSource();ns.buffer=nb;ns.loop=true;ns.start();const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=180;bp.Q.value=.7;ns.connect(bp);
+  const mix=c.createGain();saw.connect(mix);const ng=c.createGain();ng.gain.value=1.4;bp.connect(ng);ng.connect(mix);
+  const am=c.createGain();am.gain.value=.5;const lfo=c.createOscillator();lfo.type='sawtooth';const dep=c.createGain();dep.gain.value=.5;lfo.connect(dep);dep.connect(am.gain);lfo.start();mix.connect(am);am.connect(lp);
+  AUD.e={saw,lfo,lp,bp,g:vol}}
  AUD.pour=mk('bandpass',260,.8,'cargo');   // cargo pouring in or out: a rumble
  const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(AUD.ch.mach);ho.start();AUD.hyd={o:ho,g:hg,n:mk('highpass',1800,.5,'mach')};   // the boom's hydraulics: a whine and a hiss
  AUD.wind=mk('lowpass',380,.3,'amb');   // ambience: wind always, birds by day, crickets at night (in sndTick)
@@ -4098,8 +4102,8 @@ document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest&&e.target
 let sndCargo=null;
 function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
  const v=run&&P.driving&&T&&T.out?T:null,cab=run&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null;
- {const e=AUD.e,heavy=v&&/semi|crane|dump/.test(v.kind)?.7:v&&v.kind==='forklift'?1.25:1,thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,sp=v?Math.abs(v.v||0):0,f=(32+sp*5.5+thr*14)*heavy;
-  e.o1.frequency.setTargetAtTime(f,t,.08);e.o2.frequency.setTargetAtTime(f,t,.08);e.lp.frequency.setTargetAtTime(260+sp*45+thr*260,t,.1);e.g.gain.setTargetAtTime(v&&(v.fuel===undefined||v.fuel>0)?.05+.05*thr+Math.min(.04,sp*.004):cab&&cab.ftOn?.035:0,t,.12)}
+ {const e=AUD.e,h=v&&/semi|crane|dump/.test(v.kind)?1.4:v&&v.kind==='forklift'?.75:1,thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn),ld=v?thr:.3,f=(11+r*34)/h;   /* r: how fast against its top speed; ld: throttle; h: lower and slower for the big ones, quicker for the forklift */
+  e.lfo.frequency.setTargetAtTime(f,t,.2);e.saw.frequency.setTargetAtTime(f*2,t,.2);e.lp.frequency.setTargetAtTime((180+r*520+ld*200)/Math.sqrt(h),t,.2);e.bp.frequency.setTargetAtTime(150+r*250,t,.2);e.g.gain.setTargetAtTime(on?.26+r*.12+ld*.12:0,t,.15)}
  {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.05:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
  {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
   const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;AUD.pour.gain.setTargetAtTime(d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
