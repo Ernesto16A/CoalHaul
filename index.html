@@ -4063,7 +4063,7 @@ function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkit
   const wh=c.createOscillator();wh.type='sine';wh.start();const wg=c.createGain();wg.gain.value=0;wh.connect(wg);wg.connect(eng);
   AUD.e={saw,sq,sg,qg,bp,ng,am,lfo,dep,lp,g:vol,tb,tg,wh,wg,k:null}}
  AUD.pour=mk('bandpass',260,.8,'cargo');   // cargo pouring in or out: a rumble
- const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(AUD.ch.mach);ho.start();AUD.hyd={o:ho,g:hg,n:mk('highpass',1800,.5,'mach')};   // the boom's hydraulics: a whine and a hiss
+ const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(AUD.ch.mach);ho.start();AUD.hyd={o:ho,g:hg,n:mk('bandpass',2600,1.2,'mach')};   // the boom's hydraulics: a whine and a soft flow of oil
  AUD.wind=mk('lowpass',380,.3,'amb');   // ambience: wind always, birds by day, crickets at night (in sndTick)
  const fo=c.createOscillator(),fg=c.createGain();fo.type='triangle';fo.frequency.value=120;fg.gain.value=0;fo.connect(fg);fg.connect(AUD.ch.mach);fo.start();AUD.pumpS={o:fo,g:fg,n:mk('bandpass',900,1.4,'mach')};   // the fuel pump
  sndVol()}catch(e){AUD.ctx=null}}
@@ -4124,7 +4124,7 @@ function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MEN
  const v=run&&P.driving&&T&&T.out?T:null,cab=run&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null;
  {const thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn);   /* r: how fast against its top speed; the crane idles while its feet are down */
   engSet(v?v.kind:cab?'crane':AUD.e.k||'pickup',r,v?thr:.3,on,t)}
- {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.05:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
+ {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.012:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
  {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
   const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;AUD.pour.gain.setTargetAtTime(d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
  {const r=Math.round(cash);if(AUD.lastCash!==null){const nw=performance.now();if(r>AUD.lastCash&&nw-AUD.cashT>1200){AUD.cashT=nw;sfx('coin')}else if(r<AUD.lastCash-.5&&nw-(AUD.buyT||0)>600){AUD.buyT=nw;sfx('buy')}}AUD.lastCash=r}
