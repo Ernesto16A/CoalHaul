@@ -3184,6 +3184,9 @@ function drawSeats(){const h=hoverSeat();if(!h)return;const v=h.v;
  seatsOf(v).forEach((q,i)=>{const on=(h.sd===-1?0:h.sd)===i;g.fillStyle=on?'rgba(255,209,102,.95)':'rgba(20,22,28,.8)';g.strokeStyle=on?'#fff':'#ffffffaa';g.lineWidth=1.2;
   g.beginPath();g.roundRect(q[0]*S-.42*S,q[1]*S-.4*S,.84*S,.8*S,2.5);g.fill();g.stroke()});
  g.restore();
+ // other players sitting here show in their seats, with their names
+ try{const r=NET.room;if(r&&r.peers)for(const p of r.peers()){const q=p.presence;if(p.sameTab||!q)continue;let i=-1;if(q.d===v.id)i=0;else if(q.pv===v.id&&typeof q.sd==='number')i=q.sd===-1?0:q.sd;const st=seatsOf(v)[i];if(!st)continue;
+  const w=wld(st[0]*S,st[1]*S,v.x,v.y,v.a),hue=q.hue||0;drawPerson(w[0],w[1],v.a,hue,true)}}catch(e){}   /* (their name already stands over the vehicle) */
  const c=KOF(v).seats?seatPos(v,h.sd):cabOf(v);txt(h.sd===-1?'Click: drive':'Click: passenger',c[0],c[1]-2.2*S,'#ffd166','bold 11px sans-serif')}   // on a car or a bus the words stand over the seat itself
 // ---------- the story: what to do next, and where the arrow points (always at a building's entrance, never at a pad) ----------
 const STORY={fuel:0,hitch:0,trl:0};
@@ -3294,7 +3297,7 @@ function draw(t){viewHalf();
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
- drawSeats();drawPlayer();drawTop();drawNight();drawTestGrid();
+ drawSeats();drawPlayer();drawTop();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');drawTestGrid();
  const tg=objective(),O=P.driving&&T.out?T:P;
  if(tg){const dx=tg.x-O.x,dy=tg.y-O.y;if(Math.hypot(dx,dy)>170){const an=Math.atan2(dy,dx);g.save();g.translate(O.x+Math.cos(an)*100,O.y+Math.sin(an)*100);g.rotate(an);g.fillStyle=tg.c;g.beginPath();g.moveTo(16,0);g.lineTo(-8,-11);g.lineTo(-8,11);g.fill();g.restore()}}
  g.restore();
@@ -3693,7 +3696,7 @@ const tout=()=>{const t=$('tmsg').textContent;if(t)chatLine(esc(t),1);$('tmsg').
 const tog=(id,a)=>{const c=$(id),w=a.trim().toLowerCase();c.checked=w==='on'?true:w==='off'?false:!c.checked;c.dispatchEvent(new Event('change'));tout()};
 function chatCmd(t){const m=t.slice(1).match(/^(\S+)\s*(.*)$/);const c=m&&CMDS[m[1].toLowerCase()];if(!c)return chatLine('Unknown command '+esc(t.split(' ')[0])+'. Type /help.',1);try{c[2](m[2]||'')}catch(e){chatLine('That did not work: '+esc(e.message),1)}}
 function netSend(t){chatPoll();const r=NET.room;if(r&&t-RSTT>1000){RSTT=t;rosterTick(r)}if(!r||t-NET.last<66)return;NET.last=t;
- const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,nm:CHAT.name,ch:CHAT.out.length?CHAT.out:null,col:MYCOL||null,v:null,t:null,d:drv?T.id:null,s:P.pass?1:0,pid:PID};
+ const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,nm:CHAT.name,ch:CHAT.out.length?CHAT.out:null,col:MYCOL||null,v:null,t:null,d:drv?T.id:null,s:P.pass?1:0,pv:P.pass?P.pass.id:null,sd:P.pass?P.seatSd:null,pid:PID};
  if(drv&&!r.shared){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
   const tr=T.tr;if(tr)pr.t={k:tr.kind,col:tr.color||null,x:Math.round(tr.x),y:Math.round(tr.y),b:+tr.b.toFixed(2)}}
  try{r.presence(pr).catch(()=>{})}catch(e){}}
@@ -3735,7 +3738,8 @@ function drawPerson(px,py,pa,hue,seated){const r=S*.55,ca=Math.cos(pa),sa=Math.s
  g.beginPath();g.ellipse(px+ca*r*.3,py+sa*r*.3,r*.44,r*.5,pa,0,7);inked('#d39f12',1);
  g.beginPath();g.arc(px+ca*r*.06,py+sa*r*.06,r*.5,0,7);inked('#f7c927',1.1)}
 // the other players: a character on foot, or the vehicle (and trailer) he drives, eased from the last positions heard
-function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=CHW+240,vh=CHH+240;
+const PLBL=[];   // other players' names, drawn last (over roofs, in the dark)
+function drawPeers(t){PLBL.length=0;const r=NET.room;if(!r)return;const seen=new Set(),vw=CHW+240,vh=CHH+240;
  for(const p of r.peers()){if(p.sameTab||p.kind!=='viewer')continue;const q=p.presence;if(!q||typeof q.x!=='number'||typeof q.y!=='number')continue;seen.add(p.peer);
   let h=NET.gh.get(p.peer);if(!h){h={x:q.x,y:q.y,a:q.a||0,t:t,v:null,vk:'',tr:null,tk:''};NET.gh.set(p.peer,h)}
   const k=1-Math.exp(-Math.min(.25,(t-h.t)/1000)*14);h.t=t;h.x+=(q.x-h.x)*k;h.y+=(q.y-h.y)*k;h.a=angLerp(h.a,q.a||0,k);
@@ -3748,7 +3752,7 @@ function drawPeers(t){const r=NET.room;if(!r)return;const seen=new Set(),vw=CHW+
     const tq=q.t;if(tq&&TRL[tq.k]){if(h.tk!==tq.k+'|'+tq.col){const o=addTrl(tq.k,tq.col);delete trl[o.id];cnt[tq.k]--;o.out=true;h.tr=o;h.tk=tq.k+'|'+tq.col}h.tr.x=tq.x;h.tr.y=tq.y;h.tr.b=tq.b;h.tr.coupled=false;h.tr.ld=null;cast(shapesOf(h.tr,[],.5));drawTrailer(h.tr)}else{h.tr=null;h.tk=''}
     v._rh=hue;cast(shapesOf(v,[],.5));drawKind(v)}   // _rh: his colour, for the figure on an open seat
    else drawPerson(h.x,h.y,h.a,hue);
-   {const nm=(q.nm&&q.nm.trim())||(q.pid&&ROSTER[q.pid]&&ROSTER[q.pid].nm!=='Player'&&ROSTER[q.pid].nm)||'Player '+p.peer.slice(0,2).toUpperCase();txt(nm,h.x,h.y-(q.d||q.s?S*3.2:S*1.7),'hsl('+hue+',80%,75%)','bold 10px sans-serif')}}   /* the player's name above them, also while they drive */catch(e){}}
+   {const nm=(q.nm&&q.nm.trim())||(q.pid&&ROSTER[q.pid]&&ROSTER[q.pid].nm!=='Player'&&ROSTER[q.pid].nm)||'Player '+p.peer.slice(0,2).toUpperCase();PLBL.push([nm,h.x,h.y-(q.d||q.s?S*3.2:S*1.7),'hsl('+hue+',80%,75%)'])}}   /* the player's name above them, also while they drive */catch(e){}}
  for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
 
 // ---------- one shared world (browsers connected through PeerJS) ----------
