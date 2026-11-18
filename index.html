@@ -161,7 +161,7 @@ const T2={mine:{U:MS,ox:8*TS,oy:4*TS},'power plant':{U:PS,ox:0,oy:4*TS},lumberya
 const T2b=(n,i)=>{const t=T2[n],r=uBox(t.U,{x0:t.ox+340+i*140,y0:t.oy+340,x1:t.ox+480+i*140,y1:t.oy+480});return[r.x0,r.y0]};   // where board i stands on the map (top-left, upright: boards always read facing south)
 const T2s=n=>{const t=T2[n];return{X:t.ox+340,Y:t.oy+480,w:280,rh:70,board:null}},T2p=n=>{const t=T2[n];return{x:t.ox+480,y:t.oy+160,w:320,h:80}};   // a site: the building (where it will stand) and the unloading pad in the back yard (in the unit's frame)
 const T2z=n=>{const t=T2[n];return{x:t.ox+480,y:t.oy+690,w:100,h:140}};   // new vehicles appear in front of the doors (in the unit's frame)
-const DOORS=b=>b.built===false?null:[80,200];   // the two doors, 2 tiles wide, on the long wall facing the gate
+const DOORS=b=>b.built===false?null:b===plant?[140]:[80,200];   // the power plant: one door in the middle (for now)   // the two doors, 2 tiles wide, on the long wall facing the gate
 
 const uBox=(U,b)=>{const p=uRot(U,b.x0,b.y0),q=uRot(U,b.x1,b.y1);return{x0:Math.min(p[0],q[0]),y0:Math.min(p[1],q[1]),x1:Math.max(p[0],q[0]),y1:Math.max(p[1],q[1])}};
 const uPlace=(U,o)=>{const p=uRot(U,o.x,o.y),A=U.rot*Math.PI/2;o.x=p[0];o.y=p[1];if('b' in o){o.b+=A;const h=uRot(U,o.hx,o.hy);o.hx=h[0];o.hy=h[1]}else o.a+=A};   // a vehicle or trailer placed in the layout, onto the map
@@ -2302,6 +2302,11 @@ function headframe(cx,cy,c){const s=21;rShade(cx-s,cy-s,2*s,2*s,11,.22);
  g.fillStyle='#22252a';g.fillRect(cx-1.6,cy-10,3.2,20);
  for(const[px,py]of[[-s,-s],[s-7,-s],[-s,s-7],[s-7,s-7]]){g.beginPath();g.rect(cx+px,cy+py,7,7);inked(c,1)}}
 // a way in: the roof stands back over a paved step; at the back of it the door in its frame, a mat in front, a lamp over it. side: S or N (in the building's frame)
+// the tiles that mark an entrance: 2 x 1 squares of small square tiles with a border in the building's colour, outside in front of the door and inside behind it
+function entryTiles(x,y,c,side){const w=2*S,h=S,n=4;g.save();g.fillStyle='#2b2f36';g.fillRect(x,y,w,h);
+ for(let i=0;i<n*2;i++)for(let j=0;j<n;j++){g.fillStyle=(i+j)%2?'#6d737c':'#545a63';g.fillRect(x+1+i*(w-2)/(n*2),y+1+j*(h-2)/n,(w-2)/(n*2)-.6,(h-2)/n-.6)}
+ g.strokeStyle=c;g.lineWidth=1.6;g.strokeRect(x+.8,y+.8,w-1.6,h-1.6);
+ g.fillStyle=c;const ay=side==='out'?y+3:y+h-3,dir=side==='out'?-1:1;g.beginPath();g.moveTo(x+w/2,ay+dir*0);g.lineTo(x+w/2-4,ay-dir*4);g.lineTo(x+w/2+4,ay-dir*4);g.closePath();g.globalAlpha=.85;g.fill();g.restore()}
 function porch(x,y,w,h,side,c){const s=side==='S',yb=s?y:y+h-3.6;
  g.fillStyle='#bdb7a8';g.fillRect(x,y,w,h);g.strokeStyle='rgba(0,0,0,.2)';g.lineWidth=.8;g.beginPath();for(let k=1;k<4;k++){g.moveTo(x+k*w/4,y);g.lineTo(x+k*w/4,y+h)}g.moveTo(x,y+h/2);g.lineTo(x+w,y+h/2);g.stroke();
  {const my=s?y+h-9:y+3;g.fillStyle=shd(c,.46);g.fillRect(x+w/2-11,my,22,6);g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=.7;g.strokeRect(x+w/2-9.4,my+1.3,18.8,3.4)}
@@ -2404,7 +2409,7 @@ const ROOF={
 // an office from above: its roof inside its footprint, the way(s) in, the name board
 function paintOffice(o){if(o===SEEO)return;const r=offRect0(o),X=r.x0,Y=r.y0,W=r.x1-r.x0,H=r.y1-r.y0,c=BCOL[o.n]||'#888888',dx=o.X+(o.w||150)/2;RA=(o.site?o.site.rot:0)*Math.PI/2;
  try{let sg;onto(X,Y,W,H,()=>{sg=(ROOF[o.n]||ROOF.shop)(X,Y,W,H,c,o)});rEdge(X,Y,W,H,1.7);
-  for(const d of o.doors?o.doors.map(d=>o.X+d):[dx])porch(d-20,Y+H-15,40,15,'S',c);if(o.eh&&o.n!=='shop')porch(dx-20,Y,40,15,'N',c);
+  for(const d of o.doors?o.doors.map(d=>o.X+d):[dx]){porch(d-20,Y+H-15,40,15,'S',c);if(EMPTYROOM.has(o.n))entryTiles(d-20,Y+H,c,'out')}if(o.eh&&o.n!=='shop')porch(dx-20,Y,40,15,'N',c);
   roofSign(sg[0],sg[1],o.label||'OFFICE',c,o.site)}finally{RA=0}}
 // a building going up, in four stages (done 0..3): the slab with the first blocks set out · the walls up, scaffolding along them · the roof timbers on · the roof half covered. Tape all round and the foot of a tower crane (its jib is drawn every frame: it swings)
 const siteGeo=(o,sq)=>{const r=offRect0(o),W=r.x1-r.x0,H=r.y1-r.y0;return{X:r.x0,Y:r.y0,W,H,done:Math.min(3,Math.floor(Math.min(1,sq.b.got/sq.b.need)*4+1e-6)),mx:r.x0+W+60,my:r.y0+20}};   // everything of a site sits on the 20 px grid: the slab is 1 tile wider all round, the tape 2 tiles, the crane's foot 3 tiles east of the slab
@@ -2614,7 +2619,7 @@ function plantFloor(X0,Y0,X1,Y1){const w=X1-X0,h=Y1-Y0,k=2;
   PFC={c,w,h}}
  g.drawImage(PFC.c,X0,Y0,w,h)}
 function drawInterior(t){const gm=interiorGeo(IN.o),X0=gm.X0,X1=gm.X1,Y0=gm.Y0,Y1=gm.Y1,W=8,G=IN.o.n==='garage',c=BCOL[IN.o.n]||'#888888';
- if(EMPTYROOM.has(IN.o.n)){plantFloor(X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,(IN.o.doors?[-4060,-3940]:[-4000]).map(x=>[x,'S']),[]);return}   // an empty room: the floor and the walls with their doors   // a building's room from above, 1:1 with the world: the floor is its whole footprint, the walls stand just outside it
+ if(EMPTYROOM.has(IN.o.n)){plantFloor(X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,roomDoors(IN.o).map(x=>[x,'S']),[]);for(const d of roomDoors(IN.o)){entryTiles(d-20,Y1-S,c,'in');entryTiles(d-20,Y1+W,c,'out')}return}   // an empty room: the floor and the walls with their doors   // a building's room from above, 1:1 with the world: the floor is its whole footprint, the walls stand just outside it
  roomFloor(IN.o.n,X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,G?[[-4000,'N'],[-4000,'S']]:(IN.o.doors?[-4060,-3940]:[-4000]).map(x=>[x,'S']),ROOMWIN[G?'g':IN.o.doors?'t2':IN.o.n==='shop'?'sh':'s']);
  if(G){
   {g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1;g.beginPath();for(let i=GSTORE.i0;i<GSTORE.i1;i++)for(let j=GSTORE.j0;j<GSTORE.j1;j++)g.rect(i*S+1.5,j*S+1.5,S-3,S-3);g.stroke()}   // the storage room: one square per tile
@@ -3298,7 +3303,7 @@ function drawNight(){const D=darkness(),VL=LIVEMAP?[]:vehLights(D);if(D<.01||LIV
  g.save();g.globalCompositeOperation='lighter';for(const w of lamps){const gr=g.createRadialGradient(w[0],w[1],0,w[0],w[1],.9*u);gr.addColorStop(0,'rgba(255,236,170,'+(.55*D)+')');gr.addColorStop(1,'rgba(255,236,170,0)');g.fillStyle=gr;g.beginPath();g.arc(w[0],w[1],.9*u,0,7);g.fill()}g.restore();drawLampGlow(VL,D)}
 // inside a building with an open roof (SEETHRU): you stay on the map. The room is drawn where the building stands, the world all round it, and the roof is left off while you are in. The room keeps its own coordinates for everything that happens inside; r2w turns a point of the room into the map
 const SEETHRU=new Set(['power plant']);let SEEO=null,ENTERLOCK=null;
-const inDoorway=x=>[-4060,-3940].some(d=>Math.abs(x-d)<20);   // the two doors of a building, in the room's frame
+const roomDoors=o=>{const gm=interiorGeo(o);return(o.doors||[]).map(d=>gm.X0+d)},inDoorway=x=>!!IN&&roomDoors(IN.o).some(d=>Math.abs(x-d)<20);   // the two doors of a building, in the room's frame
 const w2r=(o,x,y)=>{const gm=interiorGeo(o),q=uInv(o.site,x,y);return[gm.X0+(q[0]-o.X),gm.Y0+(q[1]-o.Y)]};
 const seeThru=o=>!!(o&&o.inw&&o.site&&o.doors&&SEETHRU.has(o.n));
 const r2w=(o,x,y)=>{const gm=interiorGeo(o);return uRot(o.site,o.X+(x-gm.X0),o.Y+(y-gm.Y0))};
