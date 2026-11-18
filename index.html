@@ -2363,16 +2363,18 @@ function pillarLamps(){if(!plant.built||isGone('power plant')||!plantOn||!(power
 function drawPillarLamps(){const D=darkness();for(const[x,y]of pillarLamps()){if(Math.abs(x-cam.x)>CHW+80||Math.abs(y-cam.y)>CHH+80)continue;g.save();g.globalCompositeOperation='lighter';const gr=g.createRadialGradient(x,y,0,x,y,22);gr.addColorStop(0,'rgba(255,233,168,'+(.35+.4*D)+')');gr.addColorStop(1,'rgba(255,233,168,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,22,0,7);g.fill();g.restore();
   g.fillStyle='#fff6d8';g.beginPath();g.arc(x,y,3.6,0,7);g.fill();g.strokeStyle='rgba(120,90,30,.7)';g.lineWidth=1;g.stroke()}}
 // ----- the control desk and its chair: things you can carry. The desk (2 x 1, both hands, turned with R) shows the power plant on its 3 screens while it stands in the plant's yard or room (Space on it opens the plant's window); the chair (1 square, one hand) sits centred on a desk's long side when put down against it -----
-let PWH=[];setInterval(()=>{PWH.push(power||0);if(PWH.length>12)PWH.shift()},2500);   // the power over the last half minute, for the left screen
 const deskLive=it=>{const y=yardOf(it);return y==='power plant'&&plant.built};
 function deskSprite(x,y,w,h,it,mini){const k=w/40,live=!mini&&it&&deskLive(it),st=power>0?'ok':plantOn?'low':'off',bg=!live?'#14171c':st==='ok'?'#16351f':st==='low'?'#3a2f12':'#3a1714',fg=!live?'#2a2f36':st==='ok'?'#5fe08a':st==='low'?'#ffcf5a':'#ff6b5a';
  g.save();g.translate(x,y);g.fillStyle='rgba(0,0,0,.28)';g.fillRect(-w/2+2.5*k,-h/2+3*k,w,h);
  g.fillStyle='#3d434c';g.fillRect(-w/2,-h/2,w,h);g.strokeStyle='#22262c';g.lineWidth=1.1*k;g.strokeRect(-w/2,-h/2,w,h);g.fillStyle='#4b525c';g.fillRect(-w/2+1.5*k,-h/2+1.5*k,w-3*k,h-3*k);
- const sw=11*k,sh=8*k,sy=-h/2+1.6*k;for(let i=0;i<3;i++){const sx=-w/2+2.2*k+i*(sw+1.6*k);g.fillStyle='#101317';g.fillRect(sx,sy,sw,sh);g.fillStyle=bg;g.fillRect(sx+1*k,sy+1*k,sw-2*k,sh-2*k);if(!live)continue;
-  g.strokeStyle=fg;g.fillStyle=fg;g.lineWidth=.8*k;
-  if(i===0){const mx=Math.max(100,...PWH);g.beginPath();PWH.forEach((v,j)=>{const px=sx+1.6*k+j*(sw-3.2*k)/11,py=sy+sh-1.8*k-(v/mx)*(sh-3.6*k);j?g.lineTo(px,py):g.moveTo(px,py)});g.stroke()}   // power over the last half minute
-  else if(i===1){const f=Math.max(0,Math.min(1,plant.stock/plant.cap));g.globalAlpha=.3;g.fillRect(sx+3.5*k,sy+1.7*k,sw-7*k,sh-3.4*k);g.globalAlpha=1;g.fillStyle='#f2b134';g.fillRect(sx+3.5*k,sy+1.7*k+(sh-3.4*k)*(1-f),sw-7*k,(sh-3.4*k)*f)}   // the coal store, filling up
-  else{pwSt().forEach(([n,c2],j)=>{g.fillStyle=c2;g.beginPath();g.arc(sx+2.3*k+(j%4)*2.1*k,sy+2.6*k+Math.floor(j/4)*2.6*k,.75*k,0,7);g.fill()})}}   // the buildings on the grid, one light each
+ const sw=16.6*k,sh=8.6*k,sy=-h/2+1.5*k;for(let i=0;i<2;i++){const sx=-w/2+2.6*k+i*(sw+2.2*k);g.fillStyle='#101317';g.fillRect(sx,sy,sw,sh);g.fillStyle=bg;g.fillRect(sx+1*k,sy+1*k,sw-2*k,sh-2*k);if(!live)continue;
+  if(i===0){const f=Math.max(0,Math.min(1,plant.stock/plant.cap)),bx=sx+5*k,bw=sw-7.4*k,by=sy+1.8*k,bh=sh-3.6*k;   // screen 1: the coal store, filling up, with the coal icon beside it
+   g.drawImage(cargoIco('coal'),sx+1.4*k,sy+sh/2-1.6*k,3.2*k,3.2*k);
+   g.fillStyle='rgba(255,255,255,.12)';g.fillRect(bx,by,bw,bh);g.fillStyle=fg;g.fillRect(bx,by,bw*f,bh);g.strokeStyle=fg;g.lineWidth=.5*k;g.strokeRect(bx,by,bw,bh)}
+  else{const yx=sx+sw/2-5*k,yy=sy+1.5*k,yw=10*k,yh=sh-3*k,pw=power>0&&plantOn;   // screen 2: the yard from above, a light on each corner and the gate: green lit, amber on but no power, red off
+   g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=.6*k;g.strokeRect(yx,yy,yw,yh);g.fillStyle=bg;g.fillRect(yx+yw/2-1.6*k,yy+yh-.6*k,3.2*k,1.2*k);
+   const st=on=>on?(pw?'#5fe08a':'#ffcf5a'):'#ff6b5a';
+   for(const[kk,a,b]of[['lpnw',yx,yy],['lpne',yx+yw,yy],['lpsw',yx,yy+yh],['lpse',yx+yw,yy+yh],['lpg',yx+yw/2-1.8*k,yy+yh],['lpg',yx+yw/2+1.8*k,yy+yh]]){g.fillStyle=st(plant[kk]&&plantOn);g.beginPath();g.arc(a,b,.95*k,0,7);g.fill()}}}
  g.fillStyle='#2b3037';g.fillRect(-w/2+9*k,h/2-6.5*k,22*k,4.5*k);g.fillStyle='rgba(255,255,255,.18)';for(let j=0;j<6;j++)g.fillRect(-w/2+10.3*k+j*3.5*k,h/2-5.6*k,2.4*k,1.4*k);   // the keyboard
  g.restore()}
 function chairSprite(x,y,r,a){g.save();g.translate(x,y);g.rotate(a||0);g.fillStyle='rgba(0,0,0,.25)';g.beginPath();g.arc(1.2,1.6,r,0,7);g.fill();g.fillStyle='#3f6f8f';g.beginPath();g.arc(0,0,r,0,7);g.fill();g.strokeStyle='#22262c';g.lineWidth=1;g.stroke();g.fillStyle='#2f566f';g.fillRect(-r*.9,r*.55,r*1.8,r*.45);g.restore()}   // seat, backrest on the far side from the desk
