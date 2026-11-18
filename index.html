@@ -4070,6 +4070,7 @@ function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkit
  AUD.off={rum:mk('lowpass',140,.7,'eng'),grav:mk('bandpass',2200,1.2,'eng')};   // off the road: a low rumble and gravel crunch
  {const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=55;g.gain.value=0;o.connect(g);g.connect(AUD.ch.amb);o.start();AUD.hum={o,g,n:mk('lowpass',200,1.5,'amb')}}   // buildings at work: a low drone near them
  {const o=c.createOscillator();o.type='sawtooth';o.frequency.value=70;const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=700;bp.Q.value=2;const am=c.createGain();am.gain.value=.5;const l=c.createOscillator();l.type='square';l.frequency.value=11;const d=c.createGain();d.gain.value=.5;l.connect(d);d.connect(am.gain);l.start();const g=c.createGain();g.gain.value=0;o.connect(bp);bp.connect(am);am.connect(g);g.connect(AUD.ch.mach);o.start();AUD.winch={o,g}}   // a ramp trailer's winch: a ratcheting whirr
+ for(const[n,o]of VOICES()){n._out=o;n.gain._t=0;n._zero=0}
  sndVol();if(AUD.pend){const k=AUD.pend;AUD.pend=null;setTimeout(()=>sfx(k),150)}}catch(e){AUD.ctx=null}}
 // each vehicle's engine. fi: pulses a second at idle, fr: added at full revs; saw/sq/nz: how much buzz, square buzz and rumble; nf: the rumble's pitch; lp/lr/ll: the filter at idle, added by revs, added by throttle; dep: how hard it pulses; v/vr/vl: loudness at idle, added by revs, by throttle; tb: turbo
 const ENGS={
@@ -4083,10 +4084,15 @@ const ENGS={
  car:{n:'Small car: petrol hum',fi:26,fr:85,w:'sine',saw:.7,sq:.15,nz:.5,nf:260,nr:500,lp:300,lr:1000,ll:300,q:1.5,dep:.2,v:0.22,vr:0.13,vl:0.11,tb:0}};
 // sets the engine sound: kind, revs r (0..1), throttle ld (0..1), running or not, at time t
 function engSet(kind,r,ld,on,t){const e=AUD.e;if(!e)return;const p=ENGS[kind]||ENGS.pickup;
- if(e.k!==kind){e.k=kind;e.lfo.type=p.w;e.sg.gain.setTargetAtTime(p.saw,t,.05);e.qg.gain.setTargetAtTime(p.sq*.6,t,.05);e.ng.gain.setTargetAtTime(p.nz,t,.05);e.lp.Q.value=p.q;e.am.gain.setTargetAtTime(1-p.dep,t,.05);e.dep.gain.setTargetAtTime(p.dep,t,.05)}
- const f=p.fi+r*p.fr;e.lfo.frequency.setTargetAtTime(f,t,.2);e.saw.frequency.setTargetAtTime(f*2,t,.2);e.sq.frequency.setTargetAtTime(f,t,.2);e.lp.frequency.setTargetAtTime(p.lp+r*p.lr+ld*p.ll,t,.2);e.bp.frequency.setTargetAtTime(p.nf+r*p.nr,t,.2);
- e.g.gain.setTargetAtTime(on?p.v+r*p.vr+ld*p.vl:0,t,.15);
- e.tb.frequency.setTargetAtTime(1800+r*2600,t,.6);e.wh.frequency.setTargetAtTime(1500+r*2200,t,.6);e.tg.gain.setTargetAtTime(on?p.tb*(r*ld*.5+r*.12):0,t,.5);e.wg.gain.setTargetAtTime(on?p.tb*(r*.006+r*ld*.006):0,t,.5)}
+ if(e.k!==kind){e.k=kind;e.lfo.type=p.w;gainTo(e.sg,p.saw,t,.05);gainTo(e.qg,p.sq*.6,t,.05);gainTo(e.ng,p.nz,t,.05);e.lp.Q.value=p.q;gainTo(e.am,1-p.dep,t,.05);gainTo(e.dep,p.dep,t,.05)}
+ const f=p.fi+r*p.fr;aim(e.lfo.frequency,f,t,.2);aim(e.saw.frequency,f*2,t,.2);aim(e.sq.frequency,f,t,.2);aim(e.lp.frequency,p.lp+r*p.lr+ld*p.ll,t,.2);aim(e.bp.frequency,p.nf+r*p.nr,t,.2);
+ gainTo(e.g,on?p.v+r*p.vr+ld*p.vl:0,t,.15);
+ aim(e.tb.frequency,1800+r*2600,t,.6);aim(e.wh.frequency,1500+r*2200,t,.6);gainTo(e.tg,on?p.tb*(r*ld*.5+r*.12):0,t,.5);gainTo(e.wg,on?p.tb*(r*.006+r*ld*.006):0,t,.5)}
+// sound settings that change every frame: only passed on when they really change, and a sound at rest is unplugged so the browser does no work for it
+function aim(prm,v,t,tc){if(prm._t!==undefined&&Math.abs(prm._t-v)<.002*(Math.abs(v)+1))return;prm._t=v;prm.setTargetAtTime(v,t,tc)}
+function gainTo(nd,v,t,tc){if(v>1e-4&&nd._park){nd.connect(nd._out);nd._park=false}const g=nd.gain;if(g._t!==undefined&&Math.abs(g._t-v)<.002*(v+.01))return;g._t=v;g.setTargetAtTime(v,t,tc);if(v<=1e-4)nd._zero=t}
+const VOICES=()=>{const A=AUD,c=A.ch;return[[A.e.g,c.eng],[A.e.tg,c.eng],[A.e.wg,c.eng],[A.hyd.g,c.mach],[A.hyd.n,c.mach],[A.pour,c.cargo],[A.wind,c.amb],[A.pumpS.g,c.mach],[A.pumpS.n,c.mach],[A.off.rum,c.eng],[A.off.grav,c.eng],[A.hum.g,c.amb],[A.hum.n,c.amb],[A.winch.g,c.mach]]};
+function parkIdle(t){for(const[n]of VOICES())if(!n._park&&n.gain._t<=1e-4&&t-(n._zero||0)>1.5){n.disconnect();n._park=true}}
 // a bird call or a cricket chirp, made up each time
 function ambCall(night){const c=AUD.ctx,t=c.currentTime,out=AUD.ch.amb;if(night){const f=4200+Math.random()*500;for(let i=0;i<3+Math.floor(Math.random()*3);i++){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*.07);g.gain.linearRampToValueAtTime(.025,t+i*.07+.01);g.gain.exponentialRampToValueAtTime(.0001,t+i*.07+.05);o.connect(g);g.connect(out);o.start(t+i*.07);o.stop(t+i*.07+.06)}return}
  const f0=2200+Math.random()*1800,n=2+Math.floor(Math.random()*4);for(let i=0;i<n;i++){const o=c.createOscillator(),g=c.createGain(),at=t+i*(.09+Math.random()*.06),d=.06+Math.random()*.08;o.type='sine';o.frequency.setValueAtTime(f0*(1+Math.random()*.25),at);o.frequency.exponentialRampToValueAtTime(f0*(.7+Math.random()*.6),at+d);g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.03,at+.01);g.gain.exponentialRampToValueAtTime(.0001,at+d);o.connect(g);g.connect(out);o.start(at);o.stop(at+d+.02)}}
@@ -4143,22 +4149,22 @@ function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[SCHOF[
 document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest&&e.target.closest('button'))sfx('click')},true);   /* only a real click, not one the game makes itself */
 // every frame: what you drive, what pours, the money
 let sndCargo=null;
-function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
+function sndTick(dt){if(!AUD.ctx)return;parkIdle(AUD.ctx.currentTime);const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
  const v=run&&P.driving&&T&&T.out?T:null,cab=run&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null;
  {const thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=(v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn))&&performance.now()>(AUD.engAt||0);   /* r: how fast against its top speed; the crane idles while its feet are down */
   engSet(v?v.kind:cab?'crane':AUD.e.k||'pickup',r,v?thr:.3,on,t)}
- {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.012:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
+ {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);gainTo(AUD.hyd.g,mv?.03:0,t,.08);gainTo(AUD.hyd.n,mv?.012:0,t,.08);aim(AUD.hyd.o.frequency,mv?(K.up||K.down?240:190):180,t,.1)}
  {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
-  const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;AUD.pour.gain.setTargetAtTime(d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
+  const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;gainTo(AUD.pour,d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
  {const r=Math.round(cash);if(AUD.lastCash!==null){const nw=performance.now();if(r>AUD.lastCash&&nw-AUD.cashT>1200){AUD.cashT=nw;sfx('coin')}else if(r<AUD.lastCash-.5&&nw-(AUD.buyT||0)>600){AUD.buyT=nw;sfx('buy')}}AUD.lastCash=r}
- if(!run){AUD.wind.gain.setTargetAtTime(0,t,.3);AUD.pumpS.g.gain.setTargetAtTime(0,t,.1);AUD.pumpS.n.gain.setTargetAtTime(0,t,.1);sndSeen=null;return}
+ if(!run){gainTo(AUD.wind,0,t,.3);gainTo(AUD.pumpS.g,0,t,.1);gainTo(AUD.pumpS.n,0,t,.1);sndSeen=null;return}
  // ambience: wind, and birds by day / crickets at night now and then. Quieter inside a building
- {const nt=darkness()>.5,inside=!!IN;AUD.wind.gain.setTargetAtTime(inside?.03:.09,t,.5);AUD.ambT=(AUD.ambT||0)-dt;if(AUD.ambT<=0){AUD.ambT=nt?.6+Math.random()*1.4:2+Math.random()*6;if(!inside)ambCall(nt)}}
+ {const nt=darkness()>.5,inside=!!IN;gainTo(AUD.wind,inside?.03:.09,t,.5);AUD.ambT=(AUD.ambT||0)-dt;if(AUD.ambT<=0){AUD.ambT=nt?.6+Math.random()*1.4:2+Math.random()*6;if(!inside)ambCall(nt)}}
  // reversing beeper on the big vehicles
  {const big=v&&/semi|dump|crane|forklift/.test(v.kind)&&(v.v||0)<-.2;AUD.bpT=(AUD.bpT||0)-dt;if(big&&AUD.bpT<=0){AUD.bpT=.5;sfx('beep')}if(!big)AUD.bpT=0}
  // the fuel pump while fuel goes in
  {const fv=v||(P.pass||null),fu=fv&&typeof fv.fuel==='number'?fv.fuel:null,pumping=fu!==null&&AUD.lastFuel!=null&&AUD.lastFuelV===fv&&fu>AUD.lastFuel+1e-4;AUD.lastFuel=fu;AUD.lastFuelV=fv;
-  AUD.pumpS.g.gain.setTargetAtTime(pumping?.05:0,t,.1);AUD.pumpS.n.gain.setTargetAtTime(pumping?.08:0,t,.1)}
+  gainTo(AUD.pumpS.g,pumping?.05:0,t,.1);gainTo(AUD.pumpS.n,pumping?.08:0,t,.1)}
  sndMore(dt,v,t);
  // one-off sounds for what changed since the last frame
  const now=sndState();if(sndSeen){const o=sndSeen;
@@ -4189,12 +4195,12 @@ function sndMore(dt,v,t){const A=AUD,ms=performance.now();
  // footsteps
  if(!P.driving&&!P.pass){const d=A.stX==null?0:Math.hypot(P.x-A.stX,P.y-A.stY);A.stD=(A.stD||0)+(d<40?d:0);if(A.stD>15){A.stD=0;sfx('step')}}else A.stD=0;A.stX=P.x;A.stY=P.y;
  // off the road
- {const sp=v?Math.abs(v.v||0)/(KOF(v).vmax||5):0,off=v&&sp>.02&&rigOff();A.off.rum.gain.setTargetAtTime(off?.15+sp*.3:0,t,.15);A.off.grav.gain.setTargetAtTime(off?.05+sp*.15:0,t,.15)}
+ {const sp=v?Math.abs(v.v||0)/(KOF(v).vmax||5):0,off=v&&sp>.02&&rigOff();gainTo(A.off.rum,off?.15+sp*.3:0,t,.15);gainTo(A.off.grav,off?.05+sp*.15:0,t,.15)}
  // a ramp trailer's winch pulling a load on or off
- {let w=false;for(const l of Object.values(trl))if(l.ld&&l.ld.go&&Math.hypot(l.x-P.x,l.y-P.y)<8*S){w=true;break}A.winch.g.gain.setTargetAtTime(w?.05:0,t,.1)}
+ {let w=false;for(const l of Object.values(trl))if(l.ld&&l.ld.go&&Math.hypot(l.x-P.x,l.y-P.y)<8*S){w=true;break}gainTo(A.winch.g,w?.05:0,t,.1)}
  // buildings at work hum near you, and clank now and then
  {let near=0;if(!IN)for(const o of OFFICES){try{if(o.n&&YB[o.n]&&isGone(o.n))continue;const b=o.b;if(b&&b.built===false)continue;const cx=o.X+(o.w||0)/2,cy=o.Y+(o.rh||o.w||0)/2,dd=Math.hypot(cam.x-cx,cam.y-cy);near=Math.max(near,1-dd/(1.6*TS))}catch(e){}}
-  near=Math.max(0,near);A.hum.g.gain.setTargetAtTime(near*.05,t,.4);A.hum.n.gain.setTargetAtTime(near*.12,t,.4);A.clT=(A.clT||0)-dt;if(A.clT<=0){A.clT=1.2+Math.random()*3;if(near>.25)sfx('clank')}}
+  near=Math.max(0,near);gainTo(A.hum.g,near*.05,t,.4);gainTo(A.hum.n,near*.12,t,.4);A.clT=(A.clT||0)-dt;if(A.clT<=0){A.clT=1.2+Math.random()*3;if(near>.25)sfx('clank')}}
  // dusk and dawn
  {const dk=darkness()>.5;if(A.dk!=null&&dk!==A.dk)sfx(dk?'dusk':'dawn');A.dk=dk}
  musTick(t)}
