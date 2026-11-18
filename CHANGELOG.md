@@ -12,5 +12,5 @@ Version numbering starts here, with everything built so far:
 - Camera views on TAB; minimap with optional coordinates
 - Main menu, Esc menu, settings (controls, sound channels, touch), saves with names and pictures in the browser's database
 - Multiplayer by 5-letter code, chat with commands
-- Sounds, horn on H
+- Sounds, all made by the game's own code (no recordings): an engine for each vehicle (diesels, petrol car, ATV, forklift), engine start and stop, low fuel and out of fuel, bumps and crashes, brakes and air brakes, footsteps, off-road rumble, reversing beeper, horn on H, lights on and off, crane hydraulics and tools, hitching, lifting, winching, dumping, buildings at work, wind, birds, crickets, dusk and dawn, building and demolishing, money, goals, saving, players joining and leaving, quiet music
 - PC first, phones supported (joystick where you touch, button arc)
