@@ -4054,17 +4054,35 @@ function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkit
  // a noise source shared by the hydraulics and the cargo
  const nb=AUD.nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=nb.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
  const mk=(type,f,q,to)=>{const s=c.createBufferSource();s.buffer=nb;s.loop=true;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.value=0;s.connect(bp);bp.connect(g);g.connect(AUD.ch[to]);s.start();return g};
- // the engine, a diesel chug: a saw and a rumble of noise, pulsed at the firing rate (you can count the pulses at idle), through a low filter that opens as it revs
- {const lp=c.createBiquadFilter();lp.type='lowpass';lp.Q.value=1.2;const vol=c.createGain();vol.gain.value=0;lp.connect(vol);vol.connect(eng);
-  const saw=c.createOscillator();saw.type='sawtooth';saw.start();const ns=c.createBufferSource();ns.buffer=nb;ns.loop=true;ns.start();const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=180;bp.Q.value=.7;ns.connect(bp);
-  const mix=c.createGain();saw.connect(mix);const ng=c.createGain();ng.gain.value=1.4;bp.connect(ng);ng.connect(mix);
-  const am=c.createGain();am.gain.value=.5;const lfo=c.createOscillator();lfo.type='sawtooth';const dep=c.createGain();dep.gain.value=.5;lfo.connect(dep);dep.connect(am.gain);lfo.start();mix.connect(am);am.connect(lp);
-  AUD.e={saw,lfo,lp,bp,g:vol}}
+ // the engine: two buzzes (saw and square) and a rumble of noise, pulsed at the firing rate, through a low filter that opens as it revs; plus a turbo (hiss and whistle) for the big diesels. Each vehicle has its own mix (ENGS)
+ {const lp=c.createBiquadFilter();lp.type='lowpass';const vol=c.createGain();vol.gain.value=0;lp.connect(vol);vol.connect(eng);
+  const saw=c.createOscillator();saw.type='sawtooth';saw.start();const sq=c.createOscillator();sq.type='square';sq.start();const sg=c.createGain(),qg=c.createGain();saw.connect(sg);sq.connect(qg);
+  const ns=c.createBufferSource();ns.buffer=nb;ns.loop=true;ns.start();const bp=c.createBiquadFilter();bp.type='bandpass';ns.connect(bp);const ng=c.createGain();bp.connect(ng);
+  const am=c.createGain();const lfo=c.createOscillator();const dep=c.createGain();lfo.connect(dep);dep.connect(am.gain);lfo.start();sg.connect(am);qg.connect(am);ng.connect(am);am.connect(lp);
+  const ts=c.createBufferSource();ts.buffer=nb;ts.loop=true;ts.start();const tb=c.createBiquadFilter();tb.type='bandpass';tb.Q.value=9;ts.connect(tb);const tg=c.createGain();tg.gain.value=0;tb.connect(tg);tg.connect(eng);
+  const wh=c.createOscillator();wh.type='sine';wh.start();const wg=c.createGain();wg.gain.value=0;wh.connect(wg);wg.connect(eng);
+  AUD.e={saw,sq,sg,qg,bp,ng,am,lfo,dep,lp,g:vol,tb,tg,wh,wg,k:null}}
  AUD.pour=mk('bandpass',260,.8,'cargo');   // cargo pouring in or out: a rumble
  const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(AUD.ch.mach);ho.start();AUD.hyd={o:ho,g:hg,n:mk('highpass',1800,.5,'mach')};   // the boom's hydraulics: a whine and a hiss
  AUD.wind=mk('lowpass',380,.3,'amb');   // ambience: wind always, birds by day, crickets at night (in sndTick)
  const fo=c.createOscillator(),fg=c.createGain();fo.type='triangle';fo.frequency.value=120;fg.gain.value=0;fo.connect(fg);fg.connect(AUD.ch.mach);fo.start();AUD.pumpS={o:fo,g:fg,n:mk('bandpass',900,1.4,'mach')};   // the fuel pump
  sndVol()}catch(e){AUD.ctx=null}}
+// each vehicle's engine. fi: pulses a second at idle, fr: added at full revs; saw/sq/nz: how much buzz, square buzz and rumble; nf: the rumble's pitch; lp/lr/ll: the filter at idle, added by revs, added by throttle; dep: how hard it pulses; v/vr/vl: loudness at idle, added by revs, by throttle; tb: turbo
+const ENGS={
+ pickup:{n:'Pickup: diesel',fi:11,fr:34,w:'sawtooth',saw:1,sq:0,nz:1.4,nf:150,nr:250,lp:180,lr:520,ll:200,q:1.2,dep:.5,v:.26,vr:.12,vl:.12,tb:0},
+ minibus:{n:'Mini-bus: van diesel',fi:12.5,fr:36,w:'sawtooth',saw:.8,sq:.2,nz:1.1,nf:170,nr:260,lp:200,lr:560,ll:180,q:1.4,dep:.42,v:0.27,vr:0.14,vl:0.12,tb:.3},
+ dump:{n:'Dump truck: rough diesel',fi:9,fr:26,w:'sawtooth',saw:.9,sq:.2,nz:2,nf:120,nr:200,lp:150,lr:430,ll:220,q:1.6,dep:.55,v:.28,vr:.12,vl:.14,tb:.6},
+ crane:{n:'Crane truck: heavy diesel',fi:8.5,fr:22,w:'sawtooth',saw:1,sq:.1,nz:1.5,nf:110,nr:170,lp:160,lr:470,ll:200,q:2,dep:.45,v:0.2,vr:0.13,vl:0.13,tb:.5},
+ semi:{n:'Semi truck: big diesel',fi:7.5,fr:22,w:'sawtooth',saw:1,sq:.15,nz:1.6,nf:100,nr:170,lp:130,lr:400,ll:200,q:1.8,dep:.5,v:.3,vr:.1,vl:.1,tb:1},
+ forklift:{n:'Forklift: gas putter',fi:17,fr:36,w:'square',saw:.2,sq:.8,nz:.5,nf:300,nr:300,lp:260,lr:600,ll:200,q:5,dep:.55,v:0.22,vr:0.09,vl:0.09,tb:0},
+ atv:{n:'ATV: single-cylinder buzz',fi:20,fr:75,w:'square',saw:.5,sq:.6,nz:.7,nf:500,nr:900,lp:420,lr:1600,ll:400,q:4,dep:.6,v:0.24,vr:0.14,vl:0.14,tb:0},
+ car:{n:'Small car: petrol hum',fi:26,fr:85,w:'sine',saw:.7,sq:.15,nz:.5,nf:260,nr:500,lp:300,lr:1000,ll:300,q:1.5,dep:.2,v:0.22,vr:0.13,vl:0.11,tb:0}};
+// sets the engine sound: kind, revs r (0..1), throttle ld (0..1), running or not, at time t
+function engSet(kind,r,ld,on,t){const e=AUD.e;if(!e)return;const p=ENGS[kind]||ENGS.pickup;
+ if(e.k!==kind){e.k=kind;e.lfo.type=p.w;e.sg.gain.setTargetAtTime(p.saw,t,.05);e.qg.gain.setTargetAtTime(p.sq*.6,t,.05);e.ng.gain.setTargetAtTime(p.nz,t,.05);e.lp.Q.value=p.q;e.am.gain.setTargetAtTime(1-p.dep,t,.05);e.dep.gain.setTargetAtTime(p.dep,t,.05)}
+ const f=p.fi+r*p.fr;e.lfo.frequency.setTargetAtTime(f,t,.2);e.saw.frequency.setTargetAtTime(f*2,t,.2);e.sq.frequency.setTargetAtTime(f,t,.2);e.lp.frequency.setTargetAtTime(p.lp+r*p.lr+ld*p.ll,t,.2);e.bp.frequency.setTargetAtTime(p.nf+r*p.nr,t,.2);
+ e.g.gain.setTargetAtTime(on?p.v+r*p.vr+ld*p.vl:0,t,.15);
+ e.tb.frequency.setTargetAtTime(1800+r*2600,t,.6);e.wh.frequency.setTargetAtTime(1500+r*2200,t,.6);e.tg.gain.setTargetAtTime(on?p.tb*(r*ld*.5+r*.12):0,t,.5);e.wg.gain.setTargetAtTime(on?p.tb*(r*.006+r*ld*.006):0,t,.5)}
 // a bird call or a cricket chirp, made up each time
 function ambCall(night){const c=AUD.ctx,t=c.currentTime,out=AUD.ch.amb;if(night){const f=4200+Math.random()*500;for(let i=0;i<3+Math.floor(Math.random()*3);i++){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*.07);g.gain.linearRampToValueAtTime(.025,t+i*.07+.01);g.gain.exponentialRampToValueAtTime(.0001,t+i*.07+.05);o.connect(g);g.connect(out);o.start(t+i*.07);o.stop(t+i*.07+.06)}return}
  const f0=2200+Math.random()*1800,n=2+Math.floor(Math.random()*4);for(let i=0;i<n;i++){const o=c.createOscillator(),g=c.createGain(),at=t+i*(.09+Math.random()*.06),d=.06+Math.random()*.08;o.type='sine';o.frequency.setValueAtTime(f0*(1+Math.random()*.25),at);o.frequency.exponentialRampToValueAtTime(f0*(.7+Math.random()*.6),at+d);g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.03,at+.01);g.gain.exponentialRampToValueAtTime(.0001,at+d);o.connect(g);g.connect(out);o.start(at);o.stop(at+d+.02)}}
@@ -4072,7 +4090,7 @@ const chVol=k=>SET.sv&&k in SET.sv?SET.sv[k]:.8;
 function sndVol(){if(!AUD.ctx)return;const t=AUD.ctx.currentTime;AUD.m.gain.setTargetAtTime(SET.mute?0:SET.vol,t,.05);for(const[k]of SCH)AUD.ch[k].gain.setTargetAtTime(chVol(k),t,.05)}
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{sndInit();if(AUD.ctx&&AUD.ctx.state==='suspended')AUD.ctx.resume()},true));   // browsers only allow sound after a click or a key
 // a short sound: a click, a coin, a clunk
-const SCHOF={coin:'money',buy:'money',msg:'chat',clunk:'cargo',hitch:'mach',unhitch:'mach',lift:'mach',set:'cargo',tool:'mach',pick:'cargo',put:'cargo',door:'eng',enter:'ui',feet:'mach',goal:'ui',built:'ui',error:'ui',horn:'horn',beep:'horn',pump:'mach',switch:'eng'};
+const SCHOF={coin:'money',buy:'money',msg:'chat',clunk:'cargo',hitch:'mach',unhitch:'mach',lift:'mach',set:'cargo',tool:'mach',pick:'cargo',put:'cargo',door:'eng',lon:'eng',loff:'eng',enter:'ui',feet:'mach',goal:'ui',built:'ui',error:'ui',horn:'horn',beep:'horn',pump:'mach',switch:'eng'};
 function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[SCHOF[k]||'ui'];const c=AUD.ctx,t=c.currentTime,b=(f,dur,type,v,at=0,to)=>{const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t+at);if(to)o.frequency.exponentialRampToValueAtTime(to,t+at+dur);g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(v,t+at+.005);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);o.connect(g);g.connect(out);o.start(t+at);o.stop(t+at+dur+.02)};
  const nz=(dur,f,q,v,at=0,type='bandpass')=>{const n=c.createBufferSource();n.buffer=AUD.nb;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);n.connect(bp);bp.connect(g);g.connect(out);n.start(t+at);n.stop(t+at+dur+.05)};
  if(k==='click')b(1400,.04,'square',.05);
@@ -4094,6 +4112,8 @@ function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[SCHOF[
  else if(k==='built'){[523,659,784,1047].forEach((f,i)=>b(f,.35,'triangle',.12,i*.11));b(1568,.6,'sine',.08,.45)}   // a building finished
  else if(k==='error')b(150,.13,'square',.07,0,120);   // cannot do that
  else if(k==='horn'){b(340,.45,'sawtooth',.09);b(428,.45,'sawtooth',.08)}
+ else if(k==='lon'){b(1300,.025,'square',.06);b(2600,.05,'square',.06,.035);b(3900,.03,'sine',.03,.04)}   // lights on: a bright click up
+ else if(k==='loff'){b(1800,.03,'square',.05);b(700,.06,'square',.06,.035,500)}   // lights off: a duller click down
  else if(k==='switch'){b(2400,.025,'square',.06);b(1200,.04,'square',.05,.03)}   // the light switch
  else if(k==='beep')b(1050,.22,'square',.05);   // reversing beeper
  else if(k==='pump')nz(.2,900,1.5,.08)}
@@ -4102,8 +4122,8 @@ document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest&&e.target
 let sndCargo=null;
 function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
  const v=run&&P.driving&&T&&T.out?T:null,cab=run&&P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null;
- {const e=AUD.e,h=v&&/semi|crane|dump/.test(v.kind)?1.4:v&&v.kind==='forklift'?.75:1,thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn),ld=v?thr:.3,f=(11+r*34)/h;   /* r: how fast against its top speed; ld: throttle; h: lower and slower for the big ones, quicker for the forklift */
-  e.lfo.frequency.setTargetAtTime(f,t,.2);e.saw.frequency.setTargetAtTime(f*2,t,.2);e.lp.frequency.setTargetAtTime((180+r*520+ld*200)/Math.sqrt(h),t,.2);e.bp.frequency.setTargetAtTime(150+r*250,t,.2);e.g.gain.setTargetAtTime(on?.26+r*.12+ld*.12:0,t,.15)}
+ {const thr=v?Math.abs((K.up?1:0)-(K.down?1:0))||(JOY.on?1:0):0,vm=v?(KOF(v).vmax||5):5,r=v?Math.min(1,Math.abs(v.v||0)/vm):cab&&cab.ftOn?.12:0,on=v?(v.fuel===undefined||v.fuel>0):!!(cab&&cab.ftOn);   /* r: how fast against its top speed; the crane idles while its feet are down */
+  engSet(v?v.kind:cab?'crane':AUD.e.k||'pickup',r,v?thr:.3,on,t)}
  {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.05:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
  {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
   const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;AUD.pour.gain.setTargetAtTime(d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
@@ -4137,8 +4157,8 @@ function sndState(){let hitch=0,lifted=0,feet=false;const tool={};for(const v of
 let LBK='';function lightBtns(){if(!TOUCHUI)return;const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null,on=v&&(inCraneCab()?v.hl:v.lights),k=(v?v.id:'')+(on?1:0)+(inCraneCab()?'c':'');if(k===LBK)return;LBK=k;$('ltb').style.display=$('hrb').style.display=v?'':'none';$('ltb').style.background=on?'#c9a227':'';$('ltb').style.borderColor=on?'#ffd166':''}
 // L: in a vehicle's cab its lights (day or night); in the crane cab only the work light on the hook, the truck's own lights stay as they were left. Getting out on foot turns them off (lightsWatch)
 const inCraneCab=()=>P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT;
-function lightsToggle(){const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null;if(!v)return flash('Get in a vehicle to turn its lights on.');NET.last=0;sfx('switch');
- if(inCraneCab()){v.hl=!v.hl;flash(v.hl?'Work light on: it shines on the hook.':'Work light off.')}else{v.lights=!v.lights;flash(v.lights?'Lights on.':'Lights off.')}lightBtns()}
+function lightsToggle(){const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null;if(!v)return flash('Get in a vehicle to turn its lights on.');NET.last=0;
+ if(inCraneCab()){v.hl=!v.hl;sfx(v.hl?'lon':'loff');flash(v.hl?'Work light on: it shines on the hook.':'Work light off.')}else{v.lights=!v.lights;sfx(v.lights?'lon':'loff');flash(v.lights?'Lights on.':'Lights off.')}lightBtns()}
 let LWV=null;function lightsWatch(){const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null;if(LWV&&!v&&(LWV.lights||LWV.hl)){LWV.lights=false;LWV.hl=false;NET.last=0}LWV=v}   /* out on foot: the lights of what you left go off; moving between the truck's cab and the crane cab keeps them */
 function horn(){if(!(P.driving&&T&&T.out)&&!(P.pass&&P.pass.out))return;const t=performance.now();if(t-(AUD.hornT||0)<500)return;AUD.hornT=t;sfx('horn')}
 setApply();
