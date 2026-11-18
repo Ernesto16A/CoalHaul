@@ -2401,7 +2401,7 @@ const ROOF={
   RTH.solar(X+9,Y+14,42,30);RTH.solar(X+9,Y+50,42,30);RTH.vent(X+30,Y+108);RTH.sky(X+238,Y+18,24,30);RTH.dish(X+250,Y+110);RTH.vent(X+240,Y+70);
   return[X+140,Y+104]}};
 // an office from above: its roof inside its footprint, the way(s) in, the name board
-function paintOffice(o){const r=offRect0(o),X=r.x0,Y=r.y0,W=r.x1-r.x0,H=r.y1-r.y0,c=BCOL[o.n]||'#888888',dx=o.X+(o.w||150)/2;RA=(o.site?o.site.rot:0)*Math.PI/2;
+function paintOffice(o){if(o===SEEO)return;const r=offRect0(o),X=r.x0,Y=r.y0,W=r.x1-r.x0,H=r.y1-r.y0,c=BCOL[o.n]||'#888888',dx=o.X+(o.w||150)/2;RA=(o.site?o.site.rot:0)*Math.PI/2;
  try{let sg;onto(X,Y,W,H,()=>{sg=(ROOF[o.n]||ROOF.shop)(X,Y,W,H,c,o)});rEdge(X,Y,W,H,1.7);
   for(const d of o.doors?o.doors.map(d=>o.X+d):[dx])porch(d-20,Y+H-15,40,15,'S',c);if(o.eh&&o.n!=='shop')porch(dx-20,Y,40,15,'N',c);
   roofSign(sg[0],sg[1],o.label||'OFFICE',c,o.site)}finally{RA=0}}
@@ -3280,11 +3280,18 @@ function drawNight(){const D=darkness(),VL=LIVEMAP?[]:vehLights(D);if(D<.01||LIV
  lg.globalCompositeOperation='source-over';
  g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(LC,0,0);g.restore();
  g.save();g.globalCompositeOperation='lighter';for(const w of lamps){const gr=g.createRadialGradient(w[0],w[1],0,w[0],w[1],.9*u);gr.addColorStop(0,'rgba(255,236,170,'+(.55*D)+')');gr.addColorStop(1,'rgba(255,236,170,0)');g.fillStyle=gr;g.beginPath();g.arc(w[0],w[1],.9*u,0,7);g.fill()}g.restore();drawLampGlow(VL,D)}
-function draw(t){viewHalf();
- if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
- g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
- g.save();if(VROT()){g.translate(VW/2,VH/2);g.scale(Z,Z);g.rotate(VROT());g.translate(-cam.x,-cam.y)}else{const q=dpr*Z;g.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q))}   // the camera moves in whole device pixels: the picture stays crisp, and the ground chunks are copied straight across
- if(IN){drawInterior(t);drawPads(t);drawReach();drawPlayer();if(IN.o.inw){const r=offRect0(IN.o),gm=interiorGeo(IN.o);drawTestGrid(r.x0-gm.X0,r.y0-gm.Y0)}else drawTestGrid();g.restore();drawCrateWin();return}
+// inside a building with an open roof (SEETHRU): you stay on the map. The room is drawn where the building stands, the world all round it, and the roof is left off while you are in. The room keeps its own coordinates for everything that happens inside; r2w turns a point of the room into the map
+const SEETHRU=new Set(['power plant']);let SEEO=null;
+const seeThru=o=>!!(o&&o.inw&&o.site&&o.doors&&SEETHRU.has(o.n));
+const r2w=(o,x,y)=>{const gm=interiorGeo(o);return uRot(o.site,o.X+(x-gm.X0),o.Y+(y-gm.Y0))};
+function drawSeeThru(t){const o=IN.o,gm=interiorGeo(o),U=o.site,in0=IN,px=P.x,py=P.y,pa=P.a,cx=cam.x,cy=cam.y,[ux,uy]=uC(U),[ox,oy]=uOff(U);
+ g.save();g.translate(gm.X0-o.X,gm.Y0-o.Y);g.translate(ux,uy);g.rotate(-U.rot*Math.PI/2);g.translate(-ux,-uy);g.translate(-ox,-oy);   // the map, turned into the room's frame
+ const wp=r2w(o,px,py),wc=r2w(o,cx,cy);IN=null;SEEO=o;P.x=wp[0];P.y=wp[1];P.a=pa+U.rot*Math.PI/2;cam.x=wc[0];cam.y=wc[1];
+ try{worldLayers(t)}finally{IN=in0;SEEO=null;P.x=px;P.y=py;P.a=pa;cam.x=cx;cam.y=cy;g.restore()}}
+// other players in the same room
+function drawPeersIn(){const r=NET.room;if(!r||!IN)return;try{for(const p of r.peers()){const q=p.presence;if(p.sameTab||!q||!q.in||q.inb!==IN.o.n||typeof q.rx!=='number')continue;const hue=q.col||(typeof q.hue==='number'?q.hue:200);drawPerson(q.rx,q.ry,q.ra||0,hue);txt((q.nm&&q.nm.trim())||'Player',q.rx,q.ry-S*1.7,'#fff','bold 10px sans-serif')}}catch(e){}}
+// everything on the map, from the ground up to the night and the players' names (also drawn around a building you are inside, through its open roof)
+function worldLayers(t){
  drawGround();drawBuildings(t);drawInfo(t);drawPads(t);
  drawGrid();drawLogs();for(const o of ATT)if(!o.fk&&!o.on&&!o.onP)drawAtt(o);
  for(const p of PALS)if(!p.fk&&!p.on)drawPallet(p);   // pallets lie on the ground, under the vehicles
@@ -3297,7 +3304,13 @@ function draw(t){viewHalf();
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
- drawSeats();drawPlayer();drawTop();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');drawTestGrid();
+ drawSeats();drawPlayer();drawTop();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
+function draw(t){viewHalf();
+ if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
+ g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
+ g.save();if(VROT()){g.translate(VW/2,VH/2);g.scale(Z,Z);g.rotate(VROT());g.translate(-cam.x,-cam.y)}else{const q=dpr*Z;g.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q))}   // the camera moves in whole device pixels: the picture stays crisp, and the ground chunks are copied straight across
+ if(IN){if(seeThru(IN.o))drawSeeThru(t);drawInterior(t);drawPads(t);drawReach();drawPeersIn();drawPlayer();if(IN.o.inw){const r=offRect0(IN.o),gm=interiorGeo(IN.o);drawTestGrid(r.x0-gm.X0,r.y0-gm.Y0)}else drawTestGrid();g.restore();drawCrateWin();return}
+ worldLayers(t);drawTestGrid();
  const tg=objective(),O=P.driving&&T.out?T:P;
  if(tg){const dx=tg.x-O.x,dy=tg.y-O.y;if(Math.hypot(dx,dy)>170){const an=Math.atan2(dy,dx);g.save();g.translate(O.x+Math.cos(an)*100,O.y+Math.sin(an)*100);g.rotate(an);g.fillStyle=tg.c;g.beginPath();g.moveTo(16,0);g.lineTo(-8,-11);g.lineTo(-8,11);g.fill();g.restore()}}
  g.restore();
@@ -3697,6 +3710,7 @@ const tog=(id,a)=>{const c=$(id),w=a.trim().toLowerCase();c.checked=w==='on'?tru
 function chatCmd(t){const m=t.slice(1).match(/^(\S+)\s*(.*)$/);const c=m&&CMDS[m[1].toLowerCase()];if(!c)return chatLine('Unknown command '+esc(t.split(' ')[0])+'. Type /help.',1);try{c[2](m[2]||'')}catch(e){chatLine('That did not work: '+esc(e.message),1)}}
 function netSend(t){chatPoll();const r=NET.room;if(r&&t-RSTT>1000){RSTT=t;rosterTick(r)}if(!r||t-NET.last<66)return;NET.last=t;
  const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,nm:CHAT.name,ch:CHAT.out.length?CHAT.out:null,col:MYCOL||null,v:null,t:null,d:drv?T.id:null,s:P.pass?1:0,pv:P.pass?P.pass.id:null,sd:P.pass?P.seatSd:null,pid:PID};
+ if(IN&&seeThru(IN.o)){const w=r2w(IN.o,P.x,P.y);pr.x=Math.round(w[0]);pr.y=Math.round(w[1]);pr.inb=IN.o.n;pr.rx=Math.round(P.x);pr.ry=Math.round(P.y);pr.ra=+P.a.toFixed(2)}
  if(drv&&!r.shared){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
   const tr=T.tr;if(tr)pr.t={k:tr.kind,col:tr.color||null,x:Math.round(tr.x),y:Math.round(tr.y),b:+tr.b.toFixed(2)}}
  try{r.presence(pr).catch(()=>{})}catch(e){}}
