@@ -1498,7 +1498,7 @@ function itemHint(){const t=itemTarget();if(!t){const h=heldList();if(!h.length|
  if(t.k==='bootopen')return'Click to open the boot of the '+entName(t.e)+'.';if(t.k==='bootclose')return'Click to close the boot of the '+entName(t.e)+'.';
  if(t.k==='cabpick')return'Click to pick up the cables (both hands).';if(t.k==='cslotpick')return'Click to take the cables off the crane truck.';if(t.k==='cslotput')return'Click to put the cables in their place on the crane truck.';if(t.k==='cabput')return'Click to put the cables on this flatbed place.';if(t.k==='palput')return'Click to put the '+(t.it.type==='barrier'?'traffic barrier':'pallet')+' on this flatbed place.';if(t.k==='barpick')return'Click to take the traffic barrier (both hands).';
  if(t.k==='incrate')return'Click to put the '+ITEMS[t.it.type].n+' in the crate ('+cn(t.crate)+'/9).';if(t.k==='cfull')return'That crate is full (9/9).';if(t.k==='palpick')return'Click to pick the pallet up with both hands'+((t.pl.st||1)>1?' (takes the top one of '+t.pl.st+')':'')+'.';if(t.k==='palstack')return'Click to stack the pallet on this one ('+(t.pl.st||1)+'/'+PSTK+').';if(t.k==='pstackfull')return'That stack is full ('+PSTK+' pallets).';if(t.k==='onpal')return'Click to put the crate on the pallet.';if(t.k==='palcrate')return'Click to take the crate off the pallet'+R+'.';
- return (t.k==='taken'?'That slot is taken: hover an empty one.':t.k==='full'?'Your hands are full.':t.k==='busy'?'Unhitch the trailer (C) before taking the hitch off.':t.k==='mount'?'Click to mount the hitch on the '+entName(t.e)+'.':t.k==='take'?'Click to take the hitch off the '+entName(t.e)+'.':t.k==='ground'?'Click to pick up the '+ITEMS[t.it.type].n+'.':t.k==='put'?'Click to put the '+ITEMS[t.it.type].n+' into the slots.':'Click to take an item out of the slots.')+R}
+ return (t.k==='taken'?'That slot is taken: hover an empty one.':t.k==='full'?'Your hands are full.':t.k==='busy'?'Unhitch the trailer (C) before taking the hitch off.':t.k==='mount'?'Click to mount the hitch on the '+entName(t.e)+'.':t.k==='take'?'Click to take the hitch off the '+entName(t.e)+'.':t.k==='ground'?'Click to pick up the '+ITEMS[t.it.type].n+(t.it.type==='psign'?'. Space: choose its icon.':'.'):t.k==='put'?'Click to put the '+ITEMS[t.it.type].n+' into the slots.':'Click to take an item out of the slots.')+R}
 // the reach circle around the player on foot, and a ring on what the mouse is over (yellow = in reach, red = too far)
 function drawReach(){if(P.driving||P.pass)return;
  g.fillStyle='rgba(255,255,255,.05)';g.beginPath();g.arc(P.x,P.y,RCH(),0,7);g.fill();g.strokeStyle='rgba(255,255,255,.2)';g.lineWidth=1;g.stroke();
@@ -1548,7 +1548,18 @@ addEventListener('pointerup',e=>{if(!DRAG||!CW)return DRAG=null;const c=CW.c,it=
  if(why)return flash(why==='nostore'?'Not here: put things in the storage room or on a shelf.':why==='road'?'Not inside a building or wall.':why==='taken'?'That square is taken: one thing per square.':'Too far away. Drop it on a square inside your reach.');
  c.items[from]=null;it.x=(i+.5)*S;it.y=(j+.5)*S;GI.push(it);flash('Put on the ground: '+ITEMS[it.type].n+'.')});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&CW){CW=null;DRAG=null}});
-function drawCrateWin(){cwCheck();if(!CW)return;const b=cwBox();if(!b)return;const c=CW.c,hv=cwCell();g.save();g.setTransform(dpr,0,0,dpr,0,0);
+// ----- the sign's window: Space on the power plant's sign (in reach) opens it over the sign: the 8 cargo icons, click one and the sign shows it. Space, Esc or walking away closes it -----
+let SW=null;
+function signWin(it){const old=document.getElementById('signwin');if(old)old.remove();SW=it;if(!it)return;
+ const d=document.createElement('div');d.id='signwin';d.style.cssText='position:fixed;z-index:40;background:rgba(20,22,28,.94);border:1.5px solid '+BCOL['power plant']+';border-radius:10px;padding:8px 9px;font:12px system-ui,sans-serif;color:#eee;transform:translate(-50%,-100%);pointer-events:auto;box-shadow:0 6px 20px #0008';
+ const paint=()=>{d.innerHTML='<div style="font-weight:700;margin-bottom:6px;text-align:center">Sign icon</div><div style="display:grid;grid-template-columns:repeat(4,auto);gap:5px">'+Object.keys(CGK).map((k,i)=>'<button data-i="'+i+'" title="'+CGK[k][0]+'" style="padding:2px;line-height:0;border-radius:7px;cursor:pointer;border:2px solid '+((plant.sic|0)===i?'#fff':'transparent')+';background:'+((plant.sic|0)===i?'#2f4d63':'#1b2229')+'">'+cgImg(k,30).replace('margin-right:4px','margin:0')+'</button>').join('')+'</div>'};
+ paint();d.onclick=e=>{const b=e.target.closest('button');if(!b)return;plant.sic=+b.dataset.i|0;NET.last=0;sfx('click');paint();flash('The sign shows '+CGK[Object.keys(CGK)[plant.sic]][0].toLowerCase()+'.')};d.onpointerdown=e=>e.stopPropagation();
+ document.body.appendChild(d);signWinTick()}
+function signWinTick(){if(!SW)return;const d=document.getElementById('signwin');if(!d){SW=null;return}const it=SW;
+ if(!GI.includes(it)||it.fk||P.driving||P.pass||Math.hypot(it.x-P.x,it.y-P.y)>RCH()+S*1.5)return signWin(null);
+ const dx=it.x-cam.x,dy=it.y-cam.y,rr=VROT(),c=Math.cos(rr),sn=Math.sin(rr),ux=dx*c-dy*sn,uy=dx*sn+dy*c;d.style.left=(VW/2+ux*Z)+'px';d.style.top=(VH/2+uy*Z-S*.8*Z)+'px'}
+addEventListener('keydown',e=>{if(e.key==='Escape'&&SW)signWin(null)});
+function drawCrateWin(){signWinTick();cwCheck();if(!CW)return;const b=cwBox();if(!b)return;const c=CW.c,hv=cwCell();g.save();g.setTransform(dpr,0,0,dpr,0,0);
  g.strokeStyle='rgba(255,209,102,.7)';g.lineWidth=1.5;g.beginPath();g.moveTo(b.q[0],b.q[1]-8);g.lineTo(b.x+b.W/2,b.y+b.W);g.stroke();   // pointing at its crate
  g.fillStyle='rgba(20,22,28,.92)';g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.roundRect(b.x,b.y,b.W,b.W,6);g.fill();g.stroke();
  for(let k=0;k<9;k++){const x=b.x+CWG+(k%3)*(CWC+CWG),y=b.y+CWG+Math.floor(k/3)*(CWC+CWG);g.fillStyle=k===hv?'rgba(255,209,102,.35)':'#3a3d44';g.fillRect(x,y,CWC,CWC);g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,CWC-1,CWC-1);
@@ -1712,7 +1723,8 @@ function spaceKey(){   // Space: closes a panel, works the pad you stand on, ope
  if(P.pass){if(KOF(P.pass).trunk)setBoot(P.pass,!P.pass.boot);return}   // a passenger works the boot lid too
  const q=padAt();if(q)return upgrade(q);
  if(CW){CW=null;DRAG=null;return}
- const t=itemTarget(),c=targetCrate(t);if(c){if(t.far)return flash('Too far away. Step closer to open the crate.');CW={c}}}
+ if(SW){signWin(null);return}
+ const t=itemTarget(),c=targetCrate(t);if(t&&t.it&&t.it.type==='psign'&&!t.it.fk&&GI.includes(t.it)){if(t.far)return flash('Too far away. Step closer to the sign.');return signWin(t.it)}if(c){if(t.far)return flash('Too far away. Step closer to open the crate.');CW={c}}}
 const onVeh=(v,m)=>{const l=loc(m[0],m[1],v.x,v.y,v.a),k=KOF(v);return l[0]>=k.b0*S&&l[0]<=k.b1*S&&Math.abs(l[1])<=(k.hw||1.2)*S};   // the mouse over a vehicle's body
 // on foot with a canister in hand: a click on a vehicle's cab (or anywhere on it, when it has no flatbed) pours it into the tank
 function pourTarget(){if(P.driving||P.pass||IN)return null;const c=heldList().find(x=>x.type==='canister'),m=mouseWorld();if(!c||!m)return null;
