@@ -3905,6 +3905,15 @@ const SAVEMIG=[
 function migrateSave(d){const from=verN(d.ver||'0.0.0');for(const m of SAVEMIG)if(from<verN(m.to))try{m.f(d)}catch(e){console.warn('save step',m.to,e)}
  if(Array.isArray(d.e))d.e=d.e.filter(r=>r&&typeof r.id==='string'&&(r.x===undefined||Number.isFinite(r.x))&&(r.y===undefined||Number.isFinite(r.y))).filter(r=>r.k!=='v'||TKINDS[r.kind]).filter(r=>r.k!=='t'||TRL[r.kind]);   // damaged records, and vehicles and trailers the game no longer has
  d.roster=d.roster||{};return d}
+// after a save from another version is put back: a building may have grown or moved since, so whatever now stands inside one (a vehicle, a trailer, a pallet, an item, a log, an attachment, the player) is moved just outside its nearest wall
+function unstick(){let n=0;const rs=OFFICES.filter(o=>{try{const b=o.b;return!(b&&b.built===false)&&!(o.n in YB&&isGone(o.n))}catch(e){return false}}).map(o=>offRect(o));
+ const out=e=>{for(const r of rs){if(!(e.x>r.x0-4&&e.x<r.x1+4&&e.y>r.y0-4&&e.y<r.y1+4))continue;const d=[[e.x-r.x0,-1,0],[r.x1-e.x,1,0],[e.y-r.y0,0,-1],[r.y1-e.y,0,1]].sort((a,b)=>a[0]-b[0])[0],m=36;
+  if(d[1]<0)e.x=r.x0-m;else if(d[1]>0)e.x=r.x1+m;else if(d[2]<0)e.y=r.y0-m;else e.y=r.y1+m;n++;return true}return false};
+ for(const v of Object.values(veh))if(v.out!==false&&!v.fk&&out(v)&&v.tr){let q=v.tr;while(q){q.x=v.x;q.y=v.y;q=q.tr}}
+ for(const t of Object.values(trl))if(!t.coupled&&!t.fk)out(t);
+ for(const A of[PALS,GI,LG,ATT])for(const e of A)if(!e.fk&&!e.on&&!e.st)out(e);
+ if(!IN&&!P.driving&&!P.pass&&out(P)){cam.x=P.x;cam.y=P.y}
+ return n}
 const saveNewer=d=>d&&d.ver&&verN(d.ver)>verN(VER);
 function gameSave(){const d=netApi().snap();d.v=1;d.ver=VER;if(SAVENM)d.name=SAVENM;d.t=Date.now();d.me={x:P.x,y:P.y,a:P.a,drv:P.driving&&T?T.id:null,in:IN?IN.o.n:null,col:MYCOL};d.story={fuel:STORY.fuel,hitch:STORY.hitch,trl:STORY.trl,d:STORY.d,made:STORY.made};return d}
 // ---- where the saves live: the browser's database (IndexedDB), which has room to spare and says how much it may use. The game keeps a copy of every save in memory (SV), so reading is instant; writing goes to the database in the background.
@@ -4289,7 +4298,7 @@ function applyStartLayout(){const L=START_LAYOUT,acts=[],ns=Object.keys(L.at);
  START=startAt();const v=Object.values(veh).find(q=>q.starter);   // the starting pickup and the player stand in the garage lot again
  if(v){v.x=START.x;v.y=START.y;v.a=START.a;const kd=KOF(v),ca=[Math.cos(START.a),Math.sin(START.a)],o=(kd.b1-1.2)*S;P.driving=false;P.x=START.x+ca[0]*o-ca[1]*2.1*S;P.y=START.y+ca[1]*o+ca[0]*2.1*S;P.a=START.a;cam.x=P.x;cam.y=P.y}}
 SVREADY.then(()=>{
-try{const raw=svGet(PENDK);if(raw){svDel(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=migrateSave(JSON.parse(raw));let ok=true;try{netApi().restore(D)}catch(e){ok=false;console.warn(e)}if(ok){if(D.name)SAVENM=D.name;if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash(saveNewer(D)?'Game loaded. It was saved with a newer version ('+D.ver+'): update the game if something is missing.':'Game loaded'+(D.ver&&D.ver!==VER?' (saved with '+D.ver+', brought up to '+VER+').':'.'))}else{applyStartLayout();flash('That save could not be put back, so a new map started. The save itself is untouched.')}}else applyStartLayout()}catch(e){}
+try{const raw=svGet(PENDK);if(raw){svDel(PENDK);try{sessionStorage.setItem('coalhaul.loaded','1')}catch(e){}const D=migrateSave(JSON.parse(raw));let ok=true;try{netApi().restore(D)}catch(e){ok=false;console.warn(e)}if(ok){if(D.ver!==VER)try{unstick()}catch(e){}if(D.name)SAVENM=D.name;if(D.story)Object.assign(STORY,D.story,{d:D.story.d||{},made:D.story.made||{}});flash(saveNewer(D)?'Game loaded. It was saved with a newer version ('+D.ver+'): update the game if something is missing.':'Game loaded'+(D.ver&&D.ver!==VER?' (saved with '+D.ver+', brought up to '+VER+').':'.'))}else{applyStartLayout();flash('That save could not be put back, so a new map started. The save itself is untouched.')}}else applyStartLayout()}catch(e){}
 try{if(sessionStorage.getItem('coalhaul.loaded')){AUD.pend='loaded';sessionStorage.removeItem('coalhaul.loaded');MENU=false;document.body.classList.remove('inmenu');netStart('host')}else{let bm=null;try{bm=sessionStorage.getItem('coalhaul.msg');sessionStorage.removeItem('coalhaul.msg')}catch(e){}if(bm)mainMenu(null,bm);else{const j=new URLSearchParams(location.search).get('join');if(j&&!IN_CLAUDE)mainMenu('join',null,j.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,5));else mainMenu()}}}catch(e){mainMenu()}
 });   // the saves are read from the database first
 requestAnimationFrame(loop);
