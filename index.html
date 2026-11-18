@@ -2348,7 +2348,7 @@ setInterval(()=>{if(panelOpen&&panelMode==='pctl')renderGarage()},1000);   // th
 function yardOf(it){if(it.rm)return it.rm;const i=LOTS.findIndex(l=>l.x0!==undefined&&it.x>l.x0&&it.x<l.x1&&it.y>l.y0&&it.y<l.y1);return i>=0?LOTK[i]:null}
 // what a yard keeps of a cargo: [amount, room] (for a site: delivered and needed), or null if that yard keeps none of it
 function yardStore(n,k){const B={mine,'power plant':plant,lumberyard:lumber,sawmill,quarry,'iron mine':iron,crusher,factory,foundry}[n];
- if(B&&B.built===false&&B.reqs){const q=reqOf(B,k);if(!q)return null;const f=yardFull(n,k);return[q.got,f?f[1]:q.need]}
+ if(B&&B.built===false&&B.reqs){const q=reqOf(B,k),f=yardFull(n,k);return q&&f?[q.got,f[1]]:null}   // a site: what has come in against the room the finished building will have; a cargo the finished building will not keep shows nothing (light off, bar empty)
  return yardFull(n,k)}
 const inZ=(o,z)=>Math.abs(o.x-z.x)<z.w/2&&Math.abs(o.y-z.y)<z.h/2,onPad=(z,type)=>GI.filter(it=>!it.fk&&!it.rm&&it.type===type&&inZ(it,z)).length,palsOn=(z,f)=>PALS.filter(p=>!p.fk&&!p.on&&inZ(p,z)&&f(p)).length;
 function yardFull(n,k){const m={mine:{coal:[mine.stock,mine.cap]},'power plant':{coal:[plant.stock,plant.cap]},lumberyard:{logs:[lumber.stock,lumber.cap]},
