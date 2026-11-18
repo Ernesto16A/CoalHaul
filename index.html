@@ -214,7 +214,7 @@ function nearRoad(x,y,m){const c=Math.floor(x/TS),r=Math.floor(y/TS);
 
 // ---------- buildings & economy ----------
 let power=0,plantRun=false,plantOn=true,lumberOn=true,sawOn=true,factoryOn=true,foundryOn=true,quarryOn=true,ironOn=true,crusherOn=true;   // plantOn: the lever in the plant's building; off, the plant burns no coal and gives no power
-const mine={sgn:0,dsk:0,sw:1,stock:0,cap:50,lvl:0,rlvl:0,rate:.1,name:'Coal mine',unit:'t'};   // sw: its main switch (off: no coal is dug)   // the coal mine regenerates 0.1 t per second
+const mine={sgn:0,dsk:0,sw:0,stock:0,cap:50,lvl:0,rlvl:0,rate:.1,name:'Coal mine',unit:'t'};   // sw: its main switch (off: no coal is dug); a new game starts with it off   // the coal mine regenerates 0.1 t per second
 const plant={built:false,need:10,got:0,stock:0,cap:50,lvl:0,burn:1,sgn:0,sic:0,dsk:0,lpnw:1,lpne:1,lpsw:1,lpse:1,lpg:1,name:'Power plant',unit:'t'};   // sgn: its sign has been made
 const lumber={sgn:0,built:false,need:10,got:0,stock:0,prog:0,ylvl:0,get cap(){const z=lzLay();return Math.floor(z.w/LOGCX+1e-6)*Math.floor(z.h/LOGCY+1e-6)},lvl:0,rate:.8,name:'Lumberyard',unit:'logs'};
 // the lumberyard has two layouts: as a construction site the coal is dumped in the middle of the lot; once built it is laid out like the power plant (building at the lot's +140,+160, board at +20,+20, log station at +640,+160)
@@ -3392,6 +3392,7 @@ function hasItem(t){const inC=c=>c&&(c.type===t||(c.items&&c.items.some(x=>x&&x.
 const siteG=(id,ch,b,name,lot,hint)=>({id,ch,t:'Build the '+name,hint,done:()=>b.built,prog:()=>reqTxt(b),dest:lot,site:b});
 const buyG=(id,ch,t,hint,cost,lot,done)=>({id,ch,t,hint,done,cost,dest:lot});
 const GOALS=[
+ {id:'mineOn',ch:1,t:'Switch the coal mine on',hint:'The coal mine starts switched off and empty. Walk into the mine and click the main switch on its back wall (or press Space at the control desk by the door). It then digs 0.1 t of coal a second.',done:()=>!!mine.sw||plant.built,dest:0},
  {id:'coal5',ch:1,t:'Deliver 5 t of coal to the power plant site',hint:'Drive to the coal mine, park on its loading pad and hold Space. Then unload on the power plant site\'s pad the same way.',done:()=>plant.built||reqOf(plant,'coal').got>=5-1e-6,prog:()=>reqOf(plant,'coal').got.toFixed(1)+' / 5 t',dest:1,site:plant,cap:5},
  {id:'fuel',ch:1,t:'Fill up at the fuel station',hint:'Park on a FUEL square at the fuel station and wait until the tank is full.',done:()=>STORY.fuel||plant.built,dest:6},
  siteG('plant',1,plant,'power plant',1,'Keep bringing coal. The power plant runs every other building.'),
@@ -4112,6 +4113,7 @@ let SAVENM='';   // the name of the game being played: the one it was last saved
 const verN=v=>{const p=String(v||'0').split('.').map(x=>parseInt(x)||0);return p[0]*1e6+(p[1]||0)*1e3+(p[2]||0)};   // '0.1.12' -> 1012
 const SAVEMIG=[
  // {to:'0.2.0',f:d=>{ ... change d ... }},   e.g. a renamed vehicle kind, a moved building
+ {to:'0.1.5',f:d=>{if(d.s&&!('mine.sw' in d.s))d.s['mine.sw']=1}},   // the mine got its main switch: older saves keep it digging
 ];
 function migrateSave(d){const from=verN(d.ver||'0.0.0');for(const m of SAVEMIG)if(from<verN(m.to))try{m.f(d)}catch(e){console.warn('save step',m.to,e)}
  if(Array.isArray(d.e))d.e=d.e.filter(r=>r&&typeof r.id==='string'&&(r.x===undefined||Number.isFinite(r.x))&&(r.y===undefined||Number.isFinite(r.y))).filter(r=>r.k!=='v'||TKINDS[r.kind]).filter(r=>r.k!=='t'||TRL[r.kind]);   // damaged records, and vehicles and trailers the game no longer has
