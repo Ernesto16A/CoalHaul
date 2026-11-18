@@ -3286,9 +3286,16 @@ function draw(t){viewHalf();
  const tg=objective(),O=P.driving&&T.out?T:P;
  if(tg){const dx=tg.x-O.x,dy=tg.y-O.y;if(Math.hypot(dx,dy)>170){const an=Math.atan2(dy,dx);g.save();g.translate(O.x+Math.cos(an)*100,O.y+Math.sin(an)*100);g.rotate(an);g.fillStyle=tg.c;g.beginPath();g.moveTo(16,0);g.lineTo(-8,-11);g.lineTo(-8,11);g.fill();g.restore()}}
  g.restore();
- if(!LIVEMAP&&(VH>420||TOUCHUI)){const mw=TOUCHUI?Math.min(130,VW*.24):Math.min(200,VW*.34),s=mw/(TOUCHUI?2200:2800),mh=mw*.78,mx=VW-mw-(TOUCHUI?12:10),my=TOUCHUI?GH+62:VH-mh-10;MM={x:mx,y:my,w:mw,h:mh};if(TOUCHUI){const hb=Math.round(my+mh);if(hb!==HUDB){HUDB=hb;document.documentElement.style.setProperty('--hudb',hb+'px')}}drawMap(mx,my,mw,mh,s,mw>=170,false)}
+ if(!LIVEMAP&&(VH>420||TOUCHUI)){const mw=TOUCHUI?Math.min(130,VW*.24):Math.min(200,VW*.34),s=mw/(TOUCHUI?2200:2800),mh=mw*.78,mx=VW-mw-(TOUCHUI?12:10),my=TOUCHUI?GH+62:VH-mh-10;MM={x:mx,y:my,w:mw,h:mh};if(TOUCHUI){const hb=Math.round(my+mh);if(hb!==HUDB){HUDB=hb;document.documentElement.style.setProperty('--hudb',hb+'px')}}drawMap(mx,my,mw,mh,s,mw>=170,false);if(SET.coords)drawCoords(mx,my,mw,mh)}
  if(!LIVEMAP)drawCrateWin()}
 let bigMap=false,MM=null;
+// the coordinates of where you are (you, or what you drive), on a strip along the bottom of the minimap: world units, the tile (320 units) and the square in it (20 units). Settings → Display
+function drawCoords(mx,my,mw,mh){const me=mapMe(),x=Math.round(me[0]),y=Math.round(me[1]),c=Math.floor(x/TS),r=Math.floor(y/TS),sx=Math.floor((x-c*TS)/S),sy=Math.floor((y-r*TS)/S);
+ const l1='x '+x+'  y '+y,l2='tile '+c+','+r+'  sq '+sx+','+sy;let fs=TOUCHUI?10:11;g.save();g.font='600 '+fs+'px ui-monospace,Menlo,Consolas,monospace';
+ const one=g.measureText(l1+'   '+l2).width<=mw-10,lh=fs+3,h=(one?1:2)*lh+5;   /* one line when it fits, otherwise two */
+ g.beginPath();g.rect(mx,my+mh-h,mw,h);g.clip();g.fillStyle='#0b120cd0';g.fillRect(mx,my+mh-h,mw,h);g.textBaseline='middle';
+ const put=(t,yy,col)=>{g.fillStyle=col;g.fillText(t,mx+(mw-g.measureText(t).width)/2,yy)};
+ if(one)put(l1+'   '+l2,my+mh-h/2+.5,'#e8e8ea');else{put(l1,my+mh-h+2.5+lh/2,'#e8e8ea');put(l2,my+mh-h+2.5+lh*1.5,'#b9c4cf')}g.restore()}
 function drawMap(mx,my,mw,mh,s,big,full){
   g.save();g.translate(mx,my);
   const rr=(x,y,w,h,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath()};
@@ -3934,7 +3941,7 @@ function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · $'+Mat
 // ---------- settings: kept in this browser ----------
 const KEYDEF={up:'w',down:'s',left:'a',right:'d',action:' ',hitch:'c',select:'v',dump:'g',turn:'r',hookl:'q',hookr:'e',camera:'tab',map:'m',goals:'j'};
 const KEYN={up:'Forward / up',down:'Back / down',left:'Left',right:'Right',action:'Action',hitch:'Hitch · crane tool',select:'Pick trailer · hook',dump:'Dump cargo',turn:'Turn',hookl:'Crane hook ⟲',hookr:'Crane hook ⟳',camera:'Camera',map:'Big map',goals:'All goals'};
-const SETDEF={cam:'north',tap:320,stick:140,night:1,low:false,vol:.7,mute:false,sv:{},keys:{}};
+const SETDEF={cam:'north',tap:320,stick:140,night:1,low:false,coords:false,vol:.7,mute:false,sv:{},keys:{}};
 const SET=(()=>{let s={};try{s=JSON.parse(localStorage.getItem('coalhaul.settings')||'{}')||{}}catch(e){}return Object.assign({},SETDEF,s,{keys:Object.assign({},KEYDEF,s.keys||{})})})();
 function setSave(){try{localStorage.setItem('coalhaul.settings',JSON.stringify(SET))}catch(e){}setApply()}
 function setApply(){LOWG=!!SET.low;sndVol();document.documentElement.style.setProperty('--js',SET.stick+'px');try{rs()}catch(e){}keyTable()}
@@ -3949,7 +3956,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
   '<label style="font-size:12px;opacity:.75">Your name</label><input id="st-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 4px">'+
   SEC('Sound')+R('<b>Volume</b>',rng('st-vol',0,1,.05,SET.vol))+R('Mute all','<input id="st-mute" type="checkbox"'+(SET.mute?' checked':'')+' style="width:20px;height:20px">')+SCH.map(([k,n,d])=>R(n+'<br><small style="opacity:.55">'+d+'</small>','<input data-ch="'+k+'" type="range" min="0" max="1" step=".05" value="'+chVol(k)+'" style="width:150px">')).join('')+
   SEC('Camera')+R('When driving, start in',sel('st-cam',[['north','north up'],['follow','turning with the vehicle']],SET.cam))+'<div style="font-size:12px;opacity:.6">The crane cab always starts in its own view. TAB switches.</div>'+
-  SEC('Display')+R('Night darkness',rng('st-night',0,1,.05,SET.night))+R('Lighter graphics (slow phones)','<input id="st-low" type="checkbox"'+(SET.low?' checked':'')+' style="width:20px;height:20px">')+
+  SEC('Display')+R('Night darkness',rng('st-night',0,1,.05,SET.night))+R('Lighter graphics (slow phones)','<input id="st-low" type="checkbox"'+(SET.low?' checked':'')+' style="width:20px;height:20px">')+R('Coordinates on the minimap<br><small style="opacity:.55">where you are: x y, tile, square</small>','<input id="st-crd" type="checkbox"'+(SET.coords?' checked':'')+' style="width:20px;height:20px">')+
   SEC('Touch')+R('Tap time (ms)<br><small style="opacity:.6">longer: easier taps, slower stick</small>',rng('st-tap',150,600,10,SET.tap)+'<small id="st-tapv" style="width:34px">'+SET.tap+'</small>')+R('Stick size',rng('st-stick',100,200,5,SET.stick))+
   SEC('Keys')+'<div style="font-size:12px;opacity:.6;margin-bottom:4px">Click a key, then press the new one (Esc: keep it). Arrows always move.</div>'+
   Object.keys(KEYDEF).map(a=>R(KEYN[a],'<button data-key="'+a+'" style="'+UI.btn+';min-width:86px;padding:6px 10px">'+keyLabel(SET.keys[a])+'</button>')).join('')+
@@ -3960,7 +3967,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
  q('#st-name').oninput=e=>{CHAT.name=e.target.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(x){}NET.last=0;const m=document.getElementById('mm-name');if(m)m.value=CHAT.name};
  q('#st-name').onkeydown=e=>e.stopPropagation();
  num('st-vol','vol');q('#st-mute').onchange=e=>{SET.mute=e.target.checked;setSave()};o.querySelectorAll('[data-ch]').forEach(i=>i.oninput=()=>{SET.sv=Object.assign({},SET.sv,{[i.dataset.ch]:+i.value});setSave();const k=i.dataset.ch;if(k==='money')sfx('coin');else if(k==='chat')sfx('msg');else if(k==='ui')sfx('click')});num('st-night','night');num('st-stick','stick');num('st-tap','tap',()=>{q('#st-tapv').textContent=SET.tap});
- q('#st-cam').onchange=e=>{SET.cam=e.target.value;setSave()};q('#st-low').onchange=e=>{SET.low=e.target.checked;setSave()};
+ q('#st-cam').onchange=e=>{SET.cam=e.target.value;setSave()};q('#st-low').onchange=e=>{SET.low=e.target.checked;setSave()};q('#st-crd').onchange=e=>{SET.coords=e.target.checked;setSave()};
  o.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{b.textContent='press a key…';b.style.background='#5a4a1e';
   const h=e=>{e.preventDefault();e.stopPropagation();removeEventListener('keydown',h,true);const k=e.key.toLowerCase();if(k!=='escape'&&!k.startsWith('arrow')&&k!=='enter'&&k!=='/'){const a=b.dataset.key,other=Object.keys(SET.keys).find(x=>x!==a&&SET.keys[x]===k);if(other)SET.keys[other]=SET.keys[a];SET.keys[a]=k;setSave()}pageSettings(o,back)};
   addEventListener('keydown',h,true)});
