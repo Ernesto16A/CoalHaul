@@ -4,6 +4,11 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.1 · 18 Nov 2026
+- Fixed: static in the sound. The looping noise behind the wind, engines and machines clicked every time it went round; it now loops seamlessly
+- Changed: wind darker and quieter; door, starter and engine stop with less hiss
+- Fixed: lag from sound. Sound settings are only sent to the audio when they change, and sounds at rest are switched off until needed
+
 ## 0.1.0 · 18 Nov 2026
 Version numbering starts here, with everything built so far:
 - Hauling coal and building the chain of buildings, on a top-down map with thick coloured walls on every lot
