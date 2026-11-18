@@ -2430,7 +2430,7 @@ const ROOF={
   RTH.solar(X+9,Y+14,42,30);RTH.solar(X+9,Y+50,42,30);RTH.vent(X+30,Y+108);RTH.sky(X+238,Y+18,24,30);RTH.dish(X+250,Y+110);RTH.vent(X+240,Y+70);
   return[X+140,Y+104]}};
 // an office from above: its roof inside its footprint, the way(s) in, the name board
-function paintOffice(o){if(o===SEEO)return;const r=offRect0(o),X=r.x0,Y=r.y0,W=r.x1-r.x0,H=r.y1-r.y0,c=BCOL[o.n]||'#888888',dx=o.X+(o.w||150)/2;RA=(o.site?o.site.rot:0)*Math.PI/2;
+function paintOffice(o){const r=offRect0(o),X=r.x0,Y=r.y0,W=r.x1-r.x0,H=r.y1-r.y0,c=BCOL[o.n]||'#888888',dx=o.X+(o.w||150)/2;RA=(o.site?o.site.rot:0)*Math.PI/2;
  try{let sg;onto(X,Y,W,H,()=>{sg=(ROOF[o.n]||ROOF.shop)(X,Y,W,H,c,o)});rEdge(X,Y,W,H,1.7);
   for(const d of o.doors?o.doors.map(d=>o.X+d):[dx]){porch(d-20,Y+H-15,40,15,'S',c);if(EMPTYROOM.has(o.n))entryTiles(d-20,Y+H,c,'out')}if(o.eh&&o.n!=='shop')porch(dx-20,Y,40,15,'N',c);
   roofSign(sg[0],sg[1],o.label||'OFFICE',c,o.site)}finally{RA=0}}
