@@ -383,7 +383,7 @@ const padOn=q=>q.exit||q.minein||q.fshop||q.lshop?false:   /* only the shop sell
 // ---------- input ----------
 const K={};
 const keys={q:'cq',e:'ce',w:'up',arrowup:'up',s:'down',arrowdown:'down',a:'left',arrowleft:'left',d:'right',arrowright:'right'};
-addEventListener('keydown',e=>{if(MENU)return;if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.target.id==='chin'){if(e.key=='Enter'){e.preventDefault();chatSend(e.target.value);chatClose()}else if(e.key=='Escape')chatClose();return}if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=keyMap(e.key.toLowerCase());if(k===null)return;if((k=='enter'||k=='/')&&!e.repeat){e.preventDefault();for(const q in K)K[q]=0;chatOpen(k=='/'?'/':'');return}if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(k=='escape'){if(!panelOpen&&!CW&&!document.getElementById('pickov'))saveMenu();return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
+addEventListener('keydown',e=>{if(MENU)return;if(e.target&&(e.target.type==='checkbox'||e.target.tagName==='SELECT'))e.target.blur();else if(e.target&&e.target.tagName=='INPUT'){if(e.target.id==='chin'){if(e.key=='Enter'){e.preventDefault();chatSend(e.target.value);chatClose()}else if(e.key=='Escape')chatClose();return}if(e.key=='Enter'&&e.target.id==='tcash')$('tset').click();return}   /* Enter sets cash only from the cash box; a ticked checkbox or a dropdown hands the keys back to the game */const k=keyMap(e.key.toLowerCase());if(k===null)return;if((k=='enter'||k=='/')&&!e.repeat){e.preventDefault();for(const q in K)K[q]=0;chatOpen(k=='/'?'/':'');return}if(k=='tab'){e.preventDefault();if(!e.repeat&&!bigMap)camMode();return}if(e.repeat)return;if(k=='h'){horn();return}if(k=='m'){setMap(!bigMap);return}if(k=='escape'&&bigMap){setMap(false);return}if(k=='escape'){if(!panelOpen&&!CW&&!document.getElementById('pickov'))saveMenu();return}if(bigMap){if(k=='r'){if(mapTool==='yard'){mapYRot=(mapYRot+1)%4;return}if(mapRoad==='bigcurve'){mapCurve=(mapCurve+1)%4;return}if(mapRoad==='bigT'){mapBT=(mapBT+1)%4;return}if(mapRoad==='bigX')return;const ps=RPIECES.find(r=>r.k===mapRoad).p,i=ps.indexOf(mapPiece);mapPiece=ps[(i+1)%ps.length];return}if(k=='o'){[mapCam.x,mapCam.y]=mapMe();return}   /* O: back to the player */const mk=MKEYS[k];if(mk){MK[mk]=1;e.preventDefault()}if(k=='+'||k=='=')mapZoom(1.2);if(k=='-')mapZoom(1/1.2);return}if(k=='r'){if(!P.driving&&!P.pass&&holdBar()){P.barR=P.barR?0:1;flash('Barrier turned: '+(P.barR?'north-south':'east-west')+'.')}return}if(k=='j'){toggleGoals();$('goal')._h=null;return}if(k==' '){spaceDown();e.preventDefault()}if(k=='g'){dumpCargo();return}if(k=='c'){couple();return}if(k=='v'){cycleTrailer();return}if(keys[k]){K[keys[k]]=1;e.preventDefault()}});
 addEventListener('keyup',e=>{const kk=keyMap(e.key.toLowerCase());if(kk===null)return;if(kk==' ')spaceUp();{const m=MKEYS[kk];if(m)MK[m]=0}const k=keys[kk];if(k)K[k]=0});
 document.querySelectorAll('#touch button[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();K[k]=1;b.classList.add('dn');b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(t=>b.addEventListener(t,()=>{K[k]=0;b.classList.remove('dn')}));b.addEventListener('contextmenu',e=>e.preventDefault())});
 {const st=$('stick'),kn=$('knob');let pid=null;JOY.g=1;
@@ -3939,8 +3939,8 @@ function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · $'+Mat
  P.q('#m-back').onclick=back}
 
 // ---------- settings: kept in this browser ----------
-const KEYDEF={up:'w',down:'s',left:'a',right:'d',action:' ',hitch:'c',select:'v',dump:'g',turn:'r',hookl:'q',hookr:'e',camera:'tab',map:'m',goals:'j'};
-const KEYN={up:'Forward / up',down:'Back / down',left:'Left',right:'Right',action:'Action',hitch:'Hitch · crane tool',select:'Pick trailer · hook',dump:'Dump cargo',turn:'Turn',hookl:'Crane hook ⟲',hookr:'Crane hook ⟳',camera:'Camera',map:'Big map',goals:'All goals'};
+const KEYDEF={up:'w',down:'s',left:'a',right:'d',action:' ',hitch:'c',select:'v',dump:'g',turn:'r',hookl:'q',hookr:'e',horn:'h',camera:'tab',map:'m',goals:'j'};
+const KEYN={up:'Forward / up',down:'Back / down',left:'Left',right:'Right',action:'Action',hitch:'Hitch · crane tool',select:'Pick trailer · hook',dump:'Dump cargo',turn:'Turn',hookl:'Crane hook ⟲',hookr:'Crane hook ⟳',horn:'Horn',camera:'Camera',map:'Big map',goals:'All goals'};
 const SETDEF={cam:'north',tap:320,stick:140,night:1,low:false,coords:false,vol:.7,mute:false,sv:{},keys:{}};
 const SET=(()=>{let s={};try{s=JSON.parse(localStorage.getItem('coalhaul.settings')||'{}')||{}}catch(e){}return Object.assign({},SETDEF,s,{keys:Object.assign({},KEYDEF,s.keys||{})})})();
 function setSave(){try{localStorage.setItem('coalhaul.settings',JSON.stringify(SET))}catch(e){}setApply()}
@@ -3974,7 +3974,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
  q('#st-kdef').onclick=()=>{SET.keys=Object.assign({},KEYDEF);setSave();pageSettings(o,back)};
  q('#m-back').onclick=back}
 function controlsHTML(){const row=(k,t)=>'<tr><td style="padding:3px 10px 3px 0;white-space:nowrap;color:#ffd166;font-weight:600;vertical-align:top">'+k+'</td><td style="padding:3px 0;opacity:.9">'+t+'</td></tr>',K=a=>keyLabel(SET.keys[a]);
- const keys=[[K('up')+' '+K('left')+' '+K('down')+' '+K('right')+' / arrows','walk · drive · in the crane cab: swing and slide the boom'],['Mouse click','use what is under the cursor: a seat, a lever, an item, a shelf…'],['Double click','off your vehicle: get out'],[K('action'),'action: load and unload, lift and set down (forklift, crane), fold the crane'],[K('hitch'),'hitch a trailer · crane: put on / take off a tool'],[K('select'),'pick the trailer · crane: what hangs on the hook'],[K('dump'),'dump the cargo'],[K('turn'),'turn the traffic barrier you hold · on the map: turn what you place'],[K('hookl')+' / '+K('hookr'),'crane: turn the load on the hook'],[K('camera'),'switch the camera'],[K('map'),'the big map (Build tab)'],[K('goals'),'all goals'],['Wheel, + / −','zoom'],['Enter or /','chat · commands (/help)'],['Esc','menu, or close what is open']];
+ const keys=[[K('up')+' '+K('left')+' '+K('down')+' '+K('right')+' / arrows','walk · drive · in the crane cab: swing and slide the boom'],['Mouse click','use what is under the cursor: a seat, a lever, an item, a shelf…'],['Double click','off your vehicle: get out'],[K('action'),'action: load and unload, lift and set down (forklift, crane), fold the crane'],[K('hitch'),'hitch a trailer · crane: put on / take off a tool'],[K('select'),'pick the trailer · crane: what hangs on the hook'],[K('dump'),'dump the cargo'],[K('turn'),'turn the traffic barrier you hold · on the map: turn what you place'],[K('hookl')+' / '+K('hookr'),'crane: turn the load on the hook'],[K('horn'),'horn'],[K('camera'),'switch the camera'],[K('map'),'the big map (Build tab)'],[K('goals'),'all goals'],['Wheel, + / −','zoom'],['Enter or /','chat · commands (/help)'],['Esc','menu, or close what is open']];
  const touch=[['Hold a finger on the map','the stick: slide to walk or drive, lift to stop'],['Tap','use what you tap · double tap off your vehicle: get out'],['Two fingers','zoom'],['␣ action','the big button'],['C, V, G, R, Q, E','as the keys'],['☰ 💬 🎥','menu · chat · camera'],['Tap the minimap','the big map']];
  const T=l=>'<table style="font-size:13px;border-collapse:collapse;width:100%">'+l.map(r=>row(r[0],r[1])).join('')+'</table>';
  return T(TOUCHUI?touch:keys)+'<div style="font-size:12px;font-weight:700;margin:10px 0 2px;opacity:.7">'+(TOUCHUI?'With a keyboard':'On a phone or tablet')+'</div><div style="opacity:.7">'+T(TOUCHUI?keys:touch)+'</div>'}
@@ -4036,7 +4036,7 @@ function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');
  q('#mm-load').onclick=()=>mainMenu('load');q('#mm-join').onclick=()=>mainMenu('join');q('#mm-set').onclick=()=>mainMenu('set');q('#mm-how').onclick=()=>mainMenu('how')}
 // ---------- sound: made in the browser (no files). The engine of what you drive, the boom's hydraulics, cargo pouring, money, clicks ----------
 // the sound channels, each with its own volume in Settings. Those marked later have no sounds yet: their slider is ready for them
-const SCH=[['eng','Engines','vehicles you drive'],['mach','Machines','crane hydraulics; later forklift, conveyors'],['cargo','Cargo','loading and unloading'],['money','Money','payments'],['ui','Interface','buttons, menus'],['chat','Chat','a message from another player'],['amb','Ambience','birds, wind, the town at night (later)'],['music','Music','(later)'],['horn','Horn and alarms','reversing beeper, horn (later)']];
+const SCH=[['eng','Engines','vehicles you drive, their doors'],['mach','Machines','hydraulics, couplings, tools, the fuel pump'],['cargo','Cargo','loading, unloading, things picked up and put down'],['money','Money','paid, and paying'],['ui','Interface','buttons, doors, goals, buildings finished'],['chat','Chat','a message from another player'],['amb','Ambience','wind, birds by day, crickets at night'],['music','Music','(later)'],['horn','Horn and alarms','horn (H), reversing beeper']];
 const AUD={ctx:null,m:null,ch:{},lastCash:null,cashT:0};
 function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;try{
  const c=AUD.ctx=new AC(),m=AUD.m=c.createGain();m.connect(c.destination);for(const[k]of SCH){const g=c.createGain();g.connect(m);AUD.ch[k]=g}const eng=AUD.ch.eng;
@@ -4044,18 +4044,45 @@ function sndInit(){if(AUD.ctx)return;const AC=window.AudioContext||window.webkit
  const o1=c.createOscillator(),o2=c.createOscillator(),lp=c.createBiquadFilter(),eg=c.createGain();o1.type='sawtooth';o2.type='square';o2.detune.value=-1200;lp.type='lowpass';lp.frequency.value=420;lp.Q.value=4;eg.gain.value=0;
  o1.connect(lp);o2.connect(lp);lp.connect(eg);eg.connect(eng);o1.start();o2.start();AUD.e={o1,o2,lp,g:eg};
  // a noise source shared by the hydraulics and the cargo
- const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=nb.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
+ const nb=AUD.nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=nb.getChannelData(0);let l=0;for(let i=0;i<d.length;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
  const mk=(type,f,q,to)=>{const s=c.createBufferSource();s.buffer=nb;s.loop=true;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.value=0;s.connect(bp);bp.connect(g);g.connect(AUD.ch[to]);s.start();return g};
  AUD.pour=mk('bandpass',260,.8,'cargo');   // cargo pouring in or out: a rumble
  const ho=c.createOscillator(),hg=c.createGain();ho.type='triangle';ho.frequency.value=180;hg.gain.value=0;ho.connect(hg);hg.connect(AUD.ch.mach);ho.start();AUD.hyd={o:ho,g:hg,n:mk('highpass',1800,.5,'mach')};   // the boom's hydraulics: a whine and a hiss
+ AUD.wind=mk('lowpass',380,.3,'amb');   // ambience: wind always, birds by day, crickets at night (in sndTick)
+ const fo=c.createOscillator(),fg=c.createGain();fo.type='triangle';fo.frequency.value=120;fg.gain.value=0;fo.connect(fg);fg.connect(AUD.ch.mach);fo.start();AUD.pumpS={o:fo,g:fg,n:mk('bandpass',900,1.4,'mach')};   // the fuel pump
  sndVol()}catch(e){AUD.ctx=null}}
+// a bird call or a cricket chirp, made up each time
+function ambCall(night){const c=AUD.ctx,t=c.currentTime,out=AUD.ch.amb;if(night){const f=4200+Math.random()*500;for(let i=0;i<3+Math.floor(Math.random()*3);i++){const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0,t+i*.07);g.gain.linearRampToValueAtTime(.025,t+i*.07+.01);g.gain.exponentialRampToValueAtTime(.0001,t+i*.07+.05);o.connect(g);g.connect(out);o.start(t+i*.07);o.stop(t+i*.07+.06)}return}
+ const f0=2200+Math.random()*1800,n=2+Math.floor(Math.random()*4);for(let i=0;i<n;i++){const o=c.createOscillator(),g=c.createGain(),at=t+i*(.09+Math.random()*.06),d=.06+Math.random()*.08;o.type='sine';o.frequency.setValueAtTime(f0*(1+Math.random()*.25),at);o.frequency.exponentialRampToValueAtTime(f0*(.7+Math.random()*.6),at+d);g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.03,at+.01);g.gain.exponentialRampToValueAtTime(.0001,at+d);o.connect(g);g.connect(out);o.start(at);o.stop(at+d+.02)}}
 const chVol=k=>SET.sv&&k in SET.sv?SET.sv[k]:.8;
 function sndVol(){if(!AUD.ctx)return;const t=AUD.ctx.currentTime;AUD.m.gain.setTargetAtTime(SET.mute?0:SET.vol,t,.05);for(const[k]of SCH)AUD.ch[k].gain.setTargetAtTime(chVol(k),t,.05)}
 ['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{sndInit();if(AUD.ctx&&AUD.ctx.state==='suspended')AUD.ctx.resume()},true));   // browsers only allow sound after a click or a key
 // a short sound: a click, a coin, a clunk
-function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[k==='coin'?'money':k==='msg'?'chat':k==='clunk'?'cargo':'ui'];const c=AUD.ctx,t=c.currentTime,b=(f,dur,type,v,at=0,to)=>{const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t+at);if(to)o.frequency.exponentialRampToValueAtTime(to,t+at+dur);g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(v,t+at+.005);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);o.connect(g);g.connect(out);o.start(t+at);o.stop(t+at+dur+.02)};
- if(k==='click')b(1400,.04,'square',.05);else if(k==='coin'){b(1318,.09,'sine',.18);b(1975,.22,'sine',.16,.07)}else if(k==='clunk')b(140,.12,'triangle',.3,0,60);else if(k==='msg')b(880,.07,'sine',.06)}
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('click')},true);
+const SCHOF={coin:'money',buy:'money',msg:'chat',clunk:'cargo',hitch:'mach',unhitch:'mach',lift:'mach',set:'cargo',tool:'mach',pick:'cargo',put:'cargo',door:'eng',enter:'ui',feet:'mach',goal:'ui',built:'ui',error:'ui',horn:'horn',beep:'horn',pump:'mach'};
+function sfx(k){if(!AUD.ctx||SET.vol<=0||SET.mute)return;const out=AUD.ch[SCHOF[k]||'ui'];const c=AUD.ctx,t=c.currentTime,b=(f,dur,type,v,at=0,to)=>{const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t+at);if(to)o.frequency.exponentialRampToValueAtTime(to,t+at+dur);g.gain.setValueAtTime(0,t+at);g.gain.linearRampToValueAtTime(v,t+at+.005);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);o.connect(g);g.connect(out);o.start(t+at);o.stop(t+at+dur+.02)};
+ const nz=(dur,f,q,v,at=0,type='bandpass')=>{const n=c.createBufferSource();n.buffer=AUD.nb;const bp=c.createBiquadFilter();bp.type=type;bp.frequency.value=f;bp.Q.value=q;const g=c.createGain();g.gain.setValueAtTime(v,t+at);g.gain.exponentialRampToValueAtTime(.0001,t+at+dur);n.connect(bp);bp.connect(g);g.connect(out);n.start(t+at);n.stop(t+at+dur+.05)};
+ if(k==='click')b(1400,.04,'square',.05);
+ else if(k==='coin'){b(1318,.09,'sine',.18);b(1975,.22,'sine',.16,.07)}
+ else if(k==='buy'){b(523,.08,'triangle',.16);b(392,.14,'triangle',.14,.07);nz(.12,3000,1,.1,.02)}   // money going out: a lower two-note and a till rattle
+ else if(k==='clunk')b(140,.12,'triangle',.3,0,60);
+ else if(k==='msg')b(880,.07,'sine',.06);
+ else if(k==='hitch'){b(90,.14,'square',.22,0,55);nz(.06,2400,2,.25);b(1800,.05,'square',.04,.03)}   // a coupling closing: a thump and a metal click
+ else if(k==='unhitch'){nz(.05,2200,2,.2);b(110,.1,'square',.14,.02,70)}
+ else if(k==='lift'){b(180,.35,'triangle',.08,0,260);nz(.3,1600,.7,.06)}   // a load taken: the hydraulics push
+ else if(k==='set'){b(120,.16,'triangle',.28,0,55);nz(.1,500,1,.22)}   // a load set down
+ else if(k==='tool'){nz(.05,3200,3,.22);b(600,.06,'square',.06,.01);b(150,.12,'square',.14,.04,90)}   // a tool latched on or off
+ else if(k==='pick'){nz(.08,900,1,.16);b(260,.05,'sine',.08)}   // something taken in the hands
+ else if(k==='put'){nz(.1,500,1,.2);b(160,.07,'sine',.12,0,90)}   // something put down
+ else if(k==='door'){nz(.12,700,1.2,.3);b(95,.12,'square',.2,.01,60)}   // a vehicle door shut
+ else if(k==='enter'){nz(.25,1200,.8,.1);b(440,.05,'sine',.05,.18)}   // a building door, a little bell
+ else if(k==='feet'){b(110,.25,'square',.2,0,70);nz(.15,400,1,.3,.05)}   // the crane's feet stand
+ else if(k==='goal'){b(659,.12,'sine',.14);b(784,.12,'sine',.14,.1);b(1047,.3,'sine',.14,.2)}   // a goal done
+ else if(k==='built'){[523,659,784,1047].forEach((f,i)=>b(f,.35,'triangle',.12,i*.11));b(1568,.6,'sine',.08,.45)}   // a building finished
+ else if(k==='error')b(150,.13,'square',.07,0,120);   // cannot do that
+ else if(k==='horn'){b(340,.45,'sawtooth',.09);b(428,.45,'sawtooth',.08)}
+ else if(k==='beep')b(1050,.22,'square',.05);   // reversing beeper
+ else if(k==='pump')nz(.2,900,1.5,.08)}
+document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest&&e.target.closest('button'))sfx('click')},true);   /* only a real click, not one the game makes itself */
 // every frame: what you drive, what pours, the money
 let sndCargo=null;
 function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MENU&&!PAUSED&&!document.hidden;
@@ -4065,7 +4092,33 @@ function sndTick(dt){if(!AUD.ctx)return;const c=AUD.ctx,t=c.currentTime,run=!MEN
  {const mv=cab&&cab.ft>=1&&(K.up||K.down||K.left||K.right||K.cq||K.ce||JOY.on);AUD.hyd.g.gain.setTargetAtTime(mv?.03:0,t,.08);AUD.hyd.n.gain.setTargetAtTime(mv?.05:0,t,.08);AUD.hyd.o.frequency.setTargetAtTime(mv?(K.up||K.down?240:190):180,t,.1)}
  {let amt=0;const add=e=>{if(e&&e.cargo&&typeof e.cargo.amt==='number')amt+=e.cargo.amt};if(v){add(v);for(let q=v.tr,n=0;q&&n<6;q=q.tr,n++)add(q)}
   const d=sndCargo===null||!v?0:Math.abs(amt-sndCargo);sndCargo=v?amt:null;AUD.pour.gain.setTargetAtTime(d>1e-4&&dt>0?Math.min(.5,.2+d/dt*.05):0,t,.1)}
- {const r=Math.round(cash);if(AUD.lastCash!==null&&r>AUD.lastCash&&performance.now()-AUD.cashT>1200){AUD.cashT=performance.now();sfx('coin')}AUD.lastCash=r}}
+ {const r=Math.round(cash);if(AUD.lastCash!==null){const nw=performance.now();if(r>AUD.lastCash&&nw-AUD.cashT>1200){AUD.cashT=nw;sfx('coin')}else if(r<AUD.lastCash-.5&&nw-(AUD.buyT||0)>600){AUD.buyT=nw;sfx('buy')}}AUD.lastCash=r}
+ if(!run){AUD.wind.gain.setTargetAtTime(0,t,.3);AUD.pumpS.g.gain.setTargetAtTime(0,t,.1);AUD.pumpS.n.gain.setTargetAtTime(0,t,.1);sndSeen=null;return}
+ // ambience: wind, and birds by day / crickets at night now and then. Quieter inside a building
+ {const nt=darkness()>.5,inside=!!IN;AUD.wind.gain.setTargetAtTime(inside?.05:.16,t,.5);AUD.ambT=(AUD.ambT||0)-dt;if(AUD.ambT<=0){AUD.ambT=nt?.6+Math.random()*1.4:2+Math.random()*6;if(!inside)ambCall(nt)}}
+ // reversing beeper on the big vehicles
+ {const big=v&&/semi|dump|crane|forklift/.test(v.kind)&&(v.v||0)<-.2;AUD.bpT=(AUD.bpT||0)-dt;if(big&&AUD.bpT<=0){AUD.bpT=.5;sfx('beep')}if(!big)AUD.bpT=0}
+ // the fuel pump while fuel goes in
+ {const fv=v||(P.pass||null),fu=fv&&typeof fv.fuel==='number'?fv.fuel:null,pumping=fu!==null&&AUD.lastFuel!=null&&AUD.lastFuelV===fv&&fu>AUD.lastFuel+1e-4;AUD.lastFuel=fu;AUD.lastFuelV=fv;
+  AUD.pumpS.g.gain.setTargetAtTime(pumping?.05:0,t,.1);AUD.pumpS.n.gain.setTargetAtTime(pumping?.08:0,t,.1)}
+ // one-off sounds for what changed since the last frame
+ const now=sndState();if(sndSeen){const o=sndSeen;
+  if(now.drv!==o.drv||now.seat!==o.seat)sfx('door');
+  if(now.inB!==o.inB)sfx('enter');
+  if(now.hitch>o.hitch)sfx('hitch');else if(now.hitch<o.hitch)sfx('unhitch');
+  if(now.lifted>o.lifted)sfx('lift');else if(now.lifted<o.lifted)sfx('set');
+  if(Object.keys(now.tool).some(id=>id in o.tool&&o.tool[id]!==now.tool[id]))sfx('tool');   /* a tool put on or taken off (not a new vehicle appearing) */
+  if(now.hands>o.hands)sfx('pick');else if(now.hands<o.hands)sfx('put');
+  if(now.feet&&!o.feet)sfx('feet');
+  if(now.built>o.built)sfx('built');else if(now.goals>o.goals)sfx('goal');
+  if(now.note&&now.note!==o.note&&/\b(first|cannot|can't|not enough|no room|too |full|refused|only |out of|nothing)\b/i.test(now.note))sfx('error')}
+ sndSeen=now}
+let sndSeen=null;
+// what the sounds keep an eye on
+function sndState(){let hitch=0,lifted=0,feet=false;const tool={};for(const v of Object.values(veh)){if(!v.out)continue;for(let q=v.tr,n=0;q&&n<8;q=q.tr,n++)hitch++;if(v.kind==='crane'){if(v.ft>=1)feet=feet||(P.pass===v);tool[v.id]=String(v.ctool||'')}if(v.kind==='forklift')tool[v.id]=String(v.forks||'')}
+ for(const p of PALS)if(p.fk)lifted++;for(const l of LG)if(l.fk)lifted++;for(const a of ATT)if(a.fk)lifted++;for(const o of Object.values(veh))if(o.fk)lifted++;for(const o of Object.values(trl))if(o.fk)lifted++;
+ return{drv:P.driving&&T?T.id:null,seat:P.pass?P.pass.id+':'+P.seatSd:null,inB:IN?1:0,hitch,lifted,tool,hands:P.hands?P.hands.filter(Boolean).length:0,feet,built:SITES.filter(q=>q.b.built).length,goals:STORY&&STORY.d?Object.keys(STORY.d).length:0,note:note||''}}
+function horn(){if(!(P.driving&&T&&T.out)&&!(P.pass&&P.pass.out))return;const t=performance.now();if(t-(AUD.hornT||0)<500)return;AUD.hornT=t;sfx('horn')}
 setApply();
 let lastDraw=0;
 function loop(n){if(MENU||PAUSED){last=n;sndTick(0);draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
