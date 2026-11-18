@@ -1570,7 +1570,12 @@ const obstAt=(x,y)=>!IN&&GI.some(it=>!it.fk&&obstHit(it,x,y,0));
 const holdBar=()=>{const h=heldList();return h.length&&h[h.length-1].type==='barrier'};
 const palCovers=(p,i,j)=>!p.fk&&!p.on&&Math.abs(p.x-(i+.5)*S)<S&&Math.abs(p.y-(j+.5)*S)<S;   // a pallet on the ground sits on a square corner and covers the 4 squares around it
 const cellUsed=(i,j,skip)=>GI.some(it=>!it.fk&&giCovers(it,i,j))||PALS.some(p=>p!==skip&&palCovers(p,i,j))||ATT.some(o=>!o.fk&&!o.on&&!o.onP&&attCovers(o,i,j))||LG.some(l=>!l.fk&&!l.st&&logCovers(l,i,j));
-const cellWhy=(i,j)=>IN&&!(IN.o.n==='garage'&&i>=GSTORE.i0&&i<GSTORE.i1&&j>=GSTORE.j0&&j<GSTORE.j1)?'nostore':bldAt((i+.5)*S,(j+.5)*S)?'road':cellUsed(i,j)?'taken':Math.hypot((i+.5)*S-P.x,(j+.5)*S-P.y)>RCH()?'far':null;
+const cellWhy=(i,j)=>IN&&seeThru(IN.o)?roomCellWhy(i,j):IN&&!(IN.o.n==='garage'&&i>=GSTORE.i0&&i<GSTORE.i1&&j>=GSTORE.j0&&j<GSTORE.j1)?'nostore':!IN&&keepClear((i+.5)*S,(j+.5)*S)?'keep':bldAt((i+.5)*S,(j+.5)*S)?'road':cellUsed(i,j)?'taken':Math.hypot((i+.5)*S-P.x,(j+.5)*S-P.y)>RCH()?'far':null;
+// where things may not be put down. In a see-through room: anywhere on the floor but the entrance (the tiles and the doorway), the control desk and its chair. Outdoors: the entrance tiles and the sign by the door
+const KEEPIN={'power plant':[[-4020,-3980,-3980,-3940],[-4100,-4020,-4040,-4000],[-4080,-4000,-4060,-3980]]};   // [x0,y0,x1,y1] in the room's frame
+function roomCellWhy(i,j){const gm=interiorGeo(IN.o),x=(i+.5)*S,y=(j+.5)*S;if(!(x>gm.X0&&x<gm.X1&&y>gm.Y0&&y<gm.Y1))return'road';for(const[a,b,c,d]of KEEPIN[IN.o.n]||[])if(x>a&&x<c&&y>b&&y<d)return'keep';return cellUsed(i,j)?'taken':Math.hypot(x-P.x,y-P.y)>RCH()?'far':null}
+function keepClear(x,y){if(!plant.built||isGone('power plant'))return false;const o=OFFICES.find(q=>q.n==='power plant');if(!o||!o.doors)return false;const r0=offRect0(o),d=o.X+o.doors[0],[lx,ly]=uInv(o.site,x,y);
+ return ly>r0.y1&&ly<r0.y1+S&&((lx>d-20&&lx<d+20)||(lx>d+40&&lx<d+80))}   // the entrance tiles (2 x 1) and the sign (2 x 1, a square further east)
 // where G would put the item in your hands: the square under the cursor, or (no mouse) the free square nearest the spot in front of you
 function dropCell(){const m=mouseWorld(),bar=holdBar(),br=P.barR||0,w2=(i,j)=>cellWhy(i,j)||(bar?cellWhy(i+(br?0:1),j+(br?1:0)):null);if(m){const i=Math.floor(m[0]/S-(bar&&!br?.5:0)),j=Math.floor(m[1]/S-(bar&&br?.5:0));return{i,j,why:w2(i,j),bar,br}}
  const fx=P.x+Math.cos(P.a)*1.5*S,fy=P.y+Math.sin(P.a)*1.5*S;let b=null,bd=1e9;
@@ -1580,11 +1585,11 @@ function dropPallet(it){const m=mouseWorld(),ref=m||[P.x+Math.cos(P.a)*1.8*S,P.y
  for(const e of flatbeds())for(let i=0;i<e.pals.length;i++){const q=placePt(e,i);if(Math.hypot(q[0]-ref[0],q[1]-ref[1])<.9*S){if(Math.hypot(q[0]-P.x,q[1]-P.y)>RCH())return flash('Too far away. Step closer: you can only reach inside the circle around you.');if(!placeFree(e,i))return flash('That place on the flatbed is taken.');
   const pl={x:q[0],y:q[1],a:'b' in e?e.b:e.a,crates:Array(9).fill(null),fk:null,da:0,on:{e,p:i}};PALS.push(pl);e.pals[i]=pl;dropFromHands(it);return flash('Pallet put on the '+entName(e)+'.')}}
  const i=Math.round(ref[0]/S),j=Math.round(ref[1]/S);if(Math.hypot(i*S-P.x,j*S-P.y)>RCH()+S)return flash('Too far away. Point at a square inside your reach.');
- for(const[a,b]of[[i-1,j-1],[i,j-1],[i-1,j],[i,j]]){const w=cellWhy(a,b);if(w&&w!=='far')return flash(w==='nostore'?'Not here: put things in the storage room or on a shelf.':w==='road'?'Not inside a building or wall.':'No room here: the pallet needs 4 free squares.')}
+ for(const[a,b]of[[i-1,j-1],[i,j-1],[i-1,j],[i,j]]){const w=cellWhy(a,b);if(w&&w!=='far')return flash(w==='keep'?'Keep this clear: the entrance, the desk and the sign stay free.':w==='nostore'?'Not here: put things in the storage room or on a shelf.':w==='road'?'Not inside a building or wall.':'No room here: the pallet needs 4 free squares.')}
  PALS.push({x:i*S,y:j*S,a:0,crates:Array(9).fill(null),fk:null,da:0});dropFromHands(it);flash('Pallet set down.')}
 function dropItem(){const h=heldList();if(!h.length)return flash('Your hands are empty.');const it=h[h.length-1];if(it.type==='pallet')return dropPallet(it);const c=dropCell();
  if(it.type==='cables'){if(c.why)return flash(c.why==='far'?'Too far away.':'Not there.');ATT.push({x:(c.i+.5)*S,y:(c.j+.5)*S,a:0,kind:'cables'});dropFromHands(it);return flash('Cables set down.')}
- if(c.why)return flash(c.why==='nostore'?'Not here: put things in the storage room or on a shelf.':c.why==='road'?'Not inside a building or wall.':c.why==='taken'?'That square is taken: one thing per square.':c.why==='far'?'Too far away. Point at a square inside your reach.':'No free square in reach.');
+ if(c.why)return flash(c.why==='keep'?'Keep this clear: the entrance, the desk and the sign stay free.':c.why==='nostore'?'Not here: put things in the storage room or on a shelf.':c.why==='road'?'Not inside a building or wall.':c.why==='taken'?'That square is taken: one thing per square.':c.why==='far'?'Too far away. Point at a square inside your reach.':'No free square in reach.');
  if(it.type==='barrier'){it.r=c.br?1:0;it.x=(c.i+(c.br?.5:1))*S;it.y=(c.j+(c.br?1:.5))*S}else{it.x=(c.i+.5)*S;it.y=(c.j+.5)*S}GI.push(it);dropFromHands(it);flash('Dropped: '+ITEMS[it.type].n+'.')}
 // a pallet set down on the ground goes onto the square corner nearest the forks, squared to the grid
 function palSpot(f){const i=Math.round(f[0]/S),j=Math.round(f[1]/S),c=PALS.find(p=>p.fk===T);let why=null;
@@ -2309,6 +2314,11 @@ function headframe(cx,cy,c){const s=21;rShade(cx-s,cy-s,2*s,2*s,11,.22);
  for(const[px,py]of[[-s,-s],[s-7,-s],[-s,s-7],[s-7,s-7]]){g.beginPath();g.rect(cx+px,cy+py,7,7);inked(c,1)}}
 // a way in: the roof stands back over a paved step; at the back of it the door in its frame, a mat in front, a lamp over it. side: S or N (in the building's frame)
 // the tiles that mark an entrance: 2 x 1 squares of small square tiles with a border in the building's colour, outside in front of the door and inside behind it
+// what lies on the floor of a room: items (barriers and cones as on the map), pallets; and where a held item would go
+function roomThings(X0,Y0,X1,Y1){const inR=o=>o.x>X0-S&&o.x<X1+S&&o.y>Y0-S&&o.y<Y1+S;
+ for(const p of PALS)if(!p.fk&&!p.on&&inR(p))drawPallet(p);
+ for(const it of GI)if(!it.fk&&inR(it)){if(it.type==='barrier'||it.type==='cone'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
+ if(heldList().length&&!P.driving){const c=dropCell();if(c.i!==undefined&&MX!=null){const bad=!!c.why,w=(c.bar&&!c.br?2:1)*S,h=(c.bar&&c.br?2:1)*S;g.fillStyle=bad?'#ff6b5a44':'#ffd16655';g.strokeStyle=bad?'#ff6b5a':'#ffd166';g.lineWidth=1.5;g.fillRect(c.i*S+1,c.j*S+1,w-2,h-2);g.strokeRect(c.i*S+1,c.j*S+1,w-2,h-2)}}}
 // the power plant's control desk by the door: a steel desk with three screens along its back, their light showing how the plant is doing (green: power, amber: switched on without coal, red: off), a keyboard and the chair
 function controlDesk(x,y,c){const w=60,h=20,ok=power>0,col=ok?'#5fe08a':plantOn?'#ffcf5a':'#ff6b5a',pl=padAt();
  g.fillStyle='rgba(0,0,0,.28)';g.fillRect(x+3,y+4,w,h);
@@ -2642,7 +2652,7 @@ function plantFloor(X0,Y0,X1,Y1){const w=X1-X0,h=Y1-Y0,k=2;
   PFC={c,w,h}}
  g.drawImage(PFC.c,X0,Y0,w,h)}
 function drawInterior(t){const gm=interiorGeo(IN.o),X0=gm.X0,X1=gm.X1,Y0=gm.Y0,Y1=gm.Y1,W=8,G=IN.o.n==='garage',c=BCOL[IN.o.n]||'#888888';
- if(EMPTYROOM.has(IN.o.n)){plantFloor(X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,roomDoors(IN.o).map(x=>[x,'S']),[]);for(const d of roomDoors(IN.o)){entryTiles(d-20,Y1-S,c,'in');entryTiles(d-20,Y1+W,c,'out')}if(IN.o.n==='power plant')controlDesk(-4100,-4020,c);return}   // an empty room: the floor and the walls with their doors   // a building's room from above, 1:1 with the world: the floor is its whole footprint, the walls stand just outside it
+ if(EMPTYROOM.has(IN.o.n)){plantFloor(X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,roomDoors(IN.o).map(x=>[x,'S']),[]);for(const d of roomDoors(IN.o)){entryTiles(d-20,Y1-S,c,'in');entryTiles(d-20,Y1+W,c,'out')}if(IN.o.n==='power plant')controlDesk(-4100,-4020,c);roomThings(X0,Y0,X1,Y1);return}   // an empty room: the floor and the walls with their doors   // a building's room from above, 1:1 with the world: the floor is its whole footprint, the walls stand just outside it
  roomFloor(IN.o.n,X0,Y0,X1,Y1);roomShell(X0,Y0,X1,Y1,W,c,G?[[-4000,'N'],[-4000,'S']]:(IN.o.doors?[-4060,-3940]:[-4000]).map(x=>[x,'S']),ROOMWIN[G?'g':IN.o.doors?'t2':IN.o.n==='shop'?'sh':'s']);
  if(G){
   {g.strokeStyle='rgba(255,255,255,.22)';g.lineWidth=1;g.beginPath();for(let i=GSTORE.i0;i<GSTORE.i1;i++)for(let j=GSTORE.j0;j<GSTORE.j1;j++)g.rect(i*S+1.5,j*S+1.5,S-3,S-3);g.stroke()}   // the storage room: one square per tile
