@@ -1964,8 +1964,8 @@ function ring(z,c,t,label){const x=z.x-z.w/2,y=z.y-z.h/2,w=z.w,h=z.h,k=Math.min(
 const FIL=70;
 // a street in cross-section, from the outside in: [half width, corner radius at a dead end, colour, 1 = too fine to draw from far away]. The markings come last
 const ROADL=[[SH+30,64,'#7d7b72',1],[SH+27.5,62,'#b5b2a7'],[SH+4,57,'#d8d5ca',1],[SH,56,'#8b6c45'],[RW+2,45,'#222428',1],[RW,44,'#383a3f'],[RW-10,36,'#3e4046',1]],LINEC='rgba(242,242,232,.72)',MIDC='#f0c64a';
-function drawRoads(){
- const near=Z>=.5,vx=CHW+TS,vy=CHH+TS,seen=(x,y,m=0)=>Math.abs(x-cam.x)<vx+m&&Math.abs(y-cam.y)<vy+m,tiles=[];
+function drawRoads(bx,near){   // the streets inside the box bx (and a tile around it), painted into the ground chunks: they are only drawn again when a street changes
+ const seen=(x,y,m=0)=>x>bx.x0-TS-m&&x<bx.x1+TS+m&&y>bx.y0-TS-m&&y<bx.y1+TS+m,tiles=[];
  for(const[k,m]of RC){const q=k.split(','),cx=q[0]*TS+TS/2,cy=q[1]*TS+TS/2;if(seen(cx,cy))tiles.push([cx,cy,dm(m),+q[0],+q[1]])}   // only the street tiles in view
  for(const L of[...ROADL,null]){if(L&&L[3]&&!near)continue;   // null: the markings
   for(const[cx,cy,m,tc,tr]of tiles){const N=m&NB,E=m&EB,Sx=m&SB,W=m&WB,cn=corner(m);
@@ -2026,16 +2026,17 @@ function drawWide(L,seen){
 // Whatever never moves (grass, the yard, the lots and their kerbs, the buildings) is painted once into off-screen chunks of a few tiles, at the zoom it is looked at, and from then on only copied: however rich the ground is, it costs next to nothing per frame
 const GCH=new Map(),GRES=[.5,.75,1,1.5,2,3],GSPAN=[4,2,2,1,1,1];let GCV=-1,GFR=0,GBUD=5,GQ=null,LQ=null,LQC=null;   // chunks by "zoom step,i,j" · picture px per world px and tiles per chunk at each zoom step · the state of the world the chunks show · frame counter · ms of painting allowed per frame
 function groundChunk(i,j,b){const res=GRES[b],n=GSPAN[b],px=Math.round(n*TS*res)+4,c=document.createElement('canvas');c.width=c.height=px;   // two px more on every side: neighbours overlap, so no seam shows between them
- const g0=g;g=c.getContext('2d');GQ=[res,2-i*n*TS*res,2-j*n*TS*res,px];try{g.setTransform(res,0,0,res,GQ[1],GQ[2]);paintGround(i*n,j*n,i*n+n,j*n+n,res>=1)}finally{g=g0;GQ=null}
+ const g0=g;g=c.getContext('2d');GQ=[res,2-i*n*TS*res,2-j*n*TS*res,px];try{g.setTransform(res,0,0,res,GQ[1],GQ[2]);paintGround(i*n,j*n,i*n+n,j*n+n,res>=1);g.lineJoin='round';g.lineCap='butt';drawRoads({x0:i*n*TS,y0:j*n*TS,x1:(i+1)*n*TS,y1:(j+1)*n*TS},res>=.75)}finally{g=g0;GQ=null}
  const e={c,f:GFR,n:px*px,b,x:i*n*TS,y:j*n*TS,s:n*TS,m:2/res};GCH.set(b+','+i+','+j,e);return e}
 // soft things (drifts, stains) are painted at a quarter of the size and blown up: nobody can tell, and it is a sixteenth of the work
 function lowres(fn){if(!GQ)return fn();const[res,tx,ty,px]=GQ,w=Math.ceil(px/4)+1;if(!LQ){LQ=document.createElement('canvas');LQC=LQ.getContext('2d')}
  if(LQ.width!==w||LQ.height!==w){LQ.width=LQ.height=w}else{LQC.setTransform(1,0,0,1,0,0);LQC.clearRect(0,0,w,w)}
  const g0=g;g=LQC;g.setTransform(res/4,0,0,res/4,tx/4,ty/4);try{fn()}finally{g=g0}
  g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(LQ,0,0,w*4,w*4);g.restore()}
+function roadSig(){let h=WIDE.length;for(const f of WIDE)h=(h*31+(f.ox|0)*7+(f.oy|0)*13+(f.k?f.k.length:0)+(f.q|0))|0;for(const[k,m]of RC){const t=String(k);for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;h=(h*31+m)|0}return h}   // changes whenever a street piece is laid, changed or taken away
 function drawGround(){
  const s=dpr*Z;let b=0;while(b<GRES.length-1&&GRES[b]<s-.001)b++;
- const CS=GSPAN[b]*TS,hw=CHW,hh=CHH,x0=cam.x-hw,x1=cam.x+hw,y0=cam.y-hh,y1=cam.y+hh,t0=performance.now(),v=SITES.reduce((a,q)=>a*8+(q.b.built?7:siteGeo(OFFICES.find(o=>o.n===q.off),q).done),RC.size*4096+WT.size*64+WD.size);
+ const CS=GSPAN[b]*TS,hw=CHW,hh=CHH,x0=cam.x-hw,x1=cam.x+hw,y0=cam.y-hh,y1=cam.y+hh,t0=performance.now(),v=SITES.reduce((a,q)=>a*8+(q.b.built?7:siteGeo(OFFICES.find(o=>o.n===q.off),q).done),RC.size*4096+WT.size*64+WD.size+roadSig());
  if(v!==GCV){GCH.clear();GCV=v}   // a site has got further or was finished, or a street was built or taken away: the ground looks different now
  GFR++;
  const i0=Math.floor(x0/CS),i1=Math.floor(x1/CS),j0=Math.floor(y0/CS),j1=Math.floor(y1/CS),have=[];let miss=[];
@@ -2058,7 +2059,6 @@ function drawGround(){
    if(sq.mat==='coal'){const q=5+hsh(k,2)*6;g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(X+1.5,Y+2,q,0,7);g.fill();g.fillStyle=hsh(k,5)<.3?'#3a3a3d':'#232326';g.beginPath();g.arc(X,Y,q,0,7);g.fill();g.fillStyle='#55575e';g.beginPath();g.arc(X-q*.35,Y-q*.4,q*.22,0,7);g.fill()}
    else{g.save();g.translate(X,Y);g.rotate(hsh(k,4)*3.14);g.fillStyle='rgba(8,12,20,.3)';g.fillRect(-15,-2,32,8);g.fillStyle=hsh(k,6)<.5?'#8a6638':'#a8844f';g.fillRect(-16,-4,32,8);g.strokeStyle='#4a2f14';g.lineWidth=.8;g.strokeRect(-16,-4,32,8);g.fillStyle='#d9b27c';g.beginPath();g.arc(16,0,4,0,7);g.fill();g.restore()}}}
  g.lineJoin='round';g.lineCap='butt';
- drawRoads();
  // the building's name painted on the asphalt just inside its gate
  LOTS.forEach((l,i)=>{const nm=['COAL MINE','POWER PLANT','GARAGE','LUMBERYARD','SAWMILL','SHOP','FUEL STATION','QUARRY','IRON MINE','CRUSHER','FACTORY','FOUNDRY'][i];
   for(const q of GATES(l)){const S2=q.side==='S'||q.side==='N',px=S2?(q.a+q.b)/2:q.side==='W'?l.x0+36:l.x1-36,py=q.side==='S'?l.y1-24:q.side==='N'?l.y0+24:(q.a+q.b)/2;   // one at every gate
