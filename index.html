@@ -4485,13 +4485,15 @@ function sndState(){let hitch=0,lifted=0,feet=false;const tool={};for(const v of
  for(const p of PALS)if(p.fk)lifted++;for(const l of LG)if(l.fk)lifted++;for(const a of ATT)if(a.fk)lifted++;for(const o of Object.values(veh))if(o.fk)lifted++;for(const o of Object.values(trl))if(o.fk)lifted++;
  return{drv:P.driving&&T?T.id:null,seat:P.pass?P.pass.id+':'+P.seatSd:null,inB:IN?1:0,hitch,lifted,tool,hands:P.hands?P.hands.filter(Boolean).length:0,feet,built:SITES.filter(q=>q.b.built).length,rot:(P.barR||0)+','+mapYRot+','+mapCurve+','+mapBT+','+mapPiece,roads:UH.length,units:Object.keys(YB).map(n=>{const u=YU(n);return u.c0+','+u.r0+','+u.rot}).join(';'),gone:Object.keys(YB).filter(isGone).length,peers:(()=>{try{const r=NET.room;return r&&r.peers?r.peers().filter(p=>!p.sameTab).length:0}catch(e){return 0}})(),goals:STORY&&STORY.d?Object.keys(STORY.d).length:0,note:note||''}}
 // touch: the lights and horn buttons show while you are in a vehicle; the lights one is lit while they are on
-let LBK='';function lightBtns(){if(!TOUCHUI)return;const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null,on=v&&(inCraneCab()?v.hl:v.lights),k=(v?v.id:'')+(on?1:0)+(inCraneCab()?'c':'');if(k===LBK)return;LBK=k;$('ltb').style.display=$('hrb').style.display=v?'':'none';$('ltb').style.background=on?'#c9a227':'';$('ltb').style.borderColor=on?'#ffd166':''}
+let LBK='';function lightBtns(){if(!TOUCHUI)return;const v=ctlV(),on=v&&(inCraneCab()?v.hl:v.lights),k=(v?v.id:'')+(on?1:0)+(inCraneCab()?'c':'');if(k===LBK)return;LBK=k;$('ltb').style.display=$('hrb').style.display=v?'':'none';$('ltb').style.background=on?'#c9a227':'';$('ltb').style.borderColor=on?'#ffd166':''}
 // L: in a vehicle's cab its lights (day or night); in the crane cab only the work light on the hook, the truck's own lights stay as they were left. Getting out on foot turns them off (lightsWatch)
 const inCraneCab=()=>P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT;
-function lightsToggle(){const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null;if(!v)return flash('Get in a vehicle to turn its lights on.');NET.last=0;
+// the vehicle whose lights and horn are yours: the one you drive, or the crane you sit in the cab of. A passenger has neither
+const ctlV=()=>P.driving&&T&&T.out?T:inCraneCab()&&P.pass.out?P.pass:null;
+function lightsToggle(){const v=ctlV();if(!v)return flash(P.pass?'Only the driver can use the lights.':'Get in a vehicle to turn its lights on.');NET.last=0;
  if(inCraneCab()){v.hl=!v.hl;sfx(v.hl?'lon':'loff');flash(v.hl?'Work light on: it shines on the hook.':'Work light off.')}else{v.lights=!v.lights;sfx(v.lights?'lon':'loff');flash(v.lights?'Lights on.':'Lights off.')}lightBtns()}
-let LWV=null;function lightsWatch(){const v=P.driving&&T&&T.out?T:P.pass&&P.pass.out?P.pass:null;if(LWV&&!v&&(LWV.lights||LWV.hl)){LWV.lights=false;LWV.hl=false;NET.last=0}LWV=v}   /* out on foot: the lights of what you left go off; moving between the truck's cab and the crane cab keeps them */
-function horn(){if(!(P.driving&&T&&T.out)&&!(P.pass&&P.pass.out))return;const t=performance.now();if(t-(AUD.hornT||0)<500)return;AUD.hornT=t;sfx('horn')}
+let LWV=null;function lightsWatch(){const v=ctlV();if(LWV&&!v&&(LWV.lights||LWV.hl)){LWV.lights=false;LWV.hl=false;NET.last=0}LWV=v}   /* out on foot: the lights of what you left go off; moving between the truck's cab and the crane cab keeps them */
+function horn(){if(!ctlV())return;const t=performance.now();if(t-(AUD.hornT||0)<500)return;AUD.hornT=t;sfx('horn')}
 setApply();
 let lastDraw=0;
 function loop(n){if(MENU||PAUSED){last=n;sndTick(0);draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
