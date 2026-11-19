@@ -4,6 +4,17 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.6 · 19 Nov 2026
+- Changed: every building is 14 x 14 squares like the power plant and the coal mine: the lumberyard, sawmill, quarry, iron mine, crusher, factory and foundry, and their construction sites. Each grew towards its back, over the spot where its (hidden) readout board stood
+- Changed: their roofs are laid out for the square shape: same look and materials, the skylights, vents, ducts, cyclones, chimneys and the rest spread over the whole roof
+- Changed: you walk in and out of all of them as in the power plant: one entrance in the middle of the front wall, the room drawn on the map, things can be put down on the floor. Their shelves, boards and upgrade / control pads are gone; anything that lay on a shelf is put on the room's floor
+- Added: a control desk and chair in each. Space on the desk opens the building's window (the factory and foundry: Control panel and Upgrades tabs). Screen 1 shows the main store, screen 2 a lamp: green running, amber on but no power, red off
+- Added: each has one main switch (2 squares) in the middle of its back wall, as in the coal mine: it is the building's on/off switch. The power plant keeps its 6 levers and yard lamps
+- Changed: each room has its own floor, painted as one piece in the building's material (boards, stone flags, tiles or concrete)
+- Fixed: the grass and the ground of the lots showed a checkerboard of slightly different squares, one per map tile; they are now one even colour
+- Changed: the Settings page is split into tabs: General (your name, camera), Sound, Display, Controls (touch and the list of controls) and Keys. It opens on the tab you last used
+- Changed: the 9 sound sliders are now 3: Vehicles and work (engines, machines, loading and unloading, horn and reversing beeper), Game (money, buttons and doors, goals, chat) and World and music (wind, birds, crickets, music), under the main volume and Mute all. Settings from before keep the loudest of their old sliders in each group
+
 ## 0.1.5 · 19 Nov 2026
 - Changed: the coal mine is rebuilt like the power plant: 14 x 14 squares, centred in its lot, with one entrance in the middle and a walk-in room you see into
 - Changed: new coal mine roof (winding-engine house, headframe with its ropes, coal bunker) and floor (dark concrete, coal dust, tread plates, hazard stripes)
