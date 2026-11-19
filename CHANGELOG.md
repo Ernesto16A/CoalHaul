@@ -4,6 +4,25 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.9 · 19 Nov 2026
+- Changed: no storage is global any more: every store belongs to its building. The sawmill's count of sawn planks is the sawmill's own, the garage storage (coal, logs, fuel) is the garage's and the shop storage is the shop's, so a later second copy of a building gets its own. Saves keep the same names, so old saves load unchanged
+- Fixed: the garage's storage upgrades (room for 50 → 100 → … of coal, logs, fuel) were not saved or shared with the other players; they are now, like the shop's
+- Added to /check: every building's own stores (sawmill planks, garage and shop storage and their room) come back from a save
+- Changed: the coal mine is ready for more than one. Every coal mine has its own store, digging, main switch, levels, desk and desk window, pipe and housing, lot (with its own name on the wall: COAL MINE 2) and room (what is put down on its floor stays in it). Each pipe pours from its own mine. A new copy is saved and shared with the other players as a map step, with its stores; old saves have the one mine as before. How a player gets a second mine (what it costs, where) is not decided yet
+- Changed: Demolish removes a building for good: its stock, upgrades and whatever lay on its room floor are gone (vehicles and things standing in its lot stay). It no longer goes back to the Yards list to be moved again
+- Added: the Yards list (Build tab on the map) has a "New coal mine" card: pick it and click the map to place a new, empty coal mine (as many as you like, wherever there is room; a road to its gate is up to you). A demolished one-of-a-kind building shows as "New power plant", "New garage"… and is placed the same way
+- Changed: saves keep every building's place and turn, and every building's stores. Before, places were only rebuilt from the list of map changes, so a step that failed on loading could lose a building
+- Changed: in a shared game, a guest who sets a building down or places a new coal mine asks the host: the host checks it against its own map and picks the new mine's name, so two players can never make the same mine or put two buildings on one place. If the place is taken, the guest is told
+- Changed: the first goal is now "Get coal from a coal mine" (any coal mine). The arrow that pointed from the player to the next goal is gone; goals will be reworked once every building can have copies
+- Changed: at night there is no glow round the player, the other players or a vehicle's cab any more: only headlights, tail and reversing lamps, the lamp over each building's entrance and a crane's work light
+- Added to /check: unloading takes only the cargo space selected with V; every building's place and turn is in the save; a demolished mine is gone from the Yards list with its store and room floor; the host refuses a second mine on the same place and never repeats a name; a demolished mine comes back new and empty; a save puts a mine back where it stood without checking the place again
+- Changed: /tp knows every coal mine by its own name: /tp mine1, /tp mine2… (the other buildings by their name without spaces: /tp powerplant, /tp garage). Each coal mine's desk window shows its name
+- Changed: in a shared game a guest's map message waits for the host: "Asking the host…", then "placed" or "demolished" once the host has done it, or why not
+- Changed: the dark coal dust on the ground under the spout is drawn at every coal mine (it was only at the first)
+- Added to /check: /tp mine1 and /tp mine2 go to each mine's door and the desk window shows its name; a guest hears "placed" only once the host has placed it
+- Added: test panel: "Add a coal mine" puts a new coal mine on the nearest free place. The start map has no free place, so it takes up the roads on the nearest place that has only roads on it
+- Added to /check: a second coal mine is added and drawn; each mine digs into its own store; a pipe pours from its own mine; its room, main switch and desk are its own; what lies on its floor stays in its room; it is saved with its place and stores
+
 ## 0.1.8 · 19 Nov 2026
 - Fixed: the crane's cables over a container on a flatbed (a dump truck's bed or a flatbed trailer) could take the truck or trailer under it instead of the container. They chose by distance to each thing's reference point (a truck's rear axle often lies right under its container). Now the cables take what is on top first (a container on a flatbed, a vehicle on a ramp deck, an attachment on a pallet or a bed), then the nearest by its middle. The yellow mark shows the same choice
 - Fixed: a crane could lift a truck with a container still on its flatbed. Now it says to unload the flatbed first
