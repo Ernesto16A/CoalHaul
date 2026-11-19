@@ -3923,7 +3923,82 @@ function chatSend(t){t=(t||'').trim();if(!t)return;if(t[0]==='/')return chatCmd(
 function chatPoll(){const r=NET.room;if(!r)return;try{for(const p of r.peers()){if(p.sameTab)continue;const q=p.presence;if(!q||!q.ch)continue;for(const m of q.ch){if(!m||CHAT.seen.has(m.id))continue;CHAT.seen.add(m.id);sfx('msg');chatLine(chatWho(q.nm,q.hue)+': '+esc(m.t))}}}catch(e){}}
 // kits for /kit: each sets out a set of things to try at the garage. More are added here
 const KITS={crane:()=>$('tcrane').click()};
+// ---------- the self-check (/check in the chat; tools/check.py runs the same in a test browser) ----------
+// It reads the game's own lists, so whatever is added to them is checked from then on: every building (RWKN), vehicle kind (TKINDS), trailer kind (TRL), item (ITEMS), shop item (ITEMSHOP), window (every panelMode the game draws), settings tab (SETTABS), and a save written and read back.
+// A new KIND of thing (boats, poles, a train) needs its own check written here once, in the same change that adds it.
+// Alone, the full check works on the game as it is, then puts it back exactly as it was (the save taken before, loaded again). With other players here it only runs the checks that change nothing.
+const CHK={on:false,res:null};
+const chkSleep=ms=>new Promise(r=>setTimeout(r,ms));
+function chkRun(sec){const n=Math.round(sec*30);for(let i=0;i<n;i++)step(1/30)}   // the game run ahead by itself, 30 steps a second
+function chkPanels(){const o=new Set();for(const m of String(renderGarage).matchAll(/panelMode\s*==+\s*'(\w+)'/g))o.add(m[1]);return[...o]}   // every window the game can draw, read from the code that draws them
+async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full!==false&&!othersHere(),R={groups:{},full,dry,ver:VER,t:Date.now()},errs=[];   // dry: nothing is run, the checks are only listed (/checklist)
+ const grp=n=>R.groups[n]||(R.groups[n]={pass:0,fail:[],items:[]});
+ const t=(g,name,fn)=>{const G=grp(g),e0=errs.length;G.items.push(name);if(dry)return;let r;try{r=fn()}catch(e){r='threw: '+(e&&e.message||e)}if(r===true&&errs.length>e0)r='error: '+errs[e0];if(r===true)G.pass++;else G.fail.push(name+': '+(r===false||r==null?'failed':r))};
+ const onErr=e=>{errs.push(String(e.message||e.reason||e))};addEventListener('error',onErr);addEventListener('unhandledrejection',onErr);
+ const draw1=()=>{draw(performance.now())};
+ const wasP=PAUSED;if(!dry){CHK.on=true;PAUSED=true}let snap=null;
+ try{
+ if(full&&!dry)snap=JSON.stringify(gameSave());
+ // 1. the lists agree with each other (changes nothing)
+ for(const n of RWKN)t('lists','building '+n,()=>!OFFICES.find(q=>q.n===n)?'no office':typeof ROOF[n]!=='function'?'no roof':!RWK[n]?'not in RWK':!BLD[n]?'not in BLD':LOTK.indexOf(n)<0?'no lot':!DESKC[n]?'no desk store':true);
+ for(const k in TKINDS)t('lists','vehicle '+k,()=>typeof TKINDS[k].cost!=='number'?'no price':!TKINDS[k].n?'no name':true);
+ for(const k in TRL)t('lists','trailer '+k,()=>typeof TRL[k].cost!=='number'?'no price':!TRL[k].n?'no name':true);
+ for(const k in ITEMSHOP)t('lists','shop item '+k,()=>{const c=itemIcon(k);return typeof c==='string'&&c.startsWith('data:image')?true:'no icon'});
+ t('lists','save',()=>{const d=JSON.parse(JSON.stringify(gameSave()));if(!Array.isArray(d.e)||typeof d.cash!=='number')return'save is not complete';if(d.ver!==VER)return'save has version '+d.ver;migrateSave(d);return true});
+ if(!full)return R;
+ // 2. buildings: built, walked into, main switch thrown, desk window opened, walked out
+ if(!dry){cash=1e6;for(const n of RWKN){const b=BLD[n];if(b.reqs)b.reqs.forEach(r=>r.got=r.need);if('built' in b)b.built=true}applyUnits();ensureDesk();chkRun(.2);
+ if(IN)exitMine();if(P.driving||P.pass){P.driving=false;P.pass=null}}
+ for(const n of RWKN){
+  const o=OFFICES.find(q=>q.n===n);
+  t('buildings',n+' is 14 x 14 with one door',()=>{const r=offRect0(o);return Math.round(r.x1-r.x0)!==280||Math.round(r.y1-r.y0)!==280?'it is '+Math.round((r.x1-r.x0)/S)+' x '+Math.round((r.y1-r.y0)/S):!o.doors||o.doors.length!==1?'doors: '+(o.doors||[]).length:true});
+  t('buildings',n+': walk in',()=>{const gm=interiorGeo(o),d=r2w(o,-4000,gm.Y1+40),c=r2w(o,-4000,-4030);P.x=d[0];P.y=d[1];const dx=c[0]-P.x,dy=c[1]-P.y,k=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');K[k]=1;chkRun(1.4);K[k]=0;return IN&&IN.o.n===n?true:'did not get in'});
+  if(!dry&&(!IN||IN.o.n!==n)){enterOffice(o)}
+  t('buildings',n+': main switch',()=>{const L=RWLEV(n).find(q=>q.k==='main');P.x=L.x+L.w/2;P.y=PLEVY+40;const h=plevAt([L.x+L.w/2,PLEVY+S/2]);if(!h)return'no lever found';if(h.far)return'lever out of reach';const a=RWK[n].on();plevThrow(h);const b2=RWK[n].on();plevThrow(h);return b2===!a&&RWK[n].on()===a?true:'the switch did not change'});
+  t('buildings',n+': desk window',()=>{const d=GI.find(i=>i.type==='desk'&&i.rm===n);if(!d)return'no desk in the room';if(deskOf(d)!==n)return'the desk does not work';supB=RWK[n].b();if(RWK[n].open)RWK[n].open();openP(RWK[n].panel);const ok=$('gp').innerHTML.length>80;closeGarage();return ok||'the window is empty'});
+  t('buildings',n+': drawn inside',()=>{draw1();return true});
+  t('buildings',n+': walk out',()=>{const gm=interiorGeo(o);P.x=-4000;P.y=gm.Y1-40;const a=r2w(o,-4000,gm.Y1+60),w=r2w(o,P.x,P.y),dx=a[0]-w[0],dy=a[1]-w[1],k=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');K[k]=1;chkRun(1.2);K[k]=0;if(IN){exitMine();return'did not get out'}return true});
+  t('buildings',n+': drawn outside',()=>{draw1();return true})}
+ // 3. vehicles: each kind put on the ground, driven ahead, drawn; then taken away again
+ const v0=Object.values(veh).find(v=>v.out),X0=v0?v0.x:P.x,Y0=v0?v0.y:P.y,A0=v0?v0.a:0;if(v0&&!dry)v0.out=false;
+ for(const k in TKINDS)t('vehicles',k+': drives',()=>{const v=addVeh(k,{});v.out=true;v.x=X0;v.y=Y0;v.a=A0;v.v=0;setActive(v);P.driving=true;P.pass=null;K.up=1;chkRun(1.5);K.up=0;chkRun(.5);const d=Math.hypot(v.x-X0,v.y-Y0);draw1();P.driving=false;delete veh[v.id];return d>4?true:'it did not move ('+d.toFixed(1)+')'});
+ // 4. trailers and items: each put on the ground and drawn
+ for(const k in TRL)t('trailers',k,()=>{const l=addTrl(k);l.out=true;l.x=X0;l.y=Y0;l.b=A0;l.hx=X0+Math.cos(A0)*TRL[k].bar*S;l.hy=Y0+Math.sin(A0)*TRL[k].bar*S;draw1();chkRun(.1);delete trl[l.id];return true});
+ for(const k in ITEMS)t('items',k,()=>{const it=mkItem(k);it.x=P.x+S;it.y=P.y;GI.push(it);chkRun(.1);draw1();const i=GI.indexOf(it);if(i>=0)GI.splice(i,1);return true});
+ // 5. the coal run: a dump truck loads at the coal mine and unloads at the power plant
+ t('hauling','coal from the mine to the power plant',()=>{/* the coal is measured by what it is paid: the other buildings may burn it as soon as it is in */const v=addVeh('dump',{});v.out=true;setActive(v);P.driving=true;P.pass=null;mine.sw=1;mine.stock=mine.cap;
+  const put=z=>{v.a=z.w>=z.h?0:Math.PI/2;v.v=0;v.x=z.x;v.y=z.y;const c=carriers().find(q=>q.ent===v);if(c){const d=dir(c.a),m=(c.e0+c.e1)/2*S;v.x+=z.x-(c.ox+d[0]*m);v.y+=z.y-(c.oy+d[1]*m)}};/* a zone is given by its middle: the truck's bed is set on it */put(load);SPK.down=true;SPK.t=performance.now()-2000;chkRun(4);const got=v.cargo&&v.cargo.amt||0;
+  if(got<=0){SPK.down=false;P.driving=false;delete veh[v.id];return'nothing was loaded at the coal mine'}
+  const p0=cash;put(dump);SPK.t=performance.now()-2000;chkRun(6);SPK.down=false;const left=v.cargo&&v.cargo.amt||0;P.driving=false;delete veh[v.id];
+  return left<got&&cash>p0?true:'nothing was unloaded at the power plant (load '+got.toFixed(1)+' t, left '+left.toFixed(1)+' t, paid $'+Math.round(cash-p0)+')'});
+ if(v0&&!dry){v0.out=true;setActive(v0)}
+ // 6. every window and every settings tab
+ for(const m of chkPanels())t('windows',m,()=>{supB=supB||quarry;if(m==='sup')supB=quarry;if(m==='yup')yupB=lumber;if(m==='fac'||m==='fnd')facView='ctl';openP(m);const ok=$('gp').innerHTML.length>40;closeGarage();return ok||'empty'});
+ {const keep=SETTAB,o=document.createElement('div');for(const[k]of SETTABS)t('settings',k,()=>{SETTAB=k;pageSettings(o,()=>{});return o.innerHTML.length>200||'empty'});SETTAB=keep}
+ // 7. a save written and read back
+ t('saves','written and read back',()=>{const s=JSON.stringify(gameSave()),d=JSON.parse(s);migrateSave(d);return Array.isArray(d.e)&&d.e.length>0?true:'no entities in the save'});
+ return R}
+ finally{removeEventListener('error',onErr);removeEventListener('unhandledrejection',onErr);for(const k in K)K[k]=0;SPK.down=false;
+  R.errors=errs.slice(0,10);if(!dry)CHK.res=R;
+  if(snap&&opt.restore!==false){try{sessionStorage.setItem('coalhaul.check',JSON.stringify(R))}catch(e){}loadFrom(snap)}   // put the game back as it was (the page reloads with it)
+  else{CHK.on=false;PAUSED=wasP}}}
+// what the check does NOT cover yet: shown by /checklist so it can be added to the check. When a check is written for one, take it off this list
+const CHKTODO=['Hitching and unhitching a trailer (C), and towing it','The forklift: lifting, carrying and setting down pallets, crates and logs','The crane truck: feet, boom, hook, cables and the bulk container','Buying in the shop and selling on the SELL pad','The garage: parking, slots, storage and the unload pad','Construction sites: deliveries, and the building going up','Production: logs, rock, iron ore, sand, gravel, planks, and the factory and foundry queues','The fuel station: pumps, canisters, running out of fuel','Ramps and ramp trailers: driving a vehicle or trailer onto a deck','Signs: choosing what they show','Day and night, lights and the horn','The big map: Build tab, moving, turning and demolishing buildings and roads','Story goals and their arrows','Multiplayer: joining, sharing a game, the host'];
+function chkListWin(){runChecks({dry:true}).then(R=>{const G=R.groups;let n=0;for(const g in G)n+=G[g].items.length;
+ const sec=(t,body)=>'<details style="margin:4px 0"><summary style="cursor:pointer;font-weight:700;font-size:14px;padding:4px 0">'+t+'</summary><div style="font-size:12px;opacity:.85;padding:2px 0 6px 14px;line-height:1.5">'+body+'</div></details>';
+ const h='<div style="max-height:58vh;overflow:auto;margin:-4px 0 10px">'+Object.keys(G).map(g=>sec('✓ '+esc(g)+' · '+G[g].items.length,G[g].items.map(esc).join('<br>'))).join('')+sec('… not checked yet · '+CHKTODO.length,CHKTODO.map(x=>'• '+esc(x)).join('<br>'))+'</div><button id="chk-run" style="'+UI.btn+';width:100%;margin-bottom:6px">Run the check now (/check)</button><button id="chk-close" style="'+UI.btn+';width:100%">Close</button>';
+ const o=overlay(ovBox('Checklist · v'+esc(VER),n+' checks, read from the game\'s own lists: a new building, vehicle, trailer, item, window or settings tab is on it by itself. Tap a group to see what it checks. A new kind of mechanic gets its own check when it is added.',h));
+ o.querySelector('#chk-close').onclick=()=>o.remove();o.querySelector('#chk-run').onclick=()=>{o.remove();CMDS.check[2]('')};o.onpointerdown=e=>{if(e.target===o)o.remove()}})}
+// the results, as lines: one per group, then what failed
+function chkLines(R){const L=[],G=R.groups;let bad=0;for(const g in G){const n=G[g].pass+G[g].fail.length;bad+=G[g].fail.length;L.push((G[g].fail.length?'✗ ':'✓ ')+g+' '+G[g].pass+'/'+n)}
+ const F=[];for(const g in G)for(const f of G[g].fail)F.push(g+' · '+f);for(const e of R.errors||[])F.push('error · '+e);return{sum:L.join(' · '),fails:F,ok:!bad&&!(R.errors||[]).length}}
+function chkReport(R){const r=chkLines(R);chatLine('<b>Check v'+esc(R.ver)+(R.full?'':' (others are here: only the checks that change nothing)')+'</b>: '+esc(r.sum),1);
+ if(r.ok)chatLine('Everything passed.',1);else{r.fails.slice(0,5).forEach(f=>chatLine('✗ '+esc(f),1));if(r.fails.length>5)chatLine('… and '+(r.fails.length-5)+' more.',1)}}
+// after the check has put the game back (the page reloaded), its results go to the chat
+setTimeout(()=>{let s=null;try{s=sessionStorage.getItem('coalhaul.check');sessionStorage.removeItem('coalhaul.check')}catch(e){}if(s)try{const R=JSON.parse(s);CHK.res=R;const w=setInterval(()=>{if(!MENU&&document.getElementById('chlog')){clearInterval(w);chatOpen&&chatOpen('');chkReport(R)}},500)}catch(e){}},0);
 const CMDS={
+ checklist:['','what /check checks, and what it does not check yet',()=>{if(MENU)return chatLine('Start or load a game first.',1);chkListWin()}],
+ check:['','check the whole game: every building, vehicle, trailer, item, window and the saves (alone: your game is put back as it was afterwards)',()=>{if(CHK.on)return chatLine('The check is already running.',1);if(MENU)return chatLine('Start or load a game first.',1);chatLine(othersHere()?'Checking (others are here, so only what changes nothing)…':'Checking everything… your game is put back as it was afterwards.',1);setTimeout(async()=>{const R=await runChecks({});if(!R.full||R.restore===false)chkReport(R)},50)}],
  help:['','list the commands',()=>{const L=t=>Object.entries(CMDS).filter(([k,v])=>t===v[1].startsWith('test: ')).map(([k,v])=>'/'+k+(v[0]?' '+v[0]:'')+' – '+v[1].replace('test: ',''));chatLine('Commands: '+esc(L(false).join(' · ')),1);chatLine('Test: '+esc(L(true).join(' · ')),1)}],
  name:['<name>','set the name the others see',a=>{const n=a.trim().slice(0,20);if(!n)return chatLine('Your name is '+(CHAT.name||'not set')+'. Use /name Joe.',1);CHAT.name=n;try{localStorage.setItem('coalhaul.name',n)}catch(e){}NET.last=0;chatLine('You are now '+esc(n)+'.',1)}],
  players:['','everyone who has been on this map: kick, ban, remove (host)',()=>playersWin()],
@@ -4198,12 +4273,12 @@ function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=svGet(key);if(o)svS
 const saveName=(d,label)=>d&&d.name?esc(d.name):label;   // a slot shows the name it was saved under, or its own label
 const readSave=key=>{try{const r=svGet(key);return r?JSON.parse(r):null}catch(e){return null}};
 function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;svSet(PENDK,raw).then(ok=>{if(ok!==false)location.reload();else flash('Could not load: the browser storage refused it.')});return true}catch(e){flash('That is not a Coal Haul save.');return false}}
-const canAuto=()=>!MENU&&NET.mode!=='join';   // a player in somebody else's game does not autosave it over his own
+const canAuto=()=>!MENU&&NET.mode!=='join'&&!CHK.on;   // a player in somebody else's game does not autosave it over his own
 setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000);   // not in the first seconds: a page opened by mistake must not replace a good autosave
 addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.6',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.7',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};

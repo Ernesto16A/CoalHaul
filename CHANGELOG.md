@@ -4,6 +4,11 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.7 · 19 Nov 2026
+- Added: /check in the chat checks the whole game: every building (built, walked into and out of, main switch thrown, desk window opened), every vehicle kind (put down and driven), every trailer and item, a coal run from the mine to the power plant, every window, every settings tab and a save written and read back. It reads the game's own lists, so whatever is added to them is checked from then on. Alone, your game is put back exactly as it was afterwards; with other players here, only the checks that change nothing run
+- Added: /checklist in the chat opens a window with everything /check checks (191 checks today, by group: tap a group to see them), read from the same lists, and the things it does not check yet, so the check can be extended. It changes nothing in the game; a button runs /check
+- Added: tools/check.py runs the same check in a test browser before every push, and loads every save kept in tools/saves/ (one per version, so a change that breaks old saves is caught)
+
 ## 0.1.6 · 19 Nov 2026
 - Changed: every building is 14 x 14 squares like the power plant and the coal mine: the lumberyard, sawmill, quarry, iron mine, crusher, factory and foundry, and their construction sites. Each grew towards its back, over the spot where its (hidden) readout board stood
 - Changed: their roofs are laid out for the square shape: same look and materials, the skylights, vents, ducts, cyclones, chimneys and the rest spread over the whole roof
