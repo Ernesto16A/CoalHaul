@@ -4,6 +4,19 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.10 · 19 Nov 2026
+- Changed: a new game starts on an empty map: no roads and no buildings, only the garage in the top-left corner (chunk 0,0, gate south) with your pickup. You build the rest from the map's Build tab: roads with Roads, buildings with Yards (the power plant and the other production buildings start as construction sites; the shop and the fuel station are built at once). Saved games keep their map
+- Changed: the first goal is now "Build a coal mine"; the goals that need the power plant, the fuel station or the shop say to build it first when there is none
+- Changed: /check sets every building down where the old start had them for its run (your game is put back afterwards), so every building is still checked
+- Added to tools/check.py: a new game starts with only the garage at 0,0 and no roads
+- Changed: the Yards tool no longer moves buildings. Its list has one card per kind of building: pick one and click the map to build a new one there (R turns it). Coal mine can always be built, as many as you like; the other kinds can only stand once for now, so their card works only after the one on the map is demolished ("built (one only)"). The separate "New coal mine" card is gone. In a shared game the host refuses to move a building that stands
+- Fixed: new coal mines had a thin fence instead of the thick concrete yard walls every other yard has
+- Fixed: only the first coal mine got its storage sign. Every coal mine now has one, against the back wall of its yard in line with its pipe (a new game's first mine too; a sign already standing in a saved game stays where it is). Demolishing a building takes its sign away; a new one gets a new sign
+- Added to /check: every coal mine has the thick walls and its sign at the back wall in line with its pipe
+- Added to /check: the Yards list has one card per kind, the coal mine card builds a new mine and leaves the others where they are, and a standing building cannot be picked or moved
+- Fixed: the first coal mine, demolished and placed again with the Yards tool, came back with its building and pipe away from its lot (the building stood on the grass where the mine used to be). Resetting a demolished building also reset its link to its place on the map. A game this happened in comes right when it is loaded again
+- Added to /check: the first mine demolished and placed again has its building, lot and pipe together
+
 ## 0.1.9 · 19 Nov 2026
 - Changed: no storage is global any more: every store belongs to its building. The sawmill's count of sawn planks is the sawmill's own, the garage storage (coal, logs, fuel) is the garage's and the shop storage is the shop's, so a later second copy of a building gets its own. Saves keep the same names, so old saves load unchanged
 - Fixed: the garage's storage upgrades (room for 50 → 100 → … of coal, logs, fuel) were not saved or shared with the other players; they are now, like the shop's

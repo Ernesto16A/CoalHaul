@@ -53,6 +53,9 @@ async def main():
         await pg.wait_for_timeout(300)
         await pg.click('button[data-c]')
         await pg.wait_for_timeout(1500)
+        # a new game starts on an empty map: only the garage, at chunk 0,0, and no roads (decided 19 Nov)
+        st = await pg.evaluate("()=>({b:NETX.units.filter(([k])=>!isGone(k)).map(([k,U])=>k+' '+U.c0+','+U.r0),roads:RC.size+WT.size+WD.size})")
+        start_ok = st['b'] == ['garage 0,0'] and st['roads'] == 0
         res = await pg.evaluate("async()=>{const R=await runChecks({restore:false});const L=chkLines(R);return {ver:R.ver,sum:L.sum,fails:L.fails,ok:L.ok,groups:R.groups}}")
         print('Coal Haul v%s check' % res['ver'])
         for g, v in res['groups'].items():
@@ -62,7 +65,8 @@ async def main():
             print('  ✗ ' + f)
         for e in errs:
             print('  ✗ page error: ' + e)
-        ok = res['ok'] and not errs
+        print('  %s start     new game: %s, %d road tiles' % ('✓' if start_ok else '✗', ', '.join(st['b']) or 'nothing', st['roads']))
+        ok = res['ok'] and not errs and start_ok
         if '--keep-save' in sys.argv:
             # a save of this version, every building built: later versions must still load it
             d = await pg.evaluate("()=>{const d=gameSave();d.name='check v'+VER;return JSON.stringify(d)}")
