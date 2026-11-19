@@ -214,7 +214,7 @@ function nearRoad(x,y,m){const c=Math.floor(x/TS),r=Math.floor(y/TS);
 
 // ---------- buildings & economy ----------
 let power=0,plantRun=false,plantOn=true,lumberOn=true,sawOn=true,factoryOn=true,foundryOn=true,quarryOn=true,ironOn=true,crusherOn=true;   // plantOn: the lever in the plant's building; off, the plant burns no coal and gives no power
-const mine={sgn:0,dsk:0,sw:0,stock:0,cap:50,lvl:0,rlvl:0,rate:.1,name:'Coal mine',unit:'t'};   // sw: its main switch (off: no coal is dug); a new game starts with it off   // the coal mine regenerates 0.1 t per second
+const mine={sgn:0,dsk:0,pi:1,pl:1,sw:0,stock:0,cap:50,lvl:0,rlvl:0,rate:.1,name:'Coal mine',unit:'t'};   // sw: its main switch (off: no coal is dug); a new game starts with it off   // the coal mine regenerates 0.1 t per second
 const plant={built:false,need:10,got:0,stock:0,cap:50,lvl:0,burn:1,sgn:0,sic:0,dsk:0,lpnw:1,lpne:1,lpsw:1,lpse:1,lpg:1,name:'Power plant',unit:'t'};   // sgn: its sign has been made
 const lumber={sgn:0,built:false,need:10,got:0,stock:0,prog:0,ylvl:0,get cap(){const z=lzLay();return Math.floor(z.w/LOGCX+1e-6)*Math.floor(z.h/LOGCY+1e-6)},lvl:0,rate:.8,name:'Lumberyard',unit:'logs'};
 // the lumberyard has two layouts: as a construction site the coal is dumped in the middle of the lot; once built it is laid out like the power plant (building at the lot's +140,+160, board at +20,+20, log station at +640,+160)
@@ -345,7 +345,8 @@ function buildWalls(){WALLS.length=0;const add=(x0,y0,x1,y1)=>WALLS.push({x0:Mat
 buildWalls();
 function buildBlds(){BLDS.length=0;const bx=(x0,y0,x1,y1)=>BLDS.push({x0,y0,x1,y1});
  for(const[x,y]of F0.pumps)BLDS.push(uBox(FS,{x0:x-20,y0:y-20,x1:x+20,y1:y+20}));BLDS.push(uBox(FS,F0.board));   // the fuel station's pumps and board, the mine's board            // fuel station: the shop on the island (12x3 tiles) and its one pump on the north kerb (2x2 tiles)
- for(const[x,y,n,w,h,U]of BOARDS)if(n!=='fuel')BLDS.push(U?uBox(U,{x0:x,y0:y,x1:x+w,y1:y+h}):{x0:x,y0:y,x1:x+w,y1:y+h})}
+ {const o=OFFICES.find(q=>q.n==='mine');if(o)BLDS.push(uBox(MS,mineHouse(o)))}   // the coal pipe's housing on the mine's back wall: part of the building (a demolished mine is parked far away, and its housing with it)
+  for(const[x,y,n,w,h,U]of BOARDS)if(n!=='fuel')BLDS.push(U?uBox(U,{x0:x,y0:y,x1:x+w,y1:y+h}):{x0:x,y0:y,x1:x+w,y1:y+h})}
 buildBlds();    // the grey readout boards behind the offices
 const offRect0=o=>o.rot?{x0:o.X,y0:o.Y,x1:o.X+66*(o.rooms||2),y1:o.Y+150}:{x0:o.X-(o.sl||0),y0:o.Y,x1:o.X+(o.w||150)+(o.sl||0),y1:o.Y+(o.eh||(o.rh||66)*(o.rooms||2))};
 const offRect=o=>o.site?uBox(o.site,offRect0(o)):offRect0(o);
@@ -416,14 +417,15 @@ const TKINDS={
  car:{n:'Small car',ax:1,wb:2.45,maxst:Math.PI/3,vmax:7,acc:5.5,b0:-1.15,b1:3.15,cab0:.2,hx:-1.45,hw:.9,zh:5,cap:0,trl:'small',tl:['small'],cost:500,fuel:4,burn:.4,seats:[[1.52,-.42],[1.52,.42],[.66,-.42],[.66,.42]],trunk:{x0:-1.05,x1:-.17,y0:-.76,y1:.76,nc:1,n:2,lid:[-1.15,-.17],bar:[-.2,.2]}},   // trunk.lid: the closed boot lid (a click on it opens the boot); trunk.bar: where the lid stands when it is open (a click on it closes the boot)
  minibus:{n:'Mini-bus',ax:1.4,wb:3.9,maxst:60*Math.PI/180,vmax:5.8,acc:4,b0:-1.3,b1:4.9,cab0:3,hx:-1.6,hw:1,zh:8.5,cap:0,trl:'small',tl:[],cost:900,fuel:12,burn:.7,seats:[[3.15,-.5],[3.15,.5],[2.1,-.5],[2.1,.5],[.85,-.5],[.85,.5],[-.42,-.5],[-.42,.5]]}};   // one row of two seats at each of the four windows a side: 8 seats
 const TRL={
- pc:{n:'Small bulk trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:5,cargo:'coal',cost:120},
- pl:{n:'Small log trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:3,cargo:'logs',cost:180},
- pf:{n:'Small fuel trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:150,cargo:'fuel',cost:220},
+ // the small trailers have the pickup's bed size: 2.4 units long (hw 1.2), 2 wide (hh 1), like the bed from the tailgate to the cab; the small ramp trailer keeps a 3-unit deck so an ATV or a forklift fits on it
+  pc:{n:'Small bulk trailer',cls:'small',bar:3.2,co:0,hw:1.2,hh:1,cap:5,cargo:'coal',cost:120},
+ pl:{n:'Small log trailer',cls:'small',bar:3.2,co:0,hw:1.2,hh:1,cap:3,cargo:'logs',cost:180},
+ pf:{n:'Small fuel trailer',cls:'small',bar:3.2,co:0,hw:1.2,hh:1,cap:150,cargo:'fuel',cost:220},
  tc:{n:'Medium bulk trailer',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:12,cargo:'coal',cost:200},
  tl:{n:'Medium log trailer',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:6,cargo:'logs',cost:300},
  sc:{n:'Semi bulk trailer',cls:'semi',bar:6.2,co:3,hw:4,hh:1,cap:25,cargo:'coal',king:1,cost:500},
  sl:{n:'Semi log trailer',cls:'semi',bar:6.2,co:3,hw:4,hh:1,cap:12,cargo:'logs',king:1,cost:700},
- pr:{n:'Small ramp trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:0,cargo:'ramp',ramp:1,rl:1.8,cost:250},   // a 3-unit deck: a forklift or an ATV, behind any vehicle with a hitch
+ pr:{n:'Small ramp trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:1,cap:0,cargo:'ramp',ramp:1,rl:1.8,cost:250},   // a 3-unit deck: a forklift or an ATV, behind any vehicle with a hitch
  gp:{n:'Ramp bed',cls:'glue',bar:0,co:-.04,hw:1.36,hh:.88,cap:0,cargo:'ramp',ramp:1,rl:1.8,glue:1,cost:0},   // the pickup's ramp bed, reaching over the tailgate: a forklift or an ATV
  gd:{n:'Ramp bed',cls:'glue',bar:0,co:.66,hw:2.16,hh:.95,cap:0,cargo:'ramp',ramp:1,rl:2.2,glue:1,cost:0},   // the dump truck's ramp bed: a small car, a pickup, a forklift or an ATV
  mr:{n:'Medium ramp trailer',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:0,cargo:'ramp',ramp:1,rl:2.4,cost:380},   // a 4-unit deck on a drawbar: an ATV, a forklift or a small car rides on it behind a dump truck or semi
@@ -432,12 +434,12 @@ const TRL={
  rs:{n:'Short semi ramp trailer',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:0,cargo:'ramp',king:1,ramp:1,rl:2.4,cost:450},
  mc:{n:'Short semi bulk trailer',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:12,cargo:'coal',king:1,cost:260},
  ml:{n:'Short semi log trailer',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:6,cargo:'logs',king:1,cost:360},
- pt:{n:'Small flatbed trailer',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:0,cargo:'flat',places:1,cost:160},
+ pt:{n:'Small flatbed trailer',cls:'small',bar:3.2,co:0,hw:1.2,hh:1,cap:0,cargo:'flat',places:1,cost:160},
  tt:{n:'Medium flatbed trailer',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:0,cargo:'flat',places:2,cost:260},
  sf:{n:'Semi flatbed trailer',cls:'semi',bar:6.2,co:3,hw:4,hh:1,cap:0,cargo:'flat',king:1,places:4,cost:600},
  ctr:{n:'Shipping container',cls:'box',bar:0,co:0,hw:2,hh:1,cap:0,bulk:10,cargo:'box',cost:5000},   // a container: lifted with a crane's cables, set on a flatbed (2 places) or the ground. bulk: tons of bulk cargo (coal, rock, ore, sand, gravel; one kind at a time) it takes while it hangs on the crane's hook, loaded and unloaded by holding Space on the pads
  mf:{n:'Short semi flatbed trailer',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:0,cargo:'flat',king:1,places:2,cost:320},   // flatbeds: each place takes one pallet, or 4 crates / items in its 2x2 slots
- pq:{n:'Small liquid tanker',cls:'small',bar:3.5,co:0,hw:1.5,hh:.9,cap:150,cargo:'liquid',cost:240},   // liquid tankers: any liquid but fuel (water, milk, oil...), in litres
+ pq:{n:'Small liquid tanker',cls:'small',bar:3.2,co:0,hw:1.2,hh:1,cap:150,cargo:'liquid',cost:240},   // liquid tankers: any liquid but fuel (water, milk, oil...), in litres
  tq:{n:'Medium liquid tanker',cls:'medium',bar:4,co:0,hw:2,hh:1,cap:400,cargo:'liquid',cost:380},
  mq:{n:'Short semi liquid tanker',cls:'semi',bar:2.2,co:1,hw:2,hh:1,cap:400,cargo:'liquid',king:1,cost:420},
  sq:{n:'Semi liquid tanker',cls:'semi',bar:6.2,co:3,hw:4,hh:1,cap:800,cargo:'liquid',king:1,cost:750},
@@ -653,6 +655,10 @@ function carriers(){const o=P.driving?rigCs():[];
  
  for(const t of Object.values(trl)){const k=t.kind;if(t.out&&TRL[k].cap>0&&!chainOf(T).includes(t)&&(!t.coupled||'b' in t.host)){const tr=TRL[k];o.push({cg:t.cargo,cap:tr.cap,cargo:tr.cargo,ox:t.x,oy:t.y,a:t.b,e0:tr.co-tr.hw,e1:tr.co+tr.hw,slow:()=>true})}}
  return o}
+// the coal mine's pipe: out of the middle of the building's back wall to the middle of the chunk behind it (where the loading pad was), ending in a spout over the ground. Coal pours from it into the cargo space under the spout while its driver holds Space (whichever of the rig's cargo spaces is under it, the truck's own bed or a trailer)
+const MPIPE={t:0,al:1};function mineHouse(o){return{x0:o.X+o.w/2-S,y0:o.Y-S,x1:o.X+o.w/2+S,y1:o.Y}}   // the pipe's housing: 2 squares along the back wall, 1 square out from it, in the middle (in the mine's frame)
+const minePipe=()=>{const o=OFFICES.find(q=>q.n==='mine'),h=mineHouse(o);return{a:uRot(MS,o.X+o.w/2,h.y0),b:uRot(MS,LYM.pad.x,LYM.pad.y),h0:uRot(MS,h.x0,h.y0),h1:uRot(MS,h.x1,h.y1),w:uRot(MS,o.X+o.w/2,o.Y)}};
+const underPipe=c=>{const p=minePipe().b,l=loc(p[0],p[1],c.ox,c.oy,c.a);return l[0]>c.e0*S+3&&l[0]<c.e1*S-3&&Math.abs(l[1])<.8*S};   // the spout is over this cargo space
 const cpts=c=>{const d=dir(c.a);return[[c.ox+d[0]*c.e1*S,c.oy+d[1]*c.e1*S],[c.ox+d[0]*c.e0*S,c.oy+d[1]*c.e0*S]]};
 const inZc=(c,z)=>{const d=dir(c.a),m=(c.e0+c.e1)/2*S,mx=c.ox+d[0]*m,my=c.oy+d[1]*m;
  return Math.abs(mx-z.x)<z.w/2-6&&Math.abs(my-z.y)<z.h/2-14&&cpts(c).every(p=>Math.abs(p[0]-z.x)<z.w/2+40&&Math.abs(p[1]-z.y)<z.h/2+40)};
@@ -751,7 +757,7 @@ cv.addEventListener('pointerdown',e=>{ptrs.set(e.pointerId,[e.clientX,e.clientY]
 cv.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,[e.clientX,e.clientY]);if(ptrs.size==2){const d=pinch();if(pd>0)Z=clampZ(Z*d/pd);pd=d}});
 ['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,e=>{ptrs.delete(e.pointerId);pd=0}));
 const padAt=()=>pads.find(q=>padOn(q)&&Math.abs(P.x-q.x)<q.w/2&&Math.abs(P.y-q.y)<q.h/2)||null;
-const upText=q=>q.pctl?'Press Space to use the control desk (coal, the switch, buildings, upgrades).':q.fctl&&q.own==='foundry'?'Press Space to open the foundry control panel (iron and steel jobs).':q.b===foundry?'Press Space to upgrade the foundry (ore and coal storage, bigger items pad).':q.fctl?'Press Space to open the factory control panel (what to make and how many).':q.b===factory?'Press Space to upgrade the factory (bigger items pad).':q.minein?'Press Space to go inside the mine office (upgrades).':q.exit?'Press Space to leave the office.':q.enter?'Press Space to enter the garage.':q.gup?'Press Space to upgrade the garage (vehicle and trailer slots).':q.shop?'Press Space to open the shop.':q.fshop?'Press Space to open the fuel station shop.':q.lshop?'Press Space to open the '+q.own+' shop.':q.b===crusher?'Press Space to upgrade the crusher storage (rock and sand).':q.b===mine?'Press Space to open the coal mine upgrades (storage, spawn rate).':'Press Space to open the '+q.b.name.toLowerCase()+' upgrades.';
+const upText=q=>q.pctl?'Press Space to use the control desk (coal, status, buildings, upgrades).':q.fctl&&q.own==='foundry'?'Press Space to open the foundry control panel (iron and steel jobs).':q.b===foundry?'Press Space to upgrade the foundry (ore and coal storage, bigger items pad).':q.fctl?'Press Space to open the factory control panel (what to make and how many).':q.b===factory?'Press Space to upgrade the factory (bigger items pad).':q.minein?'Press Space to go inside the mine office (upgrades).':q.exit?'Press Space to leave the office.':q.enter?'Press Space to enter the garage.':q.gup?'Press Space to upgrade the garage (vehicle and trailer slots).':q.shop?'Press Space to open the shop.':q.fshop?'Press Space to open the fuel station shop.':q.lshop?'Press Space to open the '+q.own+' shop.':q.b===crusher?'Press Space to upgrade the crusher storage (rock and sand).':q.b===mine?'Press Space to open the coal mine upgrades (storage, spawn rate).':'Press Space to open the '+q.b.name.toLowerCase()+' upgrades.';
 const FQ=()=>panelMode=='fnd'?foundry.q:factory.q;
 const UPX={ore:{cap:'cap',lvl:'lvl',step:STEP,base:125},coal:{cap:'ccap',lvl:'clvl',step:STEP,base:125},sand:{cap:'sacap',lvl:'salvl',step:STEP,base:125},steel:{cap:'scap',lvl:'slvl',step:50,base:100},firon:{cap:'icap',lvl:'ilvl',step:50,base:100},planks:{cap:'cap',lvl:'lvl',step:STEP,base:125},pall:{cap:'pcap',lvl:'plvl',step:10,base:100},crat:{cap:'kcap',lvl:'klvl',step:50,base:100}};   // storage upgrades of the factory and the foundry: how the capacity grows and what it costs (base x (level + 1))
 let fndSel='i',facView='ctl',facTab='job',facSel='p',facAmt=9,yupB=null;   // whose upgrade window is open: the lumberyard's or the sawmill's
@@ -834,12 +840,16 @@ function custView(o){const isT=!(o.kind in TKINDS),d=isT?TRL[o.kind]:KOF(o),bt=(
  if(!(isT&&d.cargo==='none')){h+=`<div class='r'><span><b>${isT||d.seats?'Colour':'Truck colour'}</b></span></div>`+sw('ecol',o.color);
   if(!isT&&d.cap)h+=`<div class='r'><span><b>Bed colour</b></span></div>`+sw('ebcol',o.bedColor)}
  return h}
+const swtch=(a,on)=>`<button data-a="${a}" aria-pressed="${on?'true':'false'}" title="${on?'On':'Off'}" style="position:relative;width:46px;height:24px;min-width:46px;padding:0;border-radius:12px;border:1px solid ${on?'#2f9e55':'#b5392c'};background:${on?'#3fdc6e':'#e0533f'};cursor:pointer;transition:background .15s"><span style="position:absolute;top:2px;left:${on?24:2}px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0006;transition:left .15s;pointer-events:none"></span></button>`;   // an on / off switch in a window: green with the knob right when on, red with it left when off
+const deskLamp=c=>'<span style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:'+c+';box-shadow:0 0 6px '+c+'"></span>';   // a lamp in a window: the building's state
 function renderGarage(){
  const btn=(a,k,t,dis,cls)=>`<button data-a="${a}" data-k="${k||''}"${dis?' disabled':''}${cls?' class="'+cls+'"':''}>${t}</button>`;
  const tabs=(list,cur)=>`<div class="tabs">${list.map(([k,n])=>btn('tab',k,n,false,cur===k?'on':'')).join('')}</div>`;
  const row=(img,name,sub,right,dim)=>`<div class="r${dim?' dim':''}">${img?`<img src="${img}" alt="">`:''}<span><b>${name}</b><small>${sub}</small></span>${right||''}</div>`;
  const title=panelMode=='pctl'?'Power plant · control desk':panelMode=='mctl'?'Coal mine · control desk':panelMode=='shop'?'Shop':panelMode=='fuel'?'Fuel station':panelMode=='lumber'?'Lumberyard shop':panelMode=='fac'?(facView==='ctl'?'Factory control panel':'Factory upgrades'):panelMode=='fnd'?(facView==='ctl'?'Foundry control panel':'Foundry upgrades'):panelMode=='saw'?'Sawmill shop':panelMode=='quarry'?'Quarry shop':panelMode=='mine'?'Coal mine shop':panelMode=='iron'?'Iron mine shop':panelMode=='crush'?'Crusher shop':panelMode=='crup'?'Crusher upgrades':panelMode=='mup'?'Coal mine upgrades':panelMode=='sup'?supB.name+' upgrades':panelMode=='yup'?(yupB===lumber?'Lumberyard upgrades':'Sawmill upgrades'):panelMode=='gup'?'Garage upgrades':'Garage',pcol=panelMode=='pctl'?BCOL['power plant']:panelMode=='shop'?BCOL.shop:panelMode=='fuel'?BCOL.fuel:panelMode=='lumber'?BCOL.lumberyard:panelMode=='fac'?BCOL.factory:panelMode=='fnd'?BCOL.foundry:panelMode=='saw'?BCOL.sawmill:panelMode=='quarry'?BCOL.quarry:panelMode=='mine'?BCOL.mine:panelMode=='iron'?BCOL['iron mine']:(panelMode=='crush'||panelMode=='crup')?BCOL.crusher:panelMode=='mup'?BCOL.mine:panelMode=='sup'?BCOL[supB.name.toLowerCase()]||BCOL.garage:panelMode=='yup'?(yupB===lumber?BCOL.lumberyard:BCOL.sawmill):BCOL.garage;$('gp').style.borderColor=pcol;
  let h=`<div class="gh"><b style="color:${pcol}">${title}</b><span>Cash <b>$${money(cash)}</b></span>${btn('close','','✕')}</div>`;
+  {const sn=panelMode=='yup'?(yupB===lumber?'lumberyard':'sawmill'):panelMode=='sup'&&supB?(supB===iron?'iron mine':supB===quarry?'quarry':null):panelMode=='crup'?'crusher':panelMode=='fac'?'factory':panelMode=='fnd'?'foundry':null;   // the building's state, as on its desk: the main lever on the room's back wall switches it
+   if(sn&&RWK[sn]){const st=RWK[sn].st(),c=st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d',tx=st==='ok'?'Running':st==='low'?'On, but no power: the power plant has no coal or is off':'Switched off';h+=row(null,'Status',deskLamp(c)+'<span style="color:'+c+'">'+tx+'</span><br><small style="opacity:.6">The main lever on the back wall switches it.</small>','')}}
 
  const SH5=({lumber:LSHELF,saw:SSHELF,quarry:QSHELF,mine:MSHELF,iron:ISHELF,crush:CSHELF})[panelMode];   // the shelf in the room of a site's shop: its Items tab sells a hitch, which lands there
  if(SH5&&!cfg){h+='<div class="r"><small>Items appear on the shelves in this room (by the door). Free slots: '+SH5.slots.filter(x=>!x).length+' / '+SH5.slots.length+'. Every vehicle comes without a hitch: mount one on the back of a truck or trailer to tow.</small></div>';
@@ -866,14 +876,15 @@ function renderGarage(){
   if(!lg)h+=row(null,'Log storage','Holds '+b.cap+' logs · level '+(b.lvl+1)+(b.lvl>=MAXLVL?' (max)':''),b.lvl>=MAXLVL?'':btn('su','x','Upgrade $'+upCost(b)))
  }else if(panelMode=='pctl'){const q=powSp(),f=Math.max(0,Math.min(1,plant.stock/plant.cap));
   h+=`<div class='r'><span><b>${cgImg('coal',20)}Coal</b><small>${plant.stock.toFixed(1)} / ${plant.cap} t in store</small></span></div><div style="height:9px;border-radius:5px;background:#0f171e;margin:-2px 10px 10px;overflow:hidden"><div style="height:100%;width:${(f*100).toFixed(1)}%;background:#f2b134"></div></div>`;
-  h+=row(null,'Status',`<span style="color:${q[1]}">${q[0]}</span>`,btn('plsw','',plantOn?'Switch off':'Switch on'));
+  {const st=RWK['power plant'].st(),c=st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d';h+=row(null,'Status',deskLamp(c)+'<span style="color:'+c+'">'+(st==='ok'?'Running':st==='low'?'On, but no coal to burn':'Switched off: no coal is burnt, no power is given')+'</span> · '+`<span style="color:${q[1]}">${q[0]}</span>`+'<br><small style="opacity:.6">The main lever on the back wall switches it.</small>','')}
   h+=`<div class='r'><small>Buildings on the grid: <b style="color:#3fdc6e">green</b> needs no power now, <b style="color:#ffa31a">orange</b> is using power, <b style="color:#ff4d3d">red</b> needs power and has none, grey is not built.</small></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:0 10px 10px">`+pwSt().map(([n,c])=>`<span style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:6px;vertical-align:-1px"></span>${n[0]+n.slice(1).toLowerCase()}</span>`).join('')+'</div>';
   h+=row(null,'Upgrade storage','Holds '+plant.cap+' t · level '+(plant.lvl+1)+(plant.lvl>=MAXLVL?' (max)':''),plant.lvl>=MAXLVL?'':btn('sst','','Upgrade $'+upCost(plant),cash<upCost(plant)))
  }else if(panelMode=='mctl'){const f=Math.max(0,Math.min(1,mine.stock/mine.cap)),st=RWK.mine.st();
   h+=`<div class='r'><span><b>${cgImg('coal',20)}Coal</b><small>${mine.stock.toFixed(1)} / ${mine.cap} t in store · regrows ${mine.rate.toFixed(1)} t per second</small></span></div><div style="height:9px;border-radius:5px;background:#0f171e;margin:-2px 10px 10px;overflow:hidden"><div style="height:100%;width:${(f*100).toFixed(1)}%;background:#f2b134"></div></div>`;
-  h+=row(null,'Status',`<span style="color:${st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d'}">${st==='ok'?'Digging':st==='low'?'On: the store is full':'Switched off: no coal is dug'}</span>`,btn('msw','',mine.sw?'Switch off':'Switch on'));
+  h+=row(null,'Status',deskLamp(st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d')+`<span style="color:${st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d'}">${st==='ok'?'Digging':st==='low'?'On: the store is full':'Switched off: no coal is dug'}</span><br><small style="opacity:.6">The main switch on the back wall switches it.</small>`,'');
   h+=row(null,'Upgrade storage','Holds '+mine.cap+' t · level '+(mine.lvl+1)+(mine.lvl>=MAXLVL?' (max)':''),mine.lvl>=MAXLVL?'':btn('mst','','Upgrade $'+upCost(mine),cash<upCost(mine)));
-  h+=row(null,'Upgrade spawn rate','Regrows '+mine.rate.toFixed(1)+' t per second · level '+(mine.rlvl+1)+(mine.rlvl>=MAXLVL?' (max)':''),mine.rlvl>=MAXLVL?'':btn('mrt','','Upgrade $'+upCost({lvl:mine.rlvl}),cash<upCost({lvl:mine.rlvl})))
+  h+=row(null,'Upgrade spawn rate','Regrows '+mine.rate.toFixed(1)+' t per second · level '+(mine.rlvl+1)+(mine.rlvl>=MAXLVL?' (max)':''),mine.rlvl>=MAXLVL?'':btn('mrt','','Upgrade $'+upCost({lvl:mine.rlvl}),cash<upCost({lvl:mine.rlvl})));
+  h+='<div class="r"><small><b>The coal pipe</b> behind the building</small></div>';h+=row(null,'Show icon on pipe','',swtch('mpi',mine.pi));h+=row(null,'Show text on pipe','',swtch('mpl',mine.pl))
  }else if(panelMode=='sup'){const b=supB;   // a building with one upgrade so far: its storage
   h+='<div class=\'r\'><small>Choose what to upgrade. Each storage level adds '+STEP+' '+b.unit+' of room.</small></div>';
   h+=row(null,'Upgrade storage','Holds '+b.cap+' '+b.unit+' · level '+(b.lvl+1)+(b.lvl>=MAXLVL?' (max)':''),b.lvl>=MAXLVL?'':btn('sst','','Upgrade $'+upCost(b),cash<upCost(b)))
@@ -1047,6 +1058,7 @@ $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
  else if(a=='fcap'){const b=factory,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Planks storage upgraded to '+b.cap+'.'}}else if(a=='fyu'){const b=factory,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}else if(a=='yu'){const b=yupB,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg=(b===lumber?'Log station':'Plank area')+' grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
  else if(a=='su'){const b=sawmill;if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else{const c=upCost(b);if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Log storage upgraded to '+b.cap+' logs.'}}}
  else if(a=='psic'){plant.sic=Math.max(0,Math.min(Object.keys(CGK).length-1,+b.dataset.k|0));pmsg='The sign now shows '+CGK[Object.keys(CGK)[plant.sic]][0].toLowerCase()+'.'}
+ else if(a=='mpi'){mine.pi=mine.pi?0:1;NET.last=0}else if(a=='mpl'){mine.pl=mine.pl?0:1;NET.last=0}
  else if(a=='msw'){mine.sw=mine.sw?0:1;sfx(mine.sw?'lon':'loff');pmsg='Coal mine switched '+(mine.sw?'on.':'off: no coal is dug.')}
  else if(a=='fview'){facView=b.dataset.k==='up'?'up':'ctl'}
  else if(a=='plsw'){plantOn=!plantOn;sfx(plantOn?'lon':'loff');pmsg='Power plant switched '+(plantOn?'on.':'off: no coal is burnt and no power is given.')}
@@ -1168,13 +1180,13 @@ function fuelHover(){const m=mouseWorld();if(!m||P.driving||P.pass)return null;
   if(l[0]>c.e0*S&&l[0]<hi*S&&Math.abs(l[1])<hh*S){const en=endsOf(c.ox,c.oy,c.a,c.e0,c.e1);return{c,far:distSeg(P.x,P.y,en[0],en[1])>RCH()}}}
  return null}
 function nearFuelCarrier(){let b=null,bd=2.6*S;for(const c of fuelCarriers()){const en=endsOf(c.ox,c.oy,c.a,c.e0,c.e1),d=distSeg(P.x,P.y,en[0],en[1]);if(d<bd){bd=d;b=c}}return b}
-function dumpCargo(){if(!P.driving&&!P.pass)return cwG();if(!P.driving||!T.out)return;   // G while driving: everything the vehicle and its trailers carry is deleted (cargo, items in the slots, pallets on the flatbeds or the forks)
- const rig=[T,...chain()],drop=p=>{PALS.splice(PALS.indexOf(p),1)};let n=0;
- for(const c of rigCs())if(c.cg.amt>0){c.cg.amt=0;c.cg.type=null;n++}
- for(const e of rig){if(e.slots)e.slots.forEach((x,i)=>{if(x){e.slots[i]=null;n++}});if(e.pals)e.pals.forEach((p,i)=>{if(p){drop(p);e.pals[i]=null;n++}})}
- for(const p of PALS.filter(p=>p.fk===T)){drop(p);n++}
- if(n)sfx('tip');
- flash(n?'Emptied: the cargo, items and pallets on the '+(rig.length>1?'whole rig':entName(T))+' are gone.':'Nothing to empty.')}
+function dumpCargo(){if(!P.driving&&!P.pass)return cwG();if(!P.driving||!T.out)return;   // G while driving: what the selected unit carries is deleted (V selects: the vehicle itself or one of its trailers): its cargo, the items in its slots, the pallets on its flatbed (and, for the vehicle, on its forks); the rest of the rig keeps its load
+  const e=selEnt(),drop=p=>{PALS.splice(PALS.indexOf(p),1)};let n=0;
+  for(const c of rigCs())if(c.ent===e&&c.cg.amt>0){c.cg.amt=0;c.cg.type=null;n++}
+  if(e.slots)e.slots.forEach((x,i)=>{if(x){e.slots[i]=null;n++}});if(e.pals)e.pals.forEach((p,i)=>{if(p){drop(p);e.pals[i]=null;n++}});
+  if(e===T)for(const p of PALS.filter(p=>p.fk===T)){drop(p);n++}
+  if(n)sfx('tip');
+  flash(n?'Emptied: the '+entName(e)+'.'+(chain().length?' The rest of the rig keeps its load.':''):'The '+entName(e)+' carries nothing to empty.'+(chain().length?' (V selects another part of the rig.)':''))}
 const cabOf=v=>{const d=dir(v.a),o=(KOF(v).b1-.8)*S;return[v.x+d[0]*o,v.y+d[1]*o]};
 const nearCab=()=>{let b=null,bd=3.4*S;for(const v of Object.values(veh)){const k=v.kind;if(!v.out)continue;const d=seatDist(v);if(d<bd){bd=d;b=v}}return b};
 // ---------- seats: hover a cab to see them, F takes the seat under the cursor (left = driver, right = passenger) ----------
@@ -1298,10 +1310,7 @@ function craneHook(){const v=P.pass;if(!(v.ft>=1&&v.ftOn))return flash('Put the 
  if(ha){const pp=palAt(q);if(pp){ha.onP=pp;delete ha.fk;return flash(ATTK[ha.kind].n+' set on the pallet.')}const fp=freePlaceAt(q);if(fp){ha.on={e:fp.e,p:fp.p,da:Math.round(ang(ha.a-('b' in fp.e?fp.e.b:fp.e.a))/(Math.PI/2))*Math.PI/2}}delete ha.fk;return flash(ATTK[ha.kind].n+' set down'+(fp?' on the '+entName(fp.e):'')+'.')}
  if(ht)return contDrop(v,ht,q,a);
  if(hv)return vehDrop(v,hv,q,a);
- let best=null,bd=1e9;
- for(const o of Object.values(veh)){if(!o.out||o===v||o.fk)continue;const l=loc(q[0],q[1],o.x,o.y,o.a),k=KOF(o);if(l[0]<k.b0*S||l[0]>k.b1*S||Math.abs(l[1])>(k.hw||1)*S)continue;const d=Math.hypot(q[0]-o.x,q[1]-o.y);if(d<bd){bd=d;best=['v',o]}}
- for(const t of Object.values(trl)){if(!t.out||t.fk||isGlue(t))continue;const l=loc(q[0],q[1],t.x,t.y,t.b),d=TRL[t.kind];if(Math.abs(l[0]-d.co*S)>d.hw*S||Math.abs(l[1])>d.hh*S)continue;const dd=Math.hypot(q[0]-t.x,q[1]-t.y);if(dd<bd){bd=dd;best=['t',t]}}
- for(const o of ATT){if(o.fk)continue;const d=Math.hypot(o.x-q[0],o.y-q[1]);if(d<1*S&&d<bd){bd=d;best=['a',o]}}
+ const best=cableTarget(v,q);
  if(!best)return flash('Nothing under the hook: swing the cables over a vehicle, a container or an attachment.');
  const[k,o]=best;
  if(k==='a'){o.on=null;o.onP=null;o.fk=v;v.cr.hr=ang(o.a-v.a-v.cr.rot);return flash(ATTK[o.kind].n+' on the cables.')}
@@ -1309,9 +1318,15 @@ function craneHook(){const v=P.pass;if(!(v.ft>=1&&v.ftOn))return flash('Put the 
  if(o.tr)return flash('Unhitch its trailer first.');if(o.kind==='crane'&&(o.ftOn||o.ft>0))return flash('Fold that crane first.');
  if((P.driving&&T===o)||P.pass===o||netBusy(o))return flash('Somebody is in that '+entName(o)+'.');
  if(Object.values(veh).some(x=>x.on&&(x.on.t===gdeck(o)))||Object.values(trl).some(x=>x.ld&&x.ld===gdeck(o)))return flash('Unload what rides on it first.');
- if(o.pals&&o.pals.some(Boolean)||ATT.some(x=>x.on&&x.on.e===o))return flash('Unload its flatbed first.');
+ if(o.pals&&o.pals.some(Boolean)||ATT.some(x=>x.on&&x.on.e===o)||Object.values(trl).some(x=>x.onF&&x.onF.e===o))return flash('Unload its flatbed first.');
  o.on=null;o.fk=v;o.v=0;v.cr.hr=ang(o.a-v.a-v.cr.rot);flash(entName(o)+' on the cables.')}
 const isCont=t=>TRL[t.kind].cls==='box';
+// what the cables would take at a point: whatever is under the hook, and of things stacked there the one on top (a container on a flatbed, a vehicle on a ramp deck, an attachment on a pallet or a bed) before what carries it; then the one whose middle is nearest
+function cableTarget(v,q){const C=[],mid=(x,y,a,o)=>[x+Math.cos(a)*o,y+Math.sin(a)*o];
+ for(const o of Object.values(veh)){if(!o.out||o===v||o.fk)continue;const l=loc(q[0],q[1],o.x,o.y,o.a),k=KOF(o);if(l[0]<k.b0*S||l[0]>k.b1*S||Math.abs(l[1])>(k.hw||1)*S)continue;const m=mid(o.x,o.y,o.a,(k.b0+k.b1)/2*S);C.push({k:'v',o,top:o.on?1:0,d:Math.hypot(q[0]-m[0],q[1]-m[1])})}
+ for(const t of Object.values(trl)){if(!t.out||t.fk||isGlue(t))continue;const l=loc(q[0],q[1],t.x,t.y,t.b),d=TRL[t.kind];if(Math.abs(l[0]-d.co*S)>d.hw*S||Math.abs(l[1])>d.hh*S)continue;const m=mid(t.x,t.y,t.b,d.co*S);C.push({k:'t',o:t,top:t.onF||t.ld?1:0,d:Math.hypot(q[0]-m[0],q[1]-m[1])})}
+ for(const o of ATT){if(o.fk)continue;const d=Math.hypot(o.x-q[0],o.y-q[1]);if(d<1*S)C.push({k:'a',o,top:o.on||o.onP?2:1,d})}
+ if(!C.length)return null;C.sort((a,b)=>b.top-a.top||a.d-b.d);return[C[0].k,C[0].o]}
 // a vehicle comes off the cables: onto a ramp deck it fits (as if it drove up), else on the ground
 function vehDrop(v,o,q,a){
  for(const t of Object.values(trl)){if(!t.out||t.ld||!TRL[t.kind].ramp||t===o||!fitsDeck(o,t)||t.glue===o.id)continue;const d=TRL[t.kind],l=loc(q[0],q[1],t.x,t.y,t.b);if(Math.abs(l[1])>d.hh*S||l[0]<(d.co-d.hw)*S||l[0]>(d.co+d.hw)*S)continue;
@@ -1644,12 +1659,8 @@ function drawSpaceHL(){if(IN)return;let v=null;
   if(ha){const pp=palAt(q),fp=pp?null:freePlaceAt(q,ha);if(pp)hlPal(pp.x,pp.y,pp.a,HLC.put,1);else if(fp)hlPlace(fp.e,fp.p,HLC.put);else ground(0,S*.6,S*.6);return}
   if(tool==='forks'){let b=null,bd=.8*S;for(const p of PALS){if(p.fk)continue;const d=Math.hypot(p.x-q[0],p.y-q[1]);if(d<bd){bd=d;b=p}}
    if(b){hlPal(b.x,b.y,b.a,HLC.pick,1);return}let o=null,od=1*S;for(const x of ATT){if(x.fk)continue;const d=Math.hypot(x.x-q[0],x.y-q[1]);if(d<od){od=d;o=x}}if(o)hlAtt(o);return}
-  // the cables: the first thing the hook would pick up
-  let best=null,bd=1e9;
-  for(const o of Object.values(veh)){if(!o.out||o===v||o.fk)continue;const l=loc(q[0],q[1],o.x,o.y,o.a),k=KOF(o);if(l[0]<k.b0*S||l[0]>k.b1*S||Math.abs(l[1])>(k.hw||1)*S)continue;const d=Math.hypot(q[0]-o.x,q[1]-o.y);if(d<bd){bd=d;best=vBody(o)}}
-  for(const t of Object.values(trl)){if(!t.out||t.fk||isGlue(t))continue;const l=loc(q[0],q[1],t.x,t.y,t.b),d=TRL[t.kind];if(Math.abs(l[0]-d.co*S)>d.hw*S||Math.abs(l[1])>d.hh*S)continue;const dd=Math.hypot(q[0]-t.x,q[1]-t.y);if(dd<bd){bd=dd;best=tBody(t)}}
-  for(const o of ATT){if(o.fk)continue;const d=Math.hypot(o.x-q[0],o.y-q[1]);if(d<1*S&&d<bd){bd=d;best={dot:o}}}
-  if(best){if(best.dot)hlAtt(best.dot);else hlBody(best,HLC.pick,1)}return}
+  // the cables: the first thing the hook would pick up (the same choice as C makes: cableTarget)
+  const cb=cableTarget(v,q),best=!cb?null:cb[0]==='v'?vBody(cb[1]):cb[0]==='t'?tBody(cb[1]):{dot:cb[1]};  if(best){if(best.dot)hlAtt(best.dot);else hlBody(best,HLC.pick,1)}return}
  if(tool==='claw'){const h=LG.find(l=>l.fk===v);
   if(h){const sp=logSpotG(q,a+Math.PI/2);hlBox(sp.x,sp.y,sp.a,-18,18,9,sp.why?HLC.bad:HLC.put,1);return}
   let b=null,bd=.9*S;for(const l of LG){if(l.fk)continue;const e=logEnds(l),d=distSeg(q[0],q[1],e[0],e[1]);if(d<bd){bd=d;b=l}}if(b){const e=logEnds(b);hlSeg(e[0],e[1],HLC.pick)}return}
@@ -1839,10 +1850,10 @@ function step(dt){
  // ----- cargo -----
  let m=null;hangMsg='';const cs=carriers();
  for(const c of cs){
-  const cg=c.cg,amt0=cg.amt,cap=c.cap,slow=c.slow(),act=!!c.ent&&(c.hang?hangHeld(c.ent):c.ent===selEnt()&&spaceHeld()),lr=act?cap*.3:0,ur=act?cap*.4:0,takes=t=>c.cargo==='any'?t!=='fuel':c.cargo===t||(c.cargo==='coal'&&(t==='rock'||t==='iron'||t==='sand'||t==='gravel'));let mm=null;
-  if(inZcU(MS,c,LYM.pad)){
-   if(!slow)mm='Slow down to load.';else if(!takes('coal'))mm='This cargo space does not take coal.';else if(cg.type!=='coal'&&cg.amt>0)mm='Dump the other cargo first (G).';else if(cg.amt>=cap-.01)mm='Load full.';else if(mine.stock<=0)mm='The coal mine is empty. It regenerates 0.1 t per second.';
-   else{mm='Loading coal…';const q=Math.min(lr*dt,cap-cg.amt,mine.stock);cg.type='coal';cg.amt+=q;mine.stock-=q}
+  const cg=c.cg,amt0=cg.amt,cap=c.cap,slow=c.slow(),act=!!c.ent&&(c.hang?hangHeld(c.ent):(c.ent===selEnt()||underPipe(c))&&spaceHeld()),lr=act?cap*.3:0,ur=act?cap*.4:0,takes=t=>c.cargo==='any'?t!=='fuel':c.cargo===t||(c.cargo==='coal'&&(t==='rock'||t==='iron'||t==='sand'||t==='gravel'));let mm=null;
+  if(underPipe(c)){
+   if(!slow)mm='Slow down to load.';else if(!takes('coal'))mm='This cargo space does not take coal.';else if(cg.type!=='coal'&&cg.amt>0)mm='Dump the other cargo first (G).';else if(cg.amt>=cap-1e-6)mm='Load full.';else if(mine.stock<=0)mm='The coal mine is empty. It regenerates 0.1 t per second.';
+   else{mm=act?'Loading coal…':'Under the coal pipe: hold Space to load.';const q=Math.min(lr*dt,cap-cg.amt,mine.stock);if(q>0)MPIPE.t=performance.now();cg.type='coal';cg.amt+=q;mine.stock-=q}
   }else if(inZcU(SS,c,S0.sell)){
    mm='SELL pad: vehicles, trailers and items standing here are sold in the shop (Sell). Loose cargo is not bought here.';
   }else if(inZcG(c,G0.gUnl)){
@@ -1851,7 +1862,7 @@ function step(dt){
    else{mm='Unloading into storage…';const q=Math.min(ur*dt,cg.amt,STCAP[cg.type]-STORE[cg.type]);STORE[cg.type]+=q;cg.amt-=q}
   }else if(inZcG(c,G0.gLoad)){
    const ty=cg.amt>0&&cg.type?cg.type:['coal','logs','fuel'].find(t=>takes(t)&&STORE[t]>.001),cf=ty==='fuel'?(c.cargo==='fuel'?c.cap:cap*(c.fm||1)):cap;
-   if(!slow)mm='Slow down to load.';else if(!ty)mm='Garage storage has nothing this cargo space can take.';else if(!takes(ty))mm='This cargo space does not take '+ty+'.';else if(cg.amt>=cf-.01)mm='Load full.';else if(STORE[ty]<=.001)mm='Garage storage has no '+ty+'.';
+   if(!slow)mm='Slow down to load.';else if(!ty)mm='Garage storage has nothing this cargo space can take.';else if(!takes(ty))mm='This cargo space does not take '+ty+'.';else if(cg.amt>=cf-1e-6)mm='Load full.';else if(STORE[ty]<=.001)mm='Garage storage has no '+ty+'.';
    else{mm='Loading '+ty+' from storage…';const q=Math.min(lr*dt,cf-cg.amt,STORE[ty]);cg.type=ty;cg.amt+=q;STORE[ty]-=q}
   }else if(inZs(c,plZ())){
    if(!slow)mm='Slow down to unload.';else if(!plant.built){mm=siteDeliver(plant,cg,ur*dt);if(plant.built)sweepLeft(cg)
@@ -1861,34 +1872,34 @@ function step(dt){
    if(!slow)mm=lumber.built?'Slow down to load logs.':'Slow down to unload.';
    else if(!lumber.built){mm=siteDeliver(lumber,cg,ur*dt);if(lumber.built)sweepLeft(cg)
    }else if(!takes('logs'))mm='This cargo space does not take logs.';else if(cg.type!=='logs'&&cg.amt>0)mm='Unload the other cargo first (G dumps it).';
-   else if(cg.amt>=cap-.01)mm='Load full.';else if(lumber.stock<=0)mm=!lumberOn?'No logs: the lumberyard is switched off.':plant.stock<=0?'No logs: the power plant has no coal, so the lumberyard is idle.':'No logs yet. Wait for production.';
+   else if(cg.amt>=cap-1e-6)mm='Load full.';else if(lumber.stock<=0)mm=!lumberOn?'No logs: the lumberyard is switched off.':plant.stock<=0?'No logs: the power plant has no coal, so the lumberyard is idle.':'No logs yet. Wait for production.';
    else{mm='Loading logs…';const q=Math.min(lr*dt,cap-cg.amt,lumber.stock);cg.type='logs';cg.amt+=q;lumber.stock-=q}
   }
   if(inZs(c,qZ())){
    if(!slow)mm=quarry.built?'Slow down to load rock.':'Slow down to unload.';
    else if(!quarry.built){mm=siteDeliver(quarry,cg,ur*dt);if(quarry.built)sweepLeft(cg)}
    else if(!takes('rock'))mm='This cargo space does not take rock.';else if(cg.type!=='rock'&&cg.amt>0)mm='Unload the other cargo first (G dumps it).';
-   else if(cg.amt>=cap-.01)mm='Load full.';else if(quarry.stock<=0)mm=!quarryOn?'No rock: the quarry is switched off.':plant.stock<=0?'No rock: the power plant has no coal, so the quarry is idle.':'No rock yet. Wait for production.';
+   else if(cg.amt>=cap-1e-6)mm='Load full.';else if(quarry.stock<=0)mm=!quarryOn?'No rock: the quarry is switched off.':plant.stock<=0?'No rock: the power plant has no coal, so the quarry is idle.':'No rock yet. Wait for production.';
    else{mm='Loading rock…';const q=Math.min(lr*dt,cap-cg.amt,quarry.stock);cg.type='rock';cg.amt+=q;quarry.stock-=q}
   }
   if(inZs(c,iZ())){
    if(!slow)mm=iron.built?'Slow down to load iron ore.':'Slow down to unload.';
    else if(!iron.built){mm=siteDeliver(iron,cg,ur*dt);if(iron.built)sweepLeft(cg)}
    else if(!takes('iron'))mm='This cargo space does not take iron ore.';else if(cg.type!=='iron'&&cg.amt>0)mm='Unload the other cargo first (G dumps it).';
-   else if(cg.amt>=cap-.01)mm='Load full.';else if(iron.stock<=0)mm=!ironOn?'No iron ore: the iron mine is switched off.':plant.stock<=0?'No iron ore: the power plant has no coal, so the iron mine is idle.':'No iron ore yet. Wait for production.';
+   else if(cg.amt>=cap-1e-6)mm='Load full.';else if(iron.stock<=0)mm=!ironOn?'No iron ore: the iron mine is switched off.':plant.stock<=0?'No iron ore: the power plant has no coal, so the iron mine is idle.':'No iron ore yet. Wait for production.';
    else{mm='Loading iron ore…';const q=Math.min(lr*dt,cap-cg.amt,iron.stock);cg.type='iron';cg.amt+=q;iron.stock-=q}
   }
   if(inZs(c,czU())){
    if(!slow)mm='Slow down to unload.';
    else if(!crusher.built){mm=siteDeliver(crusher,cg,ur*dt)}
    else if(cg.type!=='rock'&&cg.amt>0)mm='The crusher only takes rock.';else if(cg.amt<=0)mm='Crusher: bring rock ($'+CRUSHPAY+' a ton).';
-   else if(crusher.feed>=crusher.fcap-.01)mm=!crusherOn?'The crusher is switched off and its rock store is full.':plant.stock<=0?'Rock store is full: the power plant has no coal, so the crusher is idle.':'Rock store is full. Wait for it to crush.';
+   else if(crusher.feed>=crusher.fcap-1e-6)mm=!crusherOn?'The crusher is switched off and its rock store is full.':plant.stock<=0?'Rock store is full: the power plant has no coal, so the crusher is idle.':'Rock store is full. Wait for it to crush.';
    else{mm='Unloading rock into the crusher…';const q=Math.min(ur*dt,cg.amt,crusher.fcap-crusher.feed);cg.amt-=q;crusher.feed+=q;cash+=q*CRUSHPAY}
   }
   if(crusher.built&&inZcU(CRS,c,CL0)){const m=crusher.gsel?'gravel':'sand',f=crusher.gsel?'gst':'stock';   // the lever behind the boards chooses which is loaded here
    if(!slow)mm='Slow down to load '+m+'.';
    else if(!takes(m))mm='This cargo space does not take '+m+'.';else if(cg.type!==m&&cg.amt>0)mm='Unload the other cargo first (G dumps it).';
-   else if(cg.amt>=cap-.01)mm='Load full.';else if(crusher[f]<=0)mm=!crusherOn?'No '+m+': the crusher is switched off.':crusher.feed<=0?'No '+m+': unload rock at the other pad first.':plant.stock<=0?'No '+m+': the power plant has no coal, so the crusher is idle.':'No '+m+' yet. Wait for it to crush.';
+   else if(cg.amt>=cap-1e-6)mm='Load full.';else if(crusher[f]<=0)mm=!crusherOn?'No '+m+': the crusher is switched off.':crusher.feed<=0?'No '+m+': unload rock at the other pad first.':plant.stock<=0?'No '+m+': the power plant has no coal, so the crusher is idle.':'No '+m+' yet. Wait for it to crush.';
    else{mm='Loading '+m+'…';const q=Math.min(lr*dt,cap-cg.amt,crusher[f]);cg.type=m;cg.amt+=q;crusher[f]-=q}
   }
   if(inZs(c,swU())){
@@ -1903,12 +1914,12 @@ function step(dt){
   if(inZs(c,fnU())){
    if(!slow)mm='Slow down to unload.';else if(!foundry.built){mm=siteDeliver(foundry,cg,ur*dt);if(foundry.built)sweepLeft(cg)}
    else if(cg.amt<=0)mm='Foundry: bring iron ore, coal and sand ($'+SITEPAY.iron+' a ton, sand $'+SITEPAY.sand+'). Set pallets, crates and iron in crates down on this pad by hand or with a forklift.';
-   else if(cg.type==='iron'||cg.type==='coal'||cg.type==='sand'){const k=cg.type==='iron'?'ore':cg.type==='sand'?'sand':'carb',kc=foundry[k==='ore'?'cap':k==='sand'?'sacap':'ccap'],nm=cg.type==='iron'?'iron ore':cg.type;if(foundry[k]>=kc-.01)mm='The foundry\'s '+nm+' store is full.';
+   else if(cg.type==='iron'||cg.type==='coal'||cg.type==='sand'){const k=cg.type==='iron'?'ore':cg.type==='sand'?'sand':'carb',kc=foundry[k==='ore'?'cap':k==='sand'?'sacap':'ccap'],nm=cg.type==='iron'?'iron ore':cg.type;if(foundry[k]>=kc-1e-6)mm='The foundry\'s '+nm+' store is full.';
     else{mm='Unloading '+nm+' into the foundry…';const q=Math.min(ur*dt,cg.amt,kc-foundry[k]);cg.amt-=q;foundry[k]+=q;cash+=q*(SITEPAY[cg.type]||0)}}
    else mm='The foundry only takes iron ore, coal and sand.';
   }
   if(takes('fuel')&&FZS.some(z=>satHit(zoneBox(z),{ox:c.ox,oy:c.oy,a:c.a,x0:c.e0,x1:c.e1,h:1}))){const cf=c.cargo==='fuel'?c.cap:c.cap*(c.fm||1);
-   if(!slow)mm='Slow down to load fuel.';else if(cg.type&&cg.type!=='fuel'&&cg.amt>0)mm='Empty the other cargo first (G).';else if(cg.amt>=cf-.01)mm='Fuel cargo full.';else if(cash<=0)mm='No cash for fuel.';
+   if(!slow)mm='Slow down to load fuel.';else if(cg.type&&cg.type!=='fuel'&&cg.amt>0)mm='Empty the other cargo first (G).';else if(cg.amt>=cf-1e-6)mm='Fuel cargo full.';else if(cash<=0)mm='No cash for fuel.';
    else{mm='Loading fuel… $'+FUELP.toFixed(1)+' per litre.';const q=Math.min(act?cf*.3*dt:0,cf-cg.amt,cash/FUELP);cg.type='fuel';cg.amt+=q;cash-=q*FUELP}}
   if(!act&&mm)mm=c.hang?(hangSelEnt()===c.ent?'Hold Space to load or unload the '+c.ent.name+' (C sets it down).':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.'):!c.ent?'A parked trailer does not load by itself: hitch it, select it with V and hold Space.':c.ent===selEnt()?'Hold Space to load or unload the '+(c.ent===T?'truck bed':c.ent.name)+'.':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.';
   if(cg.amt<=.001){cg.amt=0;cg.type=null;if(amt0>.001)cash=Math.round(cash*1e4)/1e4}   // a cargo just emptied: clear float dust from the payment
@@ -1952,7 +1963,7 @@ function step(dt){
   if(st)m='Trailer at the hitch: '+st.name+'. Press C to hitch it.';
   else if(T.kind==='crane')m=T.ftOn?(T.ft<1?'Feet going down…':'Feet down. Click the crane cab at the back to work the crane · Space folds it and lifts the feet.'):T.ft>0?'Folding the crane…':'Crane truck: stop, then Space puts the 4 feet down'+(chain().length?' (V selects the truck itself; with a trailer selected, Space works the trailer)':'')+'.';
   else if(!c0)m=KD.trunk?'Space opens or closes the boot ('+T.slots.filter(Boolean).length+'/'+T.slots.length+' slots used, '+(T.boot?'open':'closed')+'). '+KD.seats.length+' seats: other players click a seat to ride along.':KD.seats?(KD.seats.length>1?KD.seats.length+' seats: other players click a seat to ride along. ':'')+(KD.tl.length?'Hitch a small trailer (C) to haul cargo.':''):T.bed==='items'?'Item bed: 4 slots for items carried by hand (items are coming). Hitch a trailer to haul cargo.':'This truck needs a trailer to carry cargo. Drive to one and press C (V selects).';
-  else if(rc.every(c=>c.cg.amt>=c.cap-.01)){const tp=c0.cg.type;m=tp==='logs'?(sawmill.built?'Logs loaded. Take them to the sawmill (tan rectangle).':'Logs loaded. Take them to the sawmill site (tan rectangle).'):!plant.built?'Take the coal to the power plant site (blue rectangle).':!lumber.built?'Take the coal to the lumberyard site (orange rectangle).':'Take the coal to the power plant.'}
+  else if(rc.every(c=>c.cg.amt>=c.cap-1e-6)){const tp=c0.cg.type;m=tp==='logs'?(sawmill.built?'Logs loaded. Take them to the sawmill (tan rectangle).':'Logs loaded. Take them to the sawmill site (tan rectangle).'):!plant.built?'Take the coal to the power plant site (blue rectangle).':!lumber.built?'Take the coal to the lumberyard site (orange rectangle).':'Take the coal to the power plant.'}
   else m=c0.cargo==='logs'?(lumber.built?'Load logs at the log station (orange).':'Build the lumberyard first: it needs coal.'):!plant.built?'Load coal at the coal mine, then deliver it to the power plant site.':!lumber.built?'Load coal at the coal mine, then deliver it to the lumberyard site.':'Load coal at the mine, or logs at the lumberyard.'}
  if(P.driving&&T.out&&!note&&!T.tank)m='No fuel tank: buy one in the shop (Items), hold it and click this vehicle to mount it.';else if(P.driving&&T.out&&!note&&T.fuel<=0)m='Out of fuel! The vehicle has stopped. Get a canister or have it refuelled at the fuel station.';else if(P.driving&&T.out&&!note&&T.fuel<KD.fuel*.2&&!inFz)m='Low fuel. '+m;
  if(note)m=note;else if(P.driving&&T.out&&vIn(T)&&Math.abs(T.v)<.3)m=m;
@@ -2397,11 +2408,15 @@ function deskSprite(x,y,w,h,it,mini){const k=w/40,n=!mini&&it?deskOf(it):null,li
  g.fillStyle='#3d434c';g.fillRect(-w/2,-h/2,w,h);g.strokeStyle='#22262c';g.lineWidth=1.1*k;g.strokeRect(-w/2,-h/2,w,h);g.fillStyle='#4b525c';g.fillRect(-w/2+1.5*k,-h/2+1.5*k,w-3*k,h-3*k);
  const sw=16.6*k,sh=8.6*k,sy=-h/2+1.5*k;for(let i=0;i<2;i++){const sx=-w/2+2.6*k+i*(sw+2.2*k);g.fillStyle='#101317';g.fillRect(sx,sy,sw,sh);g.fillStyle=bg;g.fillRect(sx+1*k,sy+1*k,sw-2*k,sh-2*k);if(!live)continue;
   if(i===0){const ck=DESKC[n],q=n==='mine'||n==='power plant'?[B.stock,B.cap]:yardFull(n,ck)||[0,1],f=Math.max(0,Math.min(1,q[0]/(q[1]||1))),bx=sx+5*k,bw=sw-7.4*k,by=sy+1.8*k,bh=sh-3.6*k;   // screen 1: the building's main store, filling up, with its cargo icon beside it
-   g.drawImage(cargoIco(ck),sx+1.4*k,sy+sh/2-1.6*k,3.2*k,3.2*k);
-   g.fillStyle='rgba(255,255,255,.12)';g.fillRect(bx,by,bw,bh);g.fillStyle=fg;g.fillRect(bx,by,bw*f,bh);g.strokeStyle=fg;g.lineWidth=.5*k;g.strokeRect(bx,by,bw,bh)}
-  else if(n==='mine'){const ry=sy+sh-2.6*k,rx0=sx+1.6*k,rx1=sx+sw-1.6*k,run=st==='ok',t=run?(performance.now()/2600)%1:.15,cx=rx0+1.6*k+t*(rx1-rx0-3.2*k);   // screen 2 at the mine: the rails and a coal cart running along them while it digs (amber: store full, it waits; red: switched off)
-   g.strokeStyle=fg;g.lineWidth=.45*k;g.beginPath();g.moveTo(rx0,ry);g.lineTo(rx1,ry);g.moveTo(rx0,ry+.9*k);g.lineTo(rx1,ry+.9*k);g.stroke();for(let q=rx0+.8*k;q<rx1;q+=1.6*k){g.beginPath();g.moveTo(q,ry-.3*k);g.lineTo(q,ry+1.2*k);g.stroke()}
-   g.fillStyle=fg;g.fillRect(cx-1.6*k,ry-2.6*k,3.2*k,2.1*k);g.fillStyle='#14171c';g.beginPath();g.arc(cx-.9*k,ry,.55*k,0,7);g.arc(cx+.9*k,ry,.55*k,0,7);g.fill();g.fillStyle='#1a1a1a';g.beginPath();g.ellipse(cx,ry-2.6*k,1.4*k,.7*k,0,Math.PI,0);g.fill();
+   if(n==='mine'){const x0=sx+1.4*k,w0=sw-2.8*k,y0=sy+sh-3.4*k;   // the coal mine: no icon; the coal in store in figures, and the bar under it across the whole screen
+    g.fillStyle=fg;g.font='bold '+(2.2*k)+'px sans-serif';g.textAlign='left';g.fillText(B.stock.toFixed(1)+' / '+B.cap+' t',x0,sy+3.4*k);
+    g.fillStyle='rgba(255,255,255,.12)';g.fillRect(x0,y0,w0,2*k);g.fillStyle=fg;g.fillRect(x0,y0,w0*f,2*k);g.strokeStyle=fg;g.lineWidth=.45*k;g.strokeRect(x0,y0,w0,2*k)}
+   else{g.drawImage(cargoIco(ck),sx+1.4*k,sy+sh/2-1.6*k,3.2*k,3.2*k);
+   g.fillStyle='rgba(255,255,255,.12)';g.fillRect(bx,by,bw,bh);g.fillStyle=fg;g.fillRect(bx,by,bw*f,bh);g.strokeStyle=fg;g.lineWidth=.5*k;g.strokeRect(bx,by,bw,bh)}}
+  else if(n==='mine'){const ry=sy+sh-2.6*k,rx0=sx+1.6*k,rx1=sx+sw-1.6*k,sl=(rx1-rx0)/10,d=Math.min(9,Math.floor(((mine.stock%1)+1e-9)*10)),cx=rx0+(d+.5)*sl;   // screen 2 at the mine: the rails in 10 sections, one per tenth of a ton; the cart stands in the section of the first decimal of the coal in store (12.7 t: the 8th), so it runs to the end as each ton is dug
+   g.strokeStyle=fg;g.lineWidth=.45*k;g.beginPath();g.moveTo(rx0,ry);g.lineTo(rx1,ry);g.moveTo(rx0,ry+.9*k);g.lineTo(rx1,ry+.9*k);g.stroke();g.beginPath();for(let q=0;q<=10;q++){const x=rx0+q*sl,hh=q%5===0?1.1*k:.6*k;g.moveTo(x,ry-hh);g.lineTo(x,ry+.9*k+hh)}g.stroke();   // the sleepers: one at every tenth, longer at 0, 0.5 and 1
+   const cw=Math.min(3.2*k,sl*.96),ch=Math.min(2.1*k,cw*.62),wr=Math.min(.55*k,cw*.2);g.fillStyle=fg;g.beginPath();g.moveTo(cx-cw/2,ry-.3*k-ch);g.lineTo(cx+cw/2,ry-.3*k-ch);g.lineTo(cx+cw*.38,ry-.3*k);g.lineTo(cx-cw*.38,ry-.3*k);g.closePath();g.fill();   // the cart: a tub, wider at the top
+   g.fillStyle='#14171c';g.beginPath();g.arc(cx-cw*.24,ry-.1*k,wr,0,7);g.arc(cx+cw*.24,ry-.1*k,wr,0,7);g.fill();g.fillStyle='#1a1a1a';g.beginPath();g.ellipse(cx,ry-.3*k-ch,cw*.42,Math.min(.7*k,ch*.45),0,Math.PI,0);g.fill();   // its wheels, and the coal heaped on it
    g.fillStyle=fg;g.font='bold '+(2.2*k)+'px sans-serif';g.textAlign='left';g.fillText(mine.rate.toFixed(1)+' t/s',sx+1.4*k,sy+3.4*k)}
   else if(n!=='power plant'){const cx=sx+sw/2,cy=sy+sh/2;   // screen 2 of the other buildings: a lamp (green running, amber on but no power, red off) and a bolt
    g.fillStyle=fg;g.shadowColor=fg;g.shadowBlur=st==='off'?0:3*k;g.beginPath();g.arc(cx-3*k,cy,1.8*k,0,7);g.fill();g.shadowBlur=0;
@@ -2878,6 +2893,38 @@ function logOp(){const say=m=>(flash(m),true),f=forkPt(T),h=LG.find(l=>l.fk===T)
  if(b.st){lumber.stock=Math.max(0,lumber.stock-1);b.st=false}b.fk=T;return say('Log lifted.')}
 // ---------- an icon for every bulk cargo (and logs, fuel and water): a small tile with a heap of it, drawn once and kept. CGI.coal etc.: the canvas; cgImg(k): as an <img> for the windows ----------
 const CGK={coal:['Coal','#f2b134'],rock:['Rock','#9aa6b5'],iron:['Iron ore','#c9694a'],sand:['Sand','#e6c98a'],gravel:['Gravel','#b9a58a'],logs:['Logs','#d9b27c'],fuel:['Fuel','#ff5a3d'],water:['Water','#5ab8ff'],planks:['Planks','#e0b47a'],pallet:['Pallets','#c8a46e'],crate:['Crates','#b08550'],ironbar:['Iron','#b8bec8'],steelbar:['Steel','#8fa3b8'],glass:['Glass','#9fe3ff']},CGI={};
+// is a vehicle or a trailer under the pipe? (any point along it, or the spout, over its body)
+function pipeOver(a,b){const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/8),bs=[];for(const v of Object.values(veh))if(v.out)bs.push(vBody(v));for(const t of Object.values(trl))if(t.out)bs.push(tBody(t));
+ for(const B of bs){if(Math.hypot(B.ox-b[0],B.oy-b[1])>Math.hypot(b[0]-a[0],b[1]-a[1])+12*S)continue;for(let i=0;i<=n;i++){const x=a[0]+(b[0]-a[0])*i/n,y=a[1]+(b[1]-a[1])*i/n,l=loc(x,y,B.ox,B.oy,B.a),r=i===n?.72*S:.3*S;if(l[0]>B.x0*S-r&&l[0]<B.x1*S+r&&Math.abs(l[1])<B.h*S+r)return true}}return false}
+function drawMinePipe(){if(isGone('mine'))return;const P0=minePipe(),{a,b}=P0,ang0=Math.atan2(b[1]-a[1],b[0]-a[0]),len=Math.hypot(b[0]-a[0],b[1]-a[1]),u=S,now=performance.now(),flow=now-MPIPE.t<200,R=.72*u,col=BCOL.mine||'#c99a2e';
+ // the housing (1 x 2, part of the building): a steel box on the back wall with a sloped lid, the drive motor on it and the pipe coming out of its face
+ {const ah=Math.atan2(b[1]-P0.w[1],b[0]-P0.w[0]);g.save();g.translate(P0.w[0],P0.w[1]);g.rotate(ah);   // x: out from the wall, y: along it
+  g.fillStyle='rgba(0,0,0,.3)';g.fillRect(2,-u+5,u+3,2*u);   // its shadow
+  g.fillStyle=shd(col,.62);g.fillRect(0,-u,u,2*u);g.fillStyle=shd(col,.85);g.beginPath();g.moveTo(0,-u);g.lineTo(u*.55,-u+4);g.lineTo(u*.55,u-4);g.lineTo(0,u);g.closePath();g.fill();   // the box, its lid sloping off the wall
+  g.strokeStyle='#22262c';g.lineWidth=1.1;g.strokeRect(0,-u,u,2*u);g.beginPath();g.moveTo(u*.55,-u+4);g.lineTo(u*.55,u-4);g.stroke();
+  g.fillStyle='#1c1f24';for(const y of[-u+3,u-3])for(const x of[3,u-3]){g.beginPath();g.arc(x,y,.9,0,7);g.fill()}   // bolts
+  g.fillStyle='#4b525c';g.fillRect(u*.12,-u*.78,u*.34,u*.5);g.strokeStyle='#22262c';g.strokeRect(u*.12,-u*.78,u*.34,u*.5);g.fillStyle='#8b929c';g.fillRect(u*.16,-u*.72,u*.26,u*.1);g.fillStyle='#2b3037';g.beginPath();g.arc(u*.29,-u*.2,u*.12,0,7);g.fill();   // the drive motor and its shaft
+  for(let k=0;k<5;k++){g.fillStyle=k&1?'#1c1c1e':'#d9a521';g.fillRect(u-3,-u+k*(2*u/5),3,2*u/5)}   // hazard stripes along its face
+  g.restore()}
+ MPIPE.al+=((pipeOver(a,b)?.35:1)-MPIPE.al)*.15;g.save();g.globalAlpha=MPIPE.al;   // the pipe goes see-through while a vehicle is under it, fading in and out
+ g.save();g.translate(a[0],a[1]);g.rotate(ang0);const L=len-R*.55,hw=.34*u;
+ g.fillStyle='rgba(0,0,0,.26)';g.beginPath();g.roundRect(4,-hw+10,L,2*hw,hw);g.fill();g.beginPath();g.arc(len+5,10,R+1,0,7);g.fill();   // its shadow on the ground
+
+ const G=g.createLinearGradient(0,-hw,0,hw);G.addColorStop(0,'#dfe3e8');G.addColorStop(.35,'#a9b0ba');G.addColorStop(.75,'#6c747f');G.addColorStop(1,'#4a515b');g.fillStyle=G;g.beginPath();g.roundRect(-2,-hw,L+2,2*hw,hw*.5);g.fill();g.strokeStyle='#22262c';g.lineWidth=1;g.stroke();   // the chute, round in the sun
+ g.fillStyle='rgba(255,255,255,.35)';g.fillRect(2,-hw*.62,L-6,1.2);   // its shine
+ {const cg=g.createLinearGradient(0,-hw-2.5,0,hw+2.5);cg.addColorStop(0,'#c3c9d1');cg.addColorStop(1,'#3f454e');g.fillStyle=cg;g.fillRect(-1,-hw-2.5,4.5,2*hw+5);g.strokeStyle='#22262c';g.lineWidth=.8;g.strokeRect(-1,-hw-2.5,4.5,2*hw+5)}   // the flange where it leaves the housing
+ for(let x=u*.9;x<L-u*.4;x+=1.6*u){const cg=g.createLinearGradient(0,-hw-1.5,0,hw+1.5);cg.addColorStop(0,'#c3c9d1');cg.addColorStop(1,'#3f454e');g.fillStyle=cg;g.fillRect(x-1.6,-hw-1.5,3.2,2*hw+3);g.strokeStyle='#22262c';g.lineWidth=.7;g.strokeRect(x-1.6,-hw-1.5,3.2,2*hw+3)}   // the collars where its lengths are bolted together
+ if(mine.pl){const cs=[];for(let x=u*.9;x<L-u*.4;x+=1.6*u)cs.push(x);   // the label: small dark lettering between the last two fittings before the spout, read along the pipe
+  if(cs.length>=2){const x1=cs[cs.length-1],x0=cs[cs.length-2],m=(x0+x1)/2;g.save();g.beginPath();g.roundRect(-2,-hw,L+2,2*hw,hw*.5);g.clip();
+   g.fillStyle='rgba(24,26,30,.6)';g.font='800 '+(hw*.95)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';{const c0=Math.cos(ang0),flip=c0<-.01||Math.abs(c0)<=.01&&Math.sin(ang0)>0;g.save();g.translate(m,0);if(flip)g.rotate(Math.PI);g.fillText('COAL',0,.5);g.restore()}g.textBaseline='alphabetic';   // turned half a turn when the pipe runs west or south, so it never reads upside down
+
+   const sh=g.createLinearGradient(0,-hw,0,hw);sh.addColorStop(0,'rgba(255,255,255,.22)');sh.addColorStop(.4,'rgba(255,255,255,0)');sh.addColorStop(.7,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,.35)');g.fillStyle=sh;g.fillRect(x0,-hw,x1-x0,2*hw);g.restore()}}
+ g.restore();
+ const[sx,sy]=b;   // the elbow and the spout: a hood over the ground, its mouth showing what comes out
+ g.fillStyle='#4a515b';g.beginPath();g.arc(sx,sy,R+2.5,0,7);g.fill();g.fillStyle='#2b2f36';g.beginPath();g.arc(sx,sy,R,0,7);g.fill();g.lineWidth=2.2;g.strokeStyle=flow?'#5fe08a':mine.stock>.05?'#f2b134':'#6b7079';g.beginPath();g.arc(sx,sy,R,0,7);g.stroke();   // its rim: green while coal pours, amber with coal to give, grey when the mine is empty
+ g.save();g.beginPath();g.arc(sx,sy,R-2.4,0,7);g.clip();if(mine.pi)g.drawImage(cargoIco('coal'),sx-(R-2.4),sy-(R-2.4),2*(R-2.4),2*(R-2.4));else{const hg=g.createRadialGradient(sx,sy,0,sx,sy,R-2.4);hg.addColorStop(0,'#08090b');hg.addColorStop(1,'#23262c');g.fillStyle=hg;g.fill()}   // its mouth: the icon of what comes out, or (hidden at the desk) the dark inside of the hood
+ if(flow){const t=now/90;g.fillStyle='rgba(12,12,14,.8)';for(let k=0;k<9;k++){const q=(t+k*1.7)%1,r=q*(R-3),an=k*2.4+t*.3;g.beginPath();g.arc(sx+Math.cos(an)*r,sy+Math.sin(an)*r,1.3,0,7);g.fill()}}g.restore();   // coal falling while it pours
+ if(flow){g.strokeStyle='rgba(95,224,138,.35)';g.lineWidth=4;g.beginPath();g.arc(sx,sy,R+4,0,7);g.stroke()}g.restore()}
 function cargoIco(k){if(CGI[k])return CGI[k];const N=64,c=document.createElement('canvas');c.width=c.height=N;const q=c.getContext('2d'),H=(i,n)=>hash(i,n,k.length*7+k.charCodeAt(0)),col=k==='ooo'?'#ff5a5a':(CGK[k]||['','#888'])[1];
  q.fillStyle='#1d232b';q.beginPath();q.roundRect(2,2,N-4,N-4,10);q.fill();q.lineWidth=3;q.strokeStyle=col;q.stroke();
  const heap=(n,cols,rmin,rmax,ang)=>{for(let i=0;i<n;i++){const t=H(i,1),a=H(i,2)*Math.PI,rr=Math.sqrt(H(i,3))*22,x=32+Math.cos(a+Math.PI)*rr*1.05,y=44-Math.abs(Math.sin(a))*rr*.9-(1-rr/22)*8,s=rmin+H(i,4)*(rmax-rmin);
@@ -2897,7 +2944,7 @@ function cargoIco(k){if(CGI[k])return CGI[k];const N=64,c=document.createElement
 const CGU={};const cgImg=(k,px=18)=>{if(!CGU[k])CGU[k]=cargoIco(k).toDataURL();return'<img src="'+CGU[k]+'" alt="'+(CGK[k]||[k])[0]+'" style="width:'+px+'px;height:'+px+'px;vertical-align:-4px;margin-right:4px">'};
 const cgOfLabel=l=>!l||typeof l!=='string'?null:/^COAL/.test(l)?'coal':/^ROCK/.test(l)?'rock':/^IRON ORE/.test(l)?'iron':/^SAND/.test(l)?'sand':/^GRAVEL/.test(l)?'gravel':/^LOGS?\b|LOG STATION/.test(l)?'logs':/^FUEL/.test(l)?'fuel':null;
 function drawInfo(t){
- ring(load,'#f2b134',t,'COAL LOADING');ring(dump,'#7fd1ff',t,plant.built?'COAL UNLOADING':reqList(plant));ring(lz,'#ff8a3d',t,lumber.built?'LOG STATION':reqList(lumber));ring(garage,'#d0d0d0',t);ring(gUnl,'#f2d21c',t,'UNLOAD VEHICLE');ring(gLoad,'#3fe05a',t,'LOAD VEHICLE');gWrap(drawStore);ring(sellZ,'#ff7ab6',t,'SELL');ring(spawnZ,'#8fd3ff',t,'NEW PURCHASES');for(const z of FZS)ring(z,'#ff5a3d',t,'FUEL');ring(fsz,'#ff5a3d',t,'VEHICLES');if(sawmill.built){ring(PLZ,'#d9b27c',t,'PLANKS')}ring(fz,'#8fa3b8',t,factory.built?'CARGO IN':reqList(factory));if(factory.built)ring(FIZ,'#d8b57a',t,'ITEMS');ring(fnz,'#c98a4b',t,foundry.built?'CARGO IN':reqList(foundry));if(foundry.built)ring(FNIZ,'#d8b57a',t,'ITEMS');ring(qz,'#9aa6b5',t,quarry.built?'ROCK LOADING':reqList(quarry));ring(iz,'#c9694a',t,iron.built?'IRON ORE LOADING':reqList(iron));ring(swz,'#d9b27c',t,sawmill.built?'LOGS':reqList(sawmill));ring(cz,'#7fb3a4',t,crusher.built?'ROCK UNLOADING':reqList(crusher));if(crusher.built)ring(CLZ,'#7fb3a4',t,(crusher.gsel?'GRAVEL LOADING':'SAND LOADING'));
+ ring(dump,'#7fd1ff',t,plant.built?'COAL UNLOADING':reqList(plant));ring(lz,'#ff8a3d',t,lumber.built?'LOG STATION':reqList(lumber));ring(garage,'#d0d0d0',t);ring(gUnl,'#f2d21c',t,'UNLOAD VEHICLE');ring(gLoad,'#3fe05a',t,'LOAD VEHICLE');gWrap(drawStore);ring(sellZ,'#ff7ab6',t,'SELL');ring(spawnZ,'#8fd3ff',t,'NEW PURCHASES');for(const z of FZS)ring(z,'#ff5a3d',t,'FUEL');ring(fsz,'#ff5a3d',t,'VEHICLES');if(sawmill.built){ring(PLZ,'#d9b27c',t,'PLANKS')}ring(fz,'#8fa3b8',t,factory.built?'CARGO IN':reqList(factory));if(factory.built)ring(FIZ,'#d8b57a',t,'ITEMS');ring(fnz,'#c98a4b',t,foundry.built?'CARGO IN':reqList(foundry));if(foundry.built)ring(FNIZ,'#d8b57a',t,'ITEMS');ring(qz,'#9aa6b5',t,quarry.built?'ROCK LOADING':reqList(quarry));ring(iz,'#c9694a',t,iron.built?'IRON ORE LOADING':reqList(iron));ring(swz,'#d9b27c',t,sawmill.built?'LOGS':reqList(sawmill));ring(cz,'#7fb3a4',t,crusher.built?'ROCK UNLOADING':reqList(crusher));if(crusher.built)ring(CLZ,'#7fb3a4',t,(crusher.gsel?'GRAVEL LOADING':'SAND LOADING'));
 }
 function drawPads(t){
  for(const q of pads){if(!padOn(q)||q.pctl)continue;
@@ -3434,11 +3481,11 @@ function hasItem(t){const inC=c=>c&&(c.type===t||(c.items&&c.items.some(x=>x&&x.
 const siteG=(id,ch,b,name,lot,hint)=>({id,ch,t:'Build the '+name,hint,done:()=>b.built,prog:()=>reqTxt(b),dest:lot,site:b});
 const buyG=(id,ch,t,hint,cost,lot,done)=>({id,ch,t,hint,done,cost,dest:lot});
 const GOALS=[
- {id:'mineOn',ch:1,t:'Switch the coal mine on',hint:'The coal mine starts switched off and empty. Walk into the mine and click the main switch on its back wall (or press Space at the control desk by the door). It then digs 0.1 t of coal a second.',done:()=>!!mine.sw||plant.built,dest:0},
- {id:'coal5',ch:1,t:'Deliver 5 t of coal to the power plant site',hint:'Drive to the coal mine, park on its loading pad and hold Space. Then unload on the power plant site\'s pad the same way.',done:()=>plant.built||reqOf(plant,'coal').got>=5-1e-6,prog:()=>reqOf(plant,'coal').got.toFixed(1)+' / 5 t',dest:1,site:plant,cap:5},
+ {id:'mineOn',ch:1,t:'Switch the coal mine on',hint:'The coal mine starts switched off and empty. Walk into the mine and click the main switch on its back wall. It then digs 0.1 t of coal a second.',done:()=>!!mine.sw||plant.built,dest:0},
+ {id:'coal5',ch:1,t:'Deliver 5 t of coal to the power plant site',hint:'Drive to the coal mine, park with your truck\'s bed under the coal pipe behind the building and hold Space. Then unload on the power plant site\'s pad the same way.',done:()=>plant.built||reqOf(plant,'coal').got>=5-1e-6,prog:()=>reqOf(plant,'coal').got.toFixed(1)+' / 5 t',dest:1,site:plant,cap:5},
  {id:'fuel',ch:1,t:'Fill up at the fuel station',hint:'Park on a FUEL square at the fuel station and wait until the tank is full.',done:()=>STORY.fuel||plant.built,dest:6},
  siteG('plant',1,plant,'power plant',1,'Keep bringing coal. The power plant runs every other building.'),
- {id:'plantOn',ch:1,t:'Switch the power plant on',hint:'A new building starts switched off. Go inside the power plant and click the main lever (the red one on the north wall), or use the control desk.',done:()=>plant.built&&plantOn,dest:1},
+ {id:'plantOn',ch:1,t:'Switch the power plant on',hint:'A new building starts switched off. Go inside the power plant and click the main lever (the red one on the back wall).',done:()=>plant.built&&plantOn,dest:1},
  buyG('hitch',2,'Buy a hitch','In the shop: Buy → Items. Take it off the shelf inside and click the back of your pickup to mount it.',()=>ITEMSHOP.hitch.cost,5,()=>STORY.hitch||anyV(v=>v.hitch)),
  buyG('trl',2,'Buy a small bulk trailer','In the shop: Buy → Trailers → Bulk trailer, size Small. Back your hitch up to its tip and press C.',()=>TRL.pc.cost,5,()=>STORY.trl||Object.keys(trl).length>0),
  siteG('quarry',2,quarry,'quarry',7,'Coal for the quarry site. With the trailer you carry twice as much a trip.'),
@@ -3475,7 +3522,7 @@ function objective(){
  if(T.fuel<KD.fuel*.2)return{...entr(6),c:'#ff5a3d'};
  const cs=rigCs(),c=cs[0];
  if(!c){const fh0=freeHost(),st=selTr()||Object.values(trl).find(t=>t.out&&!t.coupled&&fh0&&fh0.cls.includes(TRL[t.kind].cls)&&(!fh0.ok||fh0.ok(t.kind)));return st?{x:st.kx,y:st.ky,c:'#ffe27a'}:{x:pads[3].x,y:pads[3].y,c:'#3fae5a'}}
- const logsOnly=c.cargo==='logs',full=cs.every(q=>q.cg.amt>=q.cap-.01),hasLogs=cs.some(q=>q.cg.type==='logs');
+ const logsOnly=c.cargo==='logs',full=cs.every(q=>q.cg.amt>=q.cap-1e-6),hasLogs=cs.some(q=>q.cg.type==='logs');
  if(logsOnly||hasLogs)return hasLogs&&full?{...entr(4),c:'#d9b27c'}:lumber.built?{...entr(3),c:'#ff8a3d'}:null;
  const st=storyStep(),have=cs.reduce((a,q)=>a+(q.cg.type==='coal'?q.cg.amt:0),0);
  if(st.dest===undefined)return full?{...entr(1),c:'#7fd1ff'}:{...entr(0),c:'#f2b134'};
@@ -3489,12 +3536,13 @@ const clockHM=(c=CLK)=>{const h=c<DAYLEN?6+15*c/DAYLEN:21+9*(c-DAYLEN)/NIGHTLEN,
 function tickClock(dt){CLK+=dt;if(CLK>=CYCLE){CLK-=CYCLE;DAYN++}const el=document.getElementById('clk'),t=(darkness()>.5?'☾ ':'☀ ')+'Day '+DAYN+' · '+clockHM();if(el&&el.textContent!==t)el.textContent=t}
 const LC=document.createElement('canvas'),lg=LC.getContext('2d');
 // the night: a dark blue layer over the world with holes where light falls: headlights of vehicles in use, a glow round each person, lit buildings and yards, the work lamps of a working crane
-// ---- vehicle lights: L turns the lights of what you drive on or off (headlights forward, red tail lamps behind); white reversing lamps come on by themselves while it backs up. At the back means the back of the last trailer
+// ---- vehicle lights: L turns the lights of what you drive on or off (headlights forward, red tail lamps behind); white reversing lamps come on by themselves while it backs up. The lamps at the back are on every unit: the truck itself and each trailer it pulls. Only the headlights throw a beam; tail and reversing lamps only glow
 const reversing=v=>(v.v||0)<-.05||(P.driving&&T===v&&K.down&&!K.up&&(v.v||0)<.3);
 function rearOf(v){let u=v,n=0;while(u.tr&&n<8){u=u.tr;n++}const b=u===v?vBody(v):tBody(u),k=u===v&&v.kind==='forklift';return{b:b,x:(k?b.x0-.15:b.x0)*S,a:b.a}}
+function rearOfU(v,u){const b=u===v?vBody(v):tBody(u),k=u===v&&v.kind==='forklift';return{b:b,x:(k?b.x0-.15:b.x0)*S,a:b.a}}   // the back of one unit: the vehicle or one of its trailers
 function vehLights(D){const L=[];for(const v of Object.values(veh)){if(!v.out||!(v.lights||reversing(v)))continue;const kd=KOF(v),hw=(kd.hw||1)*.62;
   if(v.lights){const fx=(v.kind==='forklift'?.3:kd.b1)*S;for(const sd of[-1,1]){const w=wld(fx,sd*hw*S,v.x,v.y,v.a);L.push({k:'head',x:w[0],y:w[1],a:v.a})}}
-  const r=rearOf(v),rh=r.b.h*.68*S;for(const sd of[-1,1]){const w=wld(r.x,sd*rh,r.b.ox,r.b.oy,r.a);if(v.lights)L.push({k:'tail',x:w[0],y:w[1],a:r.a+Math.PI});if(reversing(v))L.push({k:'rev',x:w[0],y:w[1],a:r.a+Math.PI})}}
+  const rv=reversing(v);for(let u=v,n=0;u&&n<9;u=u.tr,n++){if(u.tr&&TRL[u.tr.kind].king)continue;const r=rearOfU(v,u),rh=r.b.h*.68*S;for(const sd of[-1,1]){const w=wld(r.x,sd*rh,r.b.ox,r.b.oy,r.a);if(v.lights)L.push({k:'tail',x:w[0],y:w[1],a:r.a+Math.PI});if(rv)L.push({k:'rev',x:w[0],y:w[1],a:r.a+Math.PI})}}}   // at the back of the truck and of every trailer behind it, except a back a semi-trailer lies over
  return L}
 // their glow, by day too (faint) and strong at night: drawn after the night layer
 function drawLampGlow(L,D){const u=S;g.save();g.globalCompositeOperation='lighter';
@@ -3506,17 +3554,18 @@ function drawNight(){const D=darkness(),VL=LIVEMAP?[]:vehLights(D);if(D<.01||LIV
  if(VROT()){lg.setTransform(dpr,0,0,dpr,0,0);lg.translate(VW/2,VH/2);lg.scale(Z,Z);lg.rotate(VROT());lg.translate(-cam.x,-cam.y)}else lg.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q));lg.globalCompositeOperation='destination-out';
  const glow=(x,y,r,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.55,'rgba(0,0,0,'+k*.6+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.arc(x,y,r,0,7);lg.fill()};
  const cone=(x,y,a,len,ha,k)=>{if(!see(x,y))return;const gr=lg.createRadialGradient(x,y,0,x,y,len);gr.addColorStop(0,'rgba(0,0,0,'+k+')');gr.addColorStop(.6,'rgba(0,0,0,'+k*.7+')');gr.addColorStop(1,'rgba(0,0,0,0)');lg.fillStyle=gr;lg.beginPath();lg.moveTo(x,y);lg.arc(x,y,len,a-ha,a+ha);lg.closePath();lg.fill()};
- for(const o of OFFICES){const r=offRect(o),cx=(r.x0+r.x1)/2,cy=(r.y0+r.y1)/2;glow(cx,cy,Math.max(r.x1-r.x0,r.y1-r.y0)*.95,.75)}
+ const DL=[];for(const o of OFFICES){if(RWK[o.n]&&o.doors){if(o.b&&o.b.built===false||isGone(o.n))continue;for(const d of o.doors){const q=uRot(o.site,o.X+d,o.Y+2*o.rh+S*.6);glow(q[0],q[1],3.2*u,.85);DL.push(q)}continue}const r=offRect(o),cx=(r.x0+r.x1)/2,cy=(r.y0+r.y1)/2;glow(cx,cy,Math.max(r.x1-r.x0,r.y1-r.y0)*.95,.75)}   // the reworked buildings: only the lamp over the entrance lights the ground outside (inside, the room is always lit); the others: their lit windows
  for(const[x,y]of pillarLamps())glow(x,y,110,.85);   // the power plant's pillar lamps   // lit windows
  for(const y of yards){const w=y.x1-y.x0,h=y.y1-y.y0;if(w*h<4*S*S)continue;glow((y.x0+y.x1)/2,(y.y0+y.y1)/2,Math.min(w,h)*.62,.5)}   // floodlit yards
  const lamps=[];
- for(const l of VL){if(l.k==='head'){const v=Object.values(veh).find(q=>Math.abs(q.a-l.a)<1e-9&&Math.hypot(q.x-l.x,q.y-l.y)<6*u);cone(l.x,l.y,l.a,v&&v.kind==='forklift'?7*u:11*u,.42,.95)}else if(l.k==='rev')cone(l.x,l.y,l.a,4.5*u,.6,.8);else glow(l.x,l.y,1.4*u,.35)}   /* headlights light the road ahead, reversing lamps a short way behind, tail lamps a little */
+ for(const l of VL){if(l.k==='head'){const v=Object.values(veh).find(q=>Math.abs(q.a-l.a)<1e-9&&Math.hypot(q.x-l.x,q.y-l.y)<6*u);cone(l.x,l.y,l.a,v&&v.kind==='forklift'?7*u:11*u,.42,.95)}else if(l.k==='rev')glow(l.x,l.y,1.6*u,.5);else glow(l.x,l.y,1.4*u,.35)}   /* headlights light the road ahead; reversing and tail lamps only glow round themselves */
  for(const v of Object.values(veh)){if(!v.out||!see(v.x,v.y))continue;if(v.lights||(P.driving&&T===v)||P.pass===v)glow(v.x,v.y,2.6*u,.55);   // the cab and the driver
   if(v.kind==='crane'&&v.ft>0&&v.hl){const h=hookPt(v);glow(h[0],h[1],4*u,.85);lamps.push(h)}}   /* the crane's work light on the hook: L, with the feet down */
  if(!P.driving&&!IN)glow(P.x,P.y,3.2*u,.7);
  if(NET.room)for(const p of NET.room.peers()){const r=p.presence;if(p.sameTab||!r||r.in||typeof r.x!=='number')continue;glow(r.x,r.y,3.2*u,.6)}
  lg.globalCompositeOperation='source-over';
  g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(LC,0,0);g.restore();
+ {g.save();g.globalCompositeOperation='lighter';for(const[x,y]of DL){if(!see(x,y))continue;const gr=g.createRadialGradient(x,y,0,x,y,2.2*u);gr.addColorStop(0,'rgba(255,214,140,'+(.32*D)+')');gr.addColorStop(1,'rgba(255,214,140,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,2.2*u,0,7);g.fill()}g.restore()}   // the entrance lamps' warm light on the ground
  g.save();g.globalCompositeOperation='lighter';for(const w of lamps){const gr=g.createRadialGradient(w[0],w[1],0,w[0],w[1],.9*u);gr.addColorStop(0,'rgba(255,236,170,'+(.55*D)+')');gr.addColorStop(1,'rgba(255,236,170,0)');g.fillStyle=gr;g.beginPath();g.arc(w[0],w[1],.9*u,0,7);g.fill()}g.restore();drawLampGlow(VL,D)}
 // inside a building with an open roof (SEETHRU): you stay on the map. The room is drawn where the building stands, the world all round it, and the roof is left off while you are in. The room keeps its own coordinates for everything that happens inside; r2w turns a point of the room into the map
 const SEETHRU=new Set(RWKN);let SEEO=null,ENTERLOCK=null;
@@ -3544,7 +3593,7 @@ function worldLayers(t){
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  if(!SEEO)drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(isBar(it)||it.type==='cone'||it.type==='chair'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
- drawSeats();drawPlayer();drawTop();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
+ drawSeats();drawPlayer();drawTop();drawMinePipe();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
 function draw(t){viewHalf();
  if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
  g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
@@ -3971,6 +4020,42 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
   if(got<=0){SPK.down=false;P.driving=false;delete veh[v.id];return'nothing was loaded at the coal mine'}
   const p0=cash;put(dump);SPK.t=performance.now()-2000;chkRun(6);SPK.down=false;const left=v.cargo&&v.cargo.amt||0;P.driving=false;delete veh[v.id];
   return left<got&&cash>p0?true:'nothing was unloaded at the power plant (load '+got.toFixed(1)+' t, left '+left.toFixed(1)+' t, paid $'+Math.round(cash-p0)+')'});
+ // 5a. loading: every vehicle that carries coal fills to exactly its capacity, from a full mine and from an empty one producing while it waits (all the coal the mine makes goes into the truck, to the last bit)
+ for(const k in TKINDS){let v=null,c=null;if(!dry){for(const o of[{},{bed:'coal'}]){v=addVeh(k,o);v.out=true;v.x=X0;v.y=Y0;v.a=A0;setActive(v);P.driving=true;P.pass=null;c=carriers().find(q=>q.ent===v);P.driving=false;if(c&&(c.cargo==='coal'||c.cargo==='any'))break;delete veh[v.id];v=null;c=null}if(!v)continue}   // (the cargo spaces are those of the vehicle being driven)
+  const nm=TKINDS[k].n,put=()=>{const z=load;v.a=z.w>=z.h?0:Math.PI/2;v.v=0;v.x=z.x;v.y=z.y;const q=carriers().find(q=>q.ent===v),d=dir(q.a),m=(q.e0+q.e1)/2*S;v.x+=z.x-(q.ox+d[0]*m);v.y+=z.y-(q.oy+d[1]*m)},
+   go=(stock,dts,sec)=>{v.cargo={type:null,amt:0};mine.sw=1;mine.stock=stock;setActive(v);P.driving=true;P.pass=null;put();SPK.down=true;SPK.t=performance.now()-2000;let i=0,tt=0;while(tt<sec){const d=dts[i++%dts.length];step(d);tt+=d}SPK.down=false;P.driving=false;return v.cargo.amt};
+  t('loading',nm+': a full load is exactly its capacity',()=>{setActive(v);P.driving=true;P.pass=null;const cap=carriers().find(q=>q.ent===v).cap,r=[go(mine.cap,[1/60],cap/(cap*.3)+3),go(mine.cap,[1/144],cap/(cap*.3)+3),go(mine.cap,[.0371,.009,.021],cap/(cap*.3)+3)];const bad=r.find(x=>Math.abs(x-cap)>1e-9);return bad===undefined?true:'loaded '+bad.toFixed(4)+' t of '+cap+' t'});
+  t('loading',nm+': loads every bit the mine makes, up to full',()=>{setActive(v);P.driving=true;P.pass=null;const cap=carriers().find(q=>q.ent===v).cap,sec=cap/mine.rate+6,got=go(0,[1/30,1/50],sec);return Math.abs(got-cap)<1e-9?true:'loaded '+got.toFixed(4)+' t of '+cap+' t while the mine made '+(mine.rate*sec).toFixed(2)+' t'});
+  if(!dry)delete veh[v.id]}
+ // 5c. lights: every vehicle kind with its lights on has 2 headlights and 2 tail lamps; backing up, 2 reversing lamps; and with a trailer on its hitch, the trailer's back has its own lamps too (none under a semi-trailer). Only the headlights throw a beam (drawNight)
+ for(const k in TKINDS)t('lights',TKINDS[k].n+': head, tail and reversing lamps',()=>{const v=addVeh(k,{});v.out=true;v.x=X0;v.y=Y0;v.a=A0;v.lights=true;v.v=0;const c=()=>{const o={};for(const l of vehLights(1))o[l.k]=(o[l.k]||0)+1;return o};let a=c(),bad=null;
+  if(a.head!==2||a.tail!==2||a.rev)bad='lights on: '+JSON.stringify(a);else{v.lights=false;v.v=-.5;a=c();if(a.rev!==2||a.head||a.tail)bad='backing up: '+JSON.stringify(a)}delete veh[v.id];return bad||true});
+ for(const k in TKINDS){const tk=Object.keys(TRL).find(x=>(TKINDS[k].tl||[]).includes(TRL[x].cls)&&!TRL[x].king)||(k==='semi'?Object.keys(TRL).find(x=>TRL[x].king):null);if(!tk)continue;
+  t('lights',TKINDS[k].n+' with a '+TRL[tk].n.toLowerCase()+': lamps at every back',()=>{const v=addVeh(k,{});v.out=true;v.x=X0;v.y=Y0;v.a=A0;v.hitch=true;v.lights=true;v.v=-.5;const l=addTrl(tk);l.out=true;l.b=A0;l.coupled=true;l.host=v;v.tr=l;
+   const o={};for(const q of vehLights(1))o[q.k]=(o[q.k]||0)+1;const n=TRL[tk].king?2:4;delete trl[l.id];delete veh[v.id];return o.tail===n&&o.rev===n?true:'expected '+n+' tail and '+n+' reversing lamps, got '+JSON.stringify(o)})}
+ // 5a2. the coal mine's pipe: only the cargo space under its spout is loaded; a bed next to the spout (where the old pad was) gets nothing
+ t('loading','coal pipe: a trailer under the spout fills, the truck in front of it does not',()=>{const v=addVeh('pickup',{bed:'coal'}),l=addTrl('pc'),pb=minePipe().b,d=TRL.pc;v.out=l.out=true;v.hitch=true;l.coupled=true;l.host=v;v.tr=l;v.a=l.b=0;
+  l.x=pb[0]-d.co*S;l.y=pb[1];l.hx=l.x+d.bar*S;l.hy=l.y;v.x=l.hx-hitchX(v)*S;v.y=l.hy;v.cargo={type:null,amt:0};l.cargo={type:null,amt:0};mine.sw=1;mine.stock=mine.cap;setActive(v);P.driving=true;P.pass=null;selVeh=v;
+  SPK.down=true;SPK.t=performance.now()-2000;chkRun(2);SPK.down=false;P.driving=false;const a=l.cargo.amt,b=v.cargo.amt;v.tr=null;delete trl[l.id];delete veh[v.id];
+  return a>.5&&b===0?true:'trailer '+a.toFixed(2)+' t, truck '+b.toFixed(2)+' t'});
+ t('loading','coal pipe: nothing loads with no cargo space under the spout',()=>{const v=addVeh('dump',{}),pb=minePipe().b;v.out=true;v.a=0;v.v=0;setActive(v);P.driving=true;P.pass=null;
+  const c=carriers().find(q=>q.ent===v),m=(c.e0+c.e1)/2*S;v.x=pb[0]-m;v.y=pb[1]+1.3*S;v.cargo={type:null,amt:0};mine.sw=1;mine.stock=mine.cap;SPK.down=true;SPK.t=performance.now()-2000;chkRun(2);SPK.down=false;P.driving=false;const b=v.cargo.amt;delete veh[v.id];
+  return b===0?true:'it loaded '+b.toFixed(2)+' t with its bed beside the spout'});
+ // 5d. G empties only the selected part of the rig (V selects): the truck or one trailer, the rest keeps its load
+ t('hauling','G empties only the selected truck or trailer',()=>{const v=addVeh('pickup',{bed:'coal'}),l=addTrl('pc');v.out=l.out=true;v.hitch=true;v.x=X0;v.y=Y0;v.a=A0;l.b=A0;l.coupled=true;l.host=v;v.tr=l;setActive(v);P.driving=true;P.pass=null;
+  const fill=()=>{v.cargo={type:'coal',amt:3};l.cargo={type:'coal',amt:4}};let bad=null;
+  fill();selVeh=null;selT=l;dumpCargo();if(l.cargo.amt!==0||v.cargo.amt!==3)bad='with the trailer selected: truck '+v.cargo.amt+' t, trailer '+l.cargo.amt+' t';
+  if(!bad){fill();selVeh=v;selT=null;dumpCargo();if(v.cargo.amt!==0||l.cargo.amt!==4)bad='with the truck selected: truck '+v.cargo.amt+' t, trailer '+l.cargo.amt+' t'}
+  P.driving=false;v.tr=null;delete trl[l.id];delete veh[v.id];return bad||true});
+ // 5b. the crane's cables: over a container on a flatbed they take the container, never the vehicle or trailer under it (every flatbed kind)
+ {const C0=[...Object.keys(TKINDS).filter(k=>(TKINDS[k].flat|0)>=2).map(k=>['v',k]),...Object.keys(TRL).filter(k=>TRL[k].cargo==='flat'&&(TRL[k].places|0)>=2).map(k=>['t',k])],ck=Object.keys(TRL).find(k=>TRL[k].cls==='box');
+  if(ck)for(const[w,k]of C0)t('crane',(w==='v'?TKINDS[k].n:TRL[k].n)+': the cables take the container on it',()=>{
+   const cr=addVeh('crane',{});cr.out=true;cr.x=X0+30*S;cr.y=Y0;cr.a=0;
+   const e=w==='v'?addVeh(k,{bed:'flat'}):addTrl(k);e.out=true;e.x=X0;e.y=Y0;if(w==='v')e.a=A0;else{e.b=A0;e.hx=X0+Math.cos(A0)*TRL[k].bar*S;e.hy=Y0+Math.sin(A0)*TRL[k].bar*S}
+   const c=addTrl(ck);c.out=true;c.onF={e,p:0,da:0};syncCarried();const d=TRL[ck];let bad=null,n=0;
+   for(const fx of[-.85,-.4,0,.4,.85])for(const fy of[-.8,0,.8]){const cs=Math.cos(c.b),sn=Math.sin(c.b),ox=fx*d.hw*S,oy=fy*d.hh*S,q=[c.x+cs*ox-sn*oy,c.y+sn*ox+cs*oy];const r=cableTarget(cr,q);n++;if(!r||r[1]!==c){bad=r?(r[0]==='v'?'the vehicle':r[0]==='t'?'the '+TRL[r[1].kind].n.toLowerCase():'an attachment'):'nothing';break}}
+   draw1();delete trl[c.id];if(w==='v')delete veh[e.id];else delete trl[e.id];delete veh[cr.id];
+   return bad?'over the container the cables would take '+bad:true})}
  if(v0&&!dry){v0.out=true;setActive(v0)}
  // 6. every window and every settings tab
  for(const m of chkPanels())t('windows',m,()=>{supB=supB||quarry;if(m==='sup')supB=quarry;if(m==='yup')yupB=lumber;if(m==='fac'||m==='fnd')facView='ctl';openP(m);const ok=$('gp').innerHTML.length>40;closeGarage();return ok||'empty'});
@@ -3983,7 +4068,7 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
   if(snap&&opt.restore!==false){try{sessionStorage.setItem('coalhaul.check',JSON.stringify(R))}catch(e){}loadFrom(snap)}   // put the game back as it was (the page reloads with it)
   else{CHK.on=false;PAUSED=wasP}}}
 // what the check does NOT cover yet: shown by /checklist so it can be added to the check. When a check is written for one, take it off this list
-const CHKTODO=['Hitching and unhitching a trailer (C), and towing it','The forklift: lifting, carrying and setting down pallets, crates and logs','The crane truck: feet, boom, hook, cables and the bulk container','Buying in the shop and selling on the SELL pad','The garage: parking, slots, storage and the unload pad','Construction sites: deliveries, and the building going up','Production: logs, rock, iron ore, sand, gravel, planks, and the factory and foundry queues','The fuel station: pumps, canisters, running out of fuel','Ramps and ramp trailers: driving a vehicle or trailer onto a deck','Signs: choosing what they show','Day and night, lights and the horn','The big map: Build tab, moving, turning and demolishing buildings and roads','Story goals and their arrows','Multiplayer: joining, sharing a game, the host'];
+const CHKTODO=['Hitching and unhitching a trailer (C), and towing it','The forklift: lifting, carrying and setting down pallets, crates and logs','The crane truck: feet, boom, hook, setting things down, the bulk container (what the cables take over a container on a flatbed is checked)','Buying in the shop and selling on the SELL pad','The garage: parking, slots, storage and the unload pad','Construction sites: deliveries, and the building going up','Production: logs, rock, iron ore, sand, gravel, planks, and the factory and foundry queues','The fuel station: pumps, canisters, running out of fuel','Ramps and ramp trailers: driving a vehicle or trailer onto a deck','Signs: choosing what they show','Day and night and the horn (the vehicle lamps are checked)','The big map: Build tab, moving, turning and demolishing buildings and roads','Story goals and their arrows','Multiplayer: joining, sharing a game, the host'];
 function chkListWin(){runChecks({dry:true}).then(R=>{const G=R.groups;let n=0;for(const g in G)n+=G[g].items.length;
  const sec=(t,body)=>'<details style="margin:4px 0"><summary style="cursor:pointer;font-weight:700;font-size:14px;padding:4px 0">'+t+'</summary><div style="font-size:12px;opacity:.85;padding:2px 0 6px 14px;line-height:1.5">'+body+'</div></details>';
  const h='<div style="max-height:58vh;overflow:auto;margin:-4px 0 10px">'+Object.keys(G).map(g=>sec('✓ '+esc(g)+' · '+G[g].items.length,G[g].items.map(esc).join('<br>'))).join('')+sec('… not checked yet · '+CHKTODO.length,CHKTODO.map(x=>'• '+esc(x)).join('<br>'))+'</div><button id="chk-run" style="'+UI.btn+';width:100%;margin-bottom:6px">Run the check now (/check)</button><button id="chk-close" style="'+UI.btn+';width:100%">Close</button>';
@@ -4148,7 +4233,7 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
 
  // the shared numbers (stock of every building, what a site has been given, upgrades, planks, the garage storage): each browser sends how much each went up or down since the last time, and adds what the others send. The on/off levers and "built" are set to what the last change said.
  const BL={mine,plant,lumber,sawmill,quarry,iron,crusher,factory,foundry},CT={},FLG={};
- for(const n in BL){const b=BL[n];for(const f of['sgn','sic','dsk','sw','lpnw','lpne','lpsw','lpse','lpg','stock','feed','prog','lvl','cap','rate','burn','fcap','flvl','gst','gsel','ylvl','ore','carb','iron','pall','crat','ccap','clvl','pcap','plvl','kcap','klvl','rlvl','sand','sacap','salvl','steel','scap','slvl','icap','ilvl']){const d=Object.getOwnPropertyDescriptor(b,f);if(d&&typeof d.value==='number')CT[n+'.'+f]={get:()=>b[f],set:v=>{const o=b[f];b[f]=f==='lvl'||f==='cap'||f==='ccap'||f==='clvl'||f==='pcap'||f==='plvl'||f==='kcap'||f==='klvl'||f==='rlvl'||f==='sacap'||f==='salvl'||f==='scap'||f==='slvl'||f==='icap'||f==='ilvl'||f==='rate'||f==='burn'||f==='fcap'||f==='flvl'||f==='gsel'||f==='ylvl'?v:Math.max(0,v);if(f==='ylvl'&&o!==v)applyUnits()}}}
+ for(const n in BL){const b=BL[n];for(const f of['sgn','sic','dsk','pi','pl','sw','lpnw','lpne','lpsw','lpse','lpg','stock','feed','prog','lvl','cap','rate','burn','fcap','flvl','gst','gsel','ylvl','ore','carb','iron','pall','crat','ccap','clvl','pcap','plvl','kcap','klvl','rlvl','sand','sacap','salvl','steel','scap','slvl','icap','ilvl']){const d=Object.getOwnPropertyDescriptor(b,f);if(d&&typeof d.value==='number')CT[n+'.'+f]={get:()=>b[f],set:v=>{const o=b[f];b[f]=f==='lvl'||f==='cap'||f==='ccap'||f==='clvl'||f==='pcap'||f==='plvl'||f==='kcap'||f==='klvl'||f==='rlvl'||f==='sacap'||f==='salvl'||f==='scap'||f==='slvl'||f==='icap'||f==='ilvl'||f==='rate'||f==='burn'||f==='fcap'||f==='flvl'||f==='gsel'||f==='ylvl'?v:Math.max(0,v);if(f==='ylvl'&&o!==v)applyUnits()}}}
   (b.reqs||[]).forEach((r,i)=>{CT[n+'.r'+i]={get:()=>r.got,set:v=>{r.got=Math.max(0,v)}}});if('built' in b)FLG[n+'.built']={get:()=>b.built,set:v=>{if(v&&!b.built)b.built=true}}}
  CT.planks={get:()=>planks,set:v=>{planks=Math.max(0,v)}};for(const k of['coal','logs','fuel'])CT['store.'+k]={get:()=>STORE[k],set:v=>{STORE[k]=Math.max(0,v)}};for(const k in SHST){CT['shop.'+k]={get:()=>SHST[k],set:v=>{SHST[k]=Math.max(0,v)}};CT['shopcap.'+k]={get:()=>SHCAP[k],set:v=>{SHCAP[k]=Math.max(50,v)}}}
  for(const k of['plantOn','lumberOn','sawOn','factoryOn','foundryOn','quarryOn','ironOn','crusherOn'])FLG[k]={get:()=>eval(k),set:v=>{eval(k+'='+v)}};
@@ -4278,7 +4363,7 @@ setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000
 addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.7',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.8',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
@@ -4370,7 +4455,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
  q('#st-kdef').onclick=()=>{SET.keys=Object.assign({},KEYDEF);setSave();pageSettings(o,back)};
  q('#m-back').onclick=back}
 function controlsHTML(){const row=(k,t)=>'<tr><td style="padding:3px 10px 3px 0;white-space:nowrap;color:#ffd166;font-weight:600;vertical-align:top">'+k+'</td><td style="padding:3px 0;opacity:.9">'+t+'</td></tr>',K=a=>keyLabel(SET.keys[a]);
- const keys=[[K('up')+' '+K('left')+' '+K('down')+' '+K('right')+' / arrows','walk · drive · in the crane cab: swing and slide the boom'],['Mouse click','use what is under the cursor: a seat, a lever, an item, a shelf…'],['Double click','off your vehicle: get out'],[K('action'),'action: load and unload, lift and set down (forklift, crane), fold the crane'],[K('hitch'),'hitch a trailer · crane: put on / take off a tool'],[K('select'),'pick the trailer · crane: what hangs on the hook'],[K('dump'),'dump the cargo'],[K('turn'),'turn the traffic barrier you hold · on the map: turn what you place'],[K('hookl')+' / '+K('hookr'),'crane: turn the load on the hook'],[K('horn'),'horn'],[K('lights'),'lights on / off, day or night · crane cab: the work light on the hook · off when you get out (reversing lamps come by themselves)'],[K('camera'),'switch the camera'],[K('map'),'the big map (Build tab)'],[K('goals'),'all goals'],['Wheel, + / −','zoom'],['Enter or /','chat · commands (/help)'],['Esc','menu, or close what is open']];
+ const keys=[[K('up')+' '+K('left')+' '+K('down')+' '+K('right')+' / arrows','walk · drive · in the crane cab: swing and slide the boom'],['Mouse click','use what is under the cursor: a seat, a lever, an item, a shelf…'],['Double click','off your vehicle: get out'],[K('action'),'action: load and unload, lift and set down (forklift, crane), fold the crane'],[K('hitch'),'hitch a trailer · crane: put on / take off a tool'],[K('select'),'pick the trailer · crane: what hangs on the hook'],[K('dump'),'dump the cargo of the selected truck or trailer (V picks it)'],[K('turn'),'turn the traffic barrier you hold · on the map: turn what you place'],[K('hookl')+' / '+K('hookr'),'crane: turn the load on the hook'],[K('horn'),'horn'],[K('lights'),'lights on / off, day or night · crane cab: the work light on the hook · off when you get out (reversing lamps come by themselves)'],[K('camera'),'switch the camera'],[K('map'),'the big map (Build tab)'],[K('goals'),'all goals'],['Wheel, + / −','zoom'],['Enter or /','chat · commands (/help)'],['Esc','menu, or close what is open']];
  const touch=[['Hold a finger on the map','the stick: slide to walk or drive, lift to stop'],['Tap','use what you tap · double tap off your vehicle: get out'],['Two fingers','zoom'],['␣ action','the big button'],['C, V, G, R, Q, E','as the keys'],['☰ 💬 🎥','menu · chat · camera'],['💡 📯','in a vehicle: lights · horn'],['Tap the minimap','the big map']];
  const T=l=>'<table style="font-size:13px;border-collapse:collapse;width:100%">'+l.map(r=>row(r[0],r[1])).join('')+'</table>';
  return T(TOUCHUI?touch:keys)+'<div style="font-size:12px;font-weight:700;margin:10px 0 2px;opacity:.7">'+(TOUCHUI?'With a keyboard':'On a phone or tablet')+'</div><div style="opacity:.7">'+T(TOUCHUI?keys:touch)+'</div>'}
@@ -4378,7 +4463,7 @@ function controlsHTML(){const row=(k,t)=>'<tr><td style="padding:3px 10px 3px 0;
 function pageHowto(o,back){const p=t=>'<p style="margin:6px 0;font-size:14px;line-height:1.45;opacity:.92">'+t+'</p>';
  const P=menuPage(o,H2('How to play')+
   p('You start with <b>$0</b>, a small pickup and a town of building sites. Haul cargo, earn money, and build the town up one site at a time.')+
-  SEC('The first hauls')+p('Drive to the <b>coal mine</b>, park on its loading pad and hold <b>action</b> to load. Unload on the <b>power plant</b> site\'s pad the same way. Every building runs on the power plant\'s coal, so it comes first.')+
+  SEC('The first hauls')+p('Drive to the <b>coal mine</b>, park with the cargo bed under the <b>coal pipe</b> behind the building and hold <b>action</b> to load. Unload on the <b>power plant</b> site\'s pad the same way. Every building runs on the power plant\'s coal, so it comes first.')+
   SEC('Earning and building')+p('Sites pay for what you deliver. Other goods sell at the <b>shop</b>. Buy bigger trucks, trailers, a forklift and a crane truck there; new purchases appear on the NEW PURCHASES pad. Fuel up at the <b>fuel station</b>.')+
   p('Each building site lists what it needs: coal, rock, logs, planks, gravel… Built, it makes the next material: the lumberyard logs, the sawmill planks, the quarry rock, the crusher sand and gravel, the iron mine ore, the factory pallets, crates and hitches, the foundry iron, steel and glass.')+
   SEC('Tools')+p('A <b>forklift</b> lifts pallets and, with the claw, logs. The <b>crane truck</b> puts its feet down and lifts anything with forks, a log claw, a log grab or cables, even vehicles.')+
