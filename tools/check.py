@@ -52,6 +52,7 @@ async def main():
         await pg.click('#mm-new')
         await pg.wait_for_timeout(300)
         await pg.click('button[data-c]')
+        await pg.click('#colok')   # the colour window: select, then Confirm
         await pg.wait_for_timeout(1500)
         # a new game starts on an empty map: only the garage, at chunk 0,0, and no roads (decided 19 Nov)
         st = await pg.evaluate("()=>({b:NETX.units.filter(([k])=>!isGone(k)).map(([k,U])=>k+' '+U.c0+','+U.r0),roads:RC.size+WT.size+WD.size})")

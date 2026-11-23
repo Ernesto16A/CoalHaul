@@ -2989,8 +2989,34 @@ function cargoIco(k){if(CGI[k])return CGI[k];const N=64,c=document.createElement
  return CGI[k]=c}
 const CGU={};const cgImg=(k,px=18)=>{if(!CGU[k])CGU[k]=cargoIco(k).toDataURL();return'<img src="'+CGU[k]+'" alt="'+(CGK[k]||[k])[0]+'" style="width:'+px+'px;height:'+px+'px;vertical-align:-4px;margin-right:4px">'};
 const cgOfLabel=l=>!l||typeof l!=='string'?null:/^COAL/.test(l)?'coal':/^ROCK/.test(l)?'rock':/^IRON ORE/.test(l)?'iron':/^SAND/.test(l)?'sand':/^GRAVEL/.test(l)?'gravel':/^LOGS?\b|LOG STATION/.test(l)?'logs':/^FUEL/.test(l)?'fuel':null;
+// the unloading grate of the built power plant, in the ground on its unloading place (same place, same size): a concrete collar, a steel frame, and bars over a hopper where the stored coal is seen, higher the fuller the store is
+function drawGrate(z,b){const W=Math.max(z.w,z.h),H=Math.min(z.w,z.h),V=z.h>z.w,hw=W/2,hh=H/2,ph=hh-7,pw=hw-7,f=Math.max(0,Math.min(1,b.stock/(b.cap||1))),far=Z<.35;
+ const lx=V?SUN[1]:SUN[0],ly=V?-SUN[0]:SUN[1];   // the sun in the grate's own frame
+ g.save();g.translate(z.x,z.y);if(V)g.rotate(Math.PI/2);
+ // the concrete collar, with yellow and black at the two ends
+ g.fillStyle='rgba(0,0,0,.28)';g.fillRect(-hw-15,-hh-15,W+30,H+30);g.fillStyle='#8d8c86';g.fillRect(-hw-13,-hh-13,W+26,H+26);g.strokeStyle='#a9a8a1';g.lineWidth=1.5;g.strokeRect(-hw-12,-hh-12,W+24,H+24);
+ if(!far){g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=1;g.beginPath();for(let x=-hw+W/4;x<hw-1;x+=W/4){g.moveTo(x,-hh-12);g.lineTo(x,-hh);g.moveTo(x,hh);g.lineTo(x,hh+12)}g.stroke();   // joints
+  for(let k=0;k<110;k++){const x=(hash(k,1,71)-.5)*(W+22),y=(hash(k,2,71)<.5?-1:1)*(hh+1+hash(k,3,71)*9),q=1+hash(k,4,71)*2.4;g.fillStyle=hash(k,5,71)<.75?'rgba(20,20,23,.75)':'rgba(70,71,78,.8)';g.fillRect(x,y,q*1.3,q)}}   // spilt crumbs
+ for(const sd of[-1,1]){g.save();g.beginPath();g.rect(sd<0?-hw-11:hw+1,-hh-10,10,H+20);g.clip();g.fillStyle='#e0b020';g.fillRect(-hw-11,-hh-10,W+22,H+20);g.strokeStyle='#1b1c1f';g.lineWidth=7;g.beginPath();for(let y=-hh-40;y<hh+40;y+=20){g.moveTo(sd*(hw+6)-14,y);g.lineTo(sd*(hw+6)+14,y+28)}g.stroke();g.restore()}
+ // the hopper: dark sloping sides down to a slot, then the coal in it
+ g.fillStyle='#4d535c';g.fillRect(-hw,-hh,W,H);g.fillStyle='#0c0d10';g.fillRect(-pw,-ph,2*pw,2*ph);
+ g.save();g.beginPath();g.rect(-pw,-ph,2*pw,2*ph);g.clip();
+ const sx=pw-16,sy=ph*.3;for(const[c,p]of[['#565d67',[-pw,-ph,pw,-ph,sx,-sy,-sx,-sy]],['#7a828d',[-pw,ph,pw,ph,sx,sy,-sx,sy]],['#4b515a',[-pw,-ph,-sx,-sy,-sx,sy,-pw,ph]],['#686f7a',[pw,-ph,sx,-sy,sx,sy,pw,ph]]]){g.fillStyle=c;g.beginPath();g.moveTo(p[0],p[1]);for(let i=2;i<8;i+=2)g.lineTo(p[i],p[i+1]);g.closePath();g.fill()}
+ if(f>.005){const cw=sx+(pw-sx)*f,ch=sy+(ph-sy)*f;g.fillStyle='#15161a';g.fillRect(-cw,-ch,2*cw,2*ch);if(!far)for(let k=0;k<260;k++){const x=(hash(k,1,73)-.5)*2*cw,y=(hash(k,2,73)-.5)*2*ch,q=2+hash(k,3,73)*3.4;g.fillStyle=['#08090b','#2b2d34','#50545e'][k%3];g.beginPath();g.moveTo(x-q,y);g.lineTo(x-q*.2,y-q*.9);g.lineTo(x+q,y-q*.2);g.lineTo(x+q*.4,y+q*.8);g.closePath();g.fill()}}
+ const sh=1-f*.6,dx=lx*13,dy=ly*13;g.fillStyle='rgba(0,0,0,'+.5*sh+')';g.fillRect(dx>0?-pw:pw+dx,-ph,Math.abs(dx),2*ph);g.fillRect(-pw,dy>0?-ph:ph+dy,2*pw,Math.abs(dy));   // the rim's shadow down into it
+ // the bars: thin ones across, 2 heavy beams along; first their shadow, then dark steel, then the worn light edge
+ const bars=(c,w,ox,oy)=>{g.strokeStyle=c;g.lineWidth=w;g.beginPath();const n=Math.round(2*pw/16);for(let i=1;i<n;i++){const x=-pw+i*2*pw/n+ox;g.moveTo(x,-ph+oy);g.lineTo(x,ph+oy)}g.stroke()},beams=(c,w,ox,oy)=>{g.strokeStyle=c;g.lineWidth=w;g.beginPath();for(const y of[-.34,.34]){g.moveTo(-pw,y*ph+oy);g.lineTo(pw,y*ph+oy)}g.stroke()};
+ if(!far){bars('rgba(0,0,0,.45)',3,lx*3,ly*3);beams('rgba(0,0,0,.4)',4,lx*3,ly*3)}
+ bars('#6a717b',2.8,0,0);if(!far)bars('#99a1ab',1,-lx,-ly);beams('#5d646e',4,0,0);if(!far)beams('#a4abb5',1.2,-lx*1.6,-ly*1.6);
+ g.restore();
+ // the steel frame, in four panels, with bolts
+ g.strokeStyle='#17191d';g.lineWidth=1.2;g.strokeRect(-hw,-hh,W,H);g.strokeRect(-pw,-ph,2*pw,2*ph);
+ g.strokeStyle='#828a95';g.lineWidth=1.2;g.beginPath();g.moveTo(-hw+1.5,hh-1.5);g.lineTo(-hw+1.5,-hh+1.5);g.lineTo(hw-1.5,-hh+1.5);g.stroke();
+ for(const x of[-hw/2,0,hw/2]){g.fillStyle='#4d535c';g.fillRect(x-4,-ph,8,2*ph);g.strokeStyle='#17191d';g.lineWidth=1;g.strokeRect(x-4,-ph,8,2*ph)}
+ if(!far)for(let i=0;i<=8;i++)for(const sd of[-1,1]){const x=-hw+3.5+i*(W-7)/8,y=sd*(hh-3.5);g.fillStyle='#24272c';g.beginPath();g.arc(x,y,2,0,7);g.fill();g.fillStyle='#b4bac3';g.beginPath();g.arc(x-lx*.6,y-ly*.6,1,0,7);g.fill()}
+ g.restore()}
 function drawInfo(t){
- ring(dump,'#7fd1ff',t,plant.built?'COAL UNLOADING':reqList(plant));ring(lz,'#ff8a3d',t,lumber.built?'LOG STATION':reqList(lumber));ring(garage,'#d0d0d0',t);ring(gUnl,'#f2d21c',t,'UNLOAD VEHICLE');ring(gLoad,'#3fe05a',t,'LOAD VEHICLE');gWrap(drawStore);ring(sellZ,'#ff7ab6',t,'SELL');ring(spawnZ,'#8fd3ff',t,'NEW PURCHASES');for(const z of FZS)ring(z,'#ff5a3d',t,'FUEL');ring(fsz,'#ff5a3d',t,'VEHICLES');if(sawmill.built){ring(PLZ,'#d9b27c',t,'PLANKS')}ring(fz,'#8fa3b8',t,factory.built?'CARGO IN':reqList(factory));if(factory.built)ring(FIZ,'#d8b57a',t,'ITEMS');ring(fnz,'#c98a4b',t,foundry.built?'CARGO IN':reqList(foundry));if(foundry.built)ring(FNIZ,'#d8b57a',t,'ITEMS');ring(qz,'#9aa6b5',t,quarry.built?'ROCK LOADING':reqList(quarry));ring(iz,'#c9694a',t,iron.built?'IRON ORE LOADING':reqList(iron));ring(swz,'#d9b27c',t,sawmill.built?'LOGS':reqList(sawmill));ring(cz,'#7fb3a4',t,crusher.built?'ROCK UNLOADING':reqList(crusher));if(crusher.built)ring(CLZ,'#7fb3a4',t,(crusher.gsel?'GRAVEL LOADING':'SAND LOADING'));
+ if(plant.built)drawGrate(dump,plant);else ring(dump,'#7fd1ff',t,reqList(plant));ring(lz,'#ff8a3d',t,lumber.built?'LOG STATION':reqList(lumber));ring(garage,'#d0d0d0',t);ring(gUnl,'#f2d21c',t,'UNLOAD VEHICLE');ring(gLoad,'#3fe05a',t,'LOAD VEHICLE');gWrap(drawStore);ring(sellZ,'#ff7ab6',t,'SELL');ring(spawnZ,'#8fd3ff',t,'NEW PURCHASES');for(const z of FZS)ring(z,'#ff5a3d',t,'FUEL');ring(fsz,'#ff5a3d',t,'VEHICLES');if(sawmill.built){ring(PLZ,'#d9b27c',t,'PLANKS')}ring(fz,'#8fa3b8',t,factory.built?'CARGO IN':reqList(factory));if(factory.built)ring(FIZ,'#d8b57a',t,'ITEMS');ring(fnz,'#c98a4b',t,foundry.built?'CARGO IN':reqList(foundry));if(foundry.built)ring(FNIZ,'#d8b57a',t,'ITEMS');ring(qz,'#9aa6b5',t,quarry.built?'ROCK LOADING':reqList(quarry));ring(iz,'#c9694a',t,iron.built?'IRON ORE LOADING':reqList(iron));ring(swz,'#d9b27c',t,sawmill.built?'LOGS':reqList(sawmill));ring(cz,'#7fb3a4',t,crusher.built?'ROCK UNLOADING':reqList(crusher));if(crusher.built)ring(CLZ,'#7fb3a4',t,(crusher.gsel?'GRAVEL LOADING':'SAND LOADING'));
 }
 function drawPads(t){
  for(const q of pads){if(!padOn(q)||q.pctl)continue;
@@ -4407,11 +4433,12 @@ function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const e of[...Object.values(
 // a player who joins picks the pickup to start with; it is made in the shared world, free, for anybody to use
 // the windows a player sees first: his colour (when the game starts, and when he joins one), then, joining, which pickup he starts with
 const ovBox=(t,sub,body)=>'<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:20px 24px;color:#eee;max-width:380px"><div style="font-size:18px;font-weight:700;margin-bottom:4px">'+t+'</div><div style="font-size:13px;opacity:.8;margin-bottom:12px">'+sub+'</div>'+body+'</div>';
-function overlay(html){const o=document.createElement('div');o.id='pickov';o.style.cssText='position:fixed;inset:0;background:#0b120ccc;z-index:50;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif';o.innerHTML=html;document.body.appendChild(o);return o}
+function overlay(html){const o=document.createElement('div');o.id='pickov';o.style.cssText='position:fixed;inset:0;background:#0b120ccc;z-index:60;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif';o.innerHTML=html;document.body.appendChild(o);return o}
 function chooseColour(joining,then){let pre=null;try{pre=localStorage.getItem('coalhaul.col')}catch(e){}if(!PAL.includes(pre))pre=PAL[0];
  const o=overlay(ovBox(joining?'Joining the game: your colour':'Choose your colour','Your pickup, and every vehicle and trailer you buy later, comes in this colour, cab and bed. In the shop you can still pick another one for a single vehicle.',
-  '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+PAL.map(c=>'<button data-c="'+c+'" title="'+c+'" style="height:52px;border-radius:10px;cursor:pointer;background:'+c+';border:3px solid '+(c===pre?'#ffd166':'#ffffff30')+'"></button>').join('')+'</div>'));
- o.querySelectorAll('button').forEach(b=>b.onclick=()=>{MYCOL=b.dataset.c;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(e){}o.remove();then&&then()})}
+  '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+PAL.map(c=>'<button data-c="'+c+'" title="'+c+'" style="height:52px;border-radius:10px;cursor:pointer;background:'+c+';border:2px solid #ffffff30;font-size:22px;font-weight:700;line-height:1;color:'+(c===PAL[6]?'#1a2630':'#fff')+'"></button>').join('')+'</div><button id="colok" style="display:block;width:100%;margin-top:16px;padding:12px;border-radius:8px;border:1px solid #ffd166;background:#ffd166;color:#1a2630;font:700 15px system-ui,sans-serif;cursor:pointer">Confirm</button>'));
+ const sw=[...o.querySelectorAll('button[data-c]')],pick=c=>{pre=c;for(const b of sw){const on=b.dataset.c===c;b.textContent=on?'✓':'';b.style.outline=on?'3px solid #fff':'none';b.style.outlineOffset='2px';b.setAttribute('aria-pressed',on)}};pick(pre);   // a click only selects (ring and tick); Confirm takes it. The colour picked last time is selected to begin with
+ sw.forEach(b=>b.onclick=()=>pick(b.dataset.c));o.querySelector('#colok').onclick=()=>{MYCOL=pre;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(e){}o.remove();then&&then()}}
 // a new game: the starting pickup takes the colour picked
 function startColour(then){chooseColour(false,()=>{for(const v of Object.values(veh))if(v.starter){v.color=MYCOL;v.bedColor=MYCOL}then&&then()})}
 function pickPickup(){const ov=document.getElementById('pickov');if(ov){if(ov.dataset.join)return;ov.remove();MYCOL=null}   // joined while the start window was still open: that choice starts over, as a joining player's
@@ -4484,7 +4511,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.11',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.12',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};

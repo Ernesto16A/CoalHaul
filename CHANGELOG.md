@@ -4,6 +4,12 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.12 · 24 Nov 2026
+- Changed: the built power plant has an unloading grate in the ground instead of the painted pad: a concrete collar with yellow and black ends, a steel frame and bars over a hopper, where the stored coal is seen, more of it the fuller the store is. Unloading works as before, in the same place; the construction site keeps its pad
+- Changed: in the colour window a click only selects the colour (white ring and tick), and the new Confirm button takes it. The colour picked last time is selected to begin with
+- Fixed: the colour window of a new game was hidden behind the main menu's new background
+- tools/check.py presses the new Confirm button
+
 ## 0.1.11 · 24 Nov 2026
 - Fixed: walking into a building that is turned (a coal mine set down with R, for example) made the view jump: the camera kept its offset from the player without turning it with the room. The view now stays put however the building is turned
 - Added: Settings → General → Saving: how often to autosave (off, every minute, 2, 5 or 10 minutes; every minute as before). Off also means no autosave when the page closes or when you quit to the menu
