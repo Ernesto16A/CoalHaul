@@ -4,6 +4,15 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.13 · 24 Nov 2026
+- Changed: a power plant gives power only to the yards that touch its wall. Where the two walls meet stands a shared pillar: at a corner of the plant it is live while that corner's switch is on, along a wall while both corner switches of that wall are on. One live pillar is enough; power does not go on from yard to yard. The corner switches work the lamp and the power together, the gate switch only its lamps. In older saves a yard that touches no power plant stands still until one is built against it
+- Added: any number of power plants (Yards list), each its own construction site with its own coal, main switch, corner switches, desk, sign and unloading grate, kept in saves and shared in multiplayer. A yard burns the coal of the plant that feeds it; of several, the one with the most coal
+- Changed: a plant's control desk lists the yards that touch it, and which switches each still needs; a building without power says why (no plant touches it, its switches are off, the plant is off, out of coal or not built)
+- Changed: goals, the arrow, the help and the messages work with any power plant; the /test worlds have four, so every yard that needs power has it
+- Changed: where two yards meet there is one pillar across both walls, no L up the neighbour's wall, and no second post where a gate begins right at a neighbour's corner
+- Fixed: what had been delivered to a construction site could be missing from the save once that building had been demolished and built again
+- Added to /check: power through corner and wall pillars (the plant turned all 4 ways), coal burnt at the right plant, several power plants (site, desk, sign, grate, save, host)
+
 ## 0.1.12 · 24 Nov 2026
 - Changed: the built power plant has an unloading grate in the ground instead of the painted pad: a concrete collar with yellow and black ends, a steel frame and bars over a hopper, where the stored coal is seen, more of it the fuller the store is. Unloading works as before, in the same place; the construction site keeps its pad
 - Changed: in the colour window a click only selects the colour (white ring and tick), and the new Confirm button takes it. The colour picked last time is selected to begin with
