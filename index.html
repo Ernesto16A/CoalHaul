@@ -2726,7 +2726,7 @@ const interiorGeo=o=>{const n=(o&&o.rooms)||2;
  if(o&&o.inw&&o.n==='garage')return{n:1,inw:1,X0:-4140,X1:-3860,Y0:-4100,Y1:-3960,PYs:[],xmin:-4132,xmax:-3868,ymin:-4092,ymax:-3966,exitY:-3968,enterY:-3978,exitNY:-4090,enterNY:-4082,doorW:16,solid:[[-3980,-4060,-3960,-4000],[-4140,-4080,-4120,-3980]],camY:-4030,zh:140,zw:280};   // the garage home: 14 x 7 tiles, doors north and south; the standing wall, the shelves on the west wall   // the garage home: 14 x 7 tiles, doors north and south
  if(o&&o.inw)return{n:1,inw:1,X0:-4080,X1:-3920,Y0:-4100,Y1:-3960,PYs:[],xmin:-4072,xmax:-3928,ymin:-4092,ymax:-3966,exitY:-3968,enterY:-3978,doorW:16,solid:o.n==='fuel'||o.n==='shop'?[[-4080,-4080,-4060,-3980],[-3940,-4080,-3920,-3980]]:o.n==='lumberyard'||o.n==='sawmill'||o.n==='factory'||o.n==='foundry'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?[[-4060,-4100,-3940,-4060],[-3940,-4100,-3920,-4080],[-4080,-3980,-4020,-3960],[-3980,-3980,-3920,-3960]]:o.n==='power plant'?[[-4060,-4100,-3940,-4060],[-3940,-4100,-3920,-4080]]:[],camY:-4030,zh:140,zw:160};   // an office: one room of 8 x 7 tiles (the fuel station's has its two shelves)   // the fuel station: one room the size of its building (8 x 7 tiles), drawn 1:1 with the world
  return n===3?{n,home:1,Y0:-4250,PYs:[-4050],WX:[-4230,-3770],xmin:-4418,xmax:-3582,ymin:-4240,camY:-4050,zh:430,zw:880}:{n,Y0:-4180,PYs:[-4000],ymin:-4170,camY:-4015,zh:340}};
-function enterOffice(o,back){const WPX=P.x,WPY=P.y,WPA=P.a,WCX=cam.x,WCY=cam.y;const sq=siteOfOff(o);if(sq&&sq.b.reqs){flash('The '+o.n+' is under construction: '+reqTxt(sq.b)+' delivered. Still needed: '+reqNeeds(sq.b)+'.');return}if(sq){flash('The '+o.n+' is under construction: deliver '+(sq.b.need-sq.b.got).toFixed(1)+sq.unit+' of '+sq.what+' to its yard ('+sq.b.got.toFixed(1)+' / '+sq.b.need+' done).');return}IN={o};{const q=pads.find(q=>q.up);q.b=o.b||null;Object.assign(q,o.inw?{x:o.n==='lumberyard'||o.n==='sawmill'||o.n==='factory'||o.n==='foundry'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?-4040:-4000,y:-4020,w:40,h:40}:{x:-4000,y:-4048,w:110,h:80});if(o.doors){q.x=-3880;q.y=-4080}}Zsave=Z;P.x=o.doors&&!back?-4140+(DOORX-o.X):-4000;P.y=back?(interiorGeo(o).enterNY||-4204):(interiorGeo(o).enterY||-3896);P.a=back?Math.PI/2:-Math.PI/2;cam.x=-4000;cam.y=interiorGeo(o).camY;if(seeThru(o)){const gm=interiorGeo(o);let w=w2r(o,WPX,WPY);if(!(w[0]>gm.X0-10&&w[0]<gm.X1+10&&w[1]>gm.Y0-10&&w[1]<gm.Y1+24))w=[P.x,P.y];P.x=w[0];P.y=w[1];P.a=WPA-o.site.rot*Math.PI/2;cam.x=P.x+(WCX-WPX);cam.y=P.y+(WCY-WPY);Z=Zsave;return}flash('You went inside the '+o.n+(o.rooms===3?' home':' office')+'.')}
+function enterOffice(o,back){const WPX=P.x,WPY=P.y,WPA=P.a,WCX=cam.x,WCY=cam.y;const sq=siteOfOff(o);if(sq&&sq.b.reqs){flash('The '+o.n+' is under construction: '+reqTxt(sq.b)+' delivered. Still needed: '+reqNeeds(sq.b)+'.');return}if(sq){flash('The '+o.n+' is under construction: deliver '+(sq.b.need-sq.b.got).toFixed(1)+sq.unit+' of '+sq.what+' to its yard ('+sq.b.got.toFixed(1)+' / '+sq.b.need+' done).');return}IN={o};{const q=pads.find(q=>q.up);q.b=o.b||null;Object.assign(q,o.inw?{x:o.n==='lumberyard'||o.n==='sawmill'||o.n==='factory'||o.n==='foundry'||o.n==='quarry'||o.n==='mine'||o.n==='iron mine'||o.n==='crusher'?-4040:-4000,y:-4020,w:40,h:40}:{x:-4000,y:-4048,w:110,h:80});if(o.doors){q.x=-3880;q.y=-4080}}Zsave=Z;P.x=o.doors&&!back?-4140+(DOORX-o.X):-4000;P.y=back?(interiorGeo(o).enterNY||-4204):(interiorGeo(o).enterY||-3896);P.a=back?Math.PI/2:-Math.PI/2;cam.x=-4000;cam.y=interiorGeo(o).camY;if(seeThru(o)){const gm=interiorGeo(o);let w=w2r(o,WPX,WPY);if(!(w[0]>gm.X0-10&&w[0]<gm.X1+10&&w[1]>gm.Y0-10&&w[1]<gm.Y1+24))w=[P.x,P.y];P.x=w[0];P.y=w[1];P.a=WPA-o.site.rot*Math.PI/2;{const dq=(4-o.site.rot)%4;let dx=WCX-WPX,dy=WCY-WPY;for(let k=0;k<dq;k++){const t=dx;dx=-dy;dy=t}cam.x=P.x+dx;cam.y=P.y+dy}Z=Zsave;return}   /* the camera keeps its place on the screen: its offset from the player turned into the room's frame (a turned building made the view jump) */flash('You went inside the '+o.n+(o.rooms===3?' home':' office')+'.')}
 function exitMine(back){const o=IN.o;if(seeThru(o)){const w=r2w(o,P.x,P.y),c=r2w(o,cam.x,cam.y);IN=null;P.x=w[0];P.y=w[1];P.a+=o.site.rot*Math.PI/2;cam.x=c[0];cam.y=c[1];ENTERLOCK=o;return}IN=null;if(o.rot){P.x=o.X-28;P.y=o.Y+75;P.a=Math.PI;cam.x=P.x;cam.y=P.y;return}[P.x,P.y,P.a]=doorOut(o,back);cam.x=P.x;cam.y=P.y}
 // ---------- inside an office: floors and furniture ----------
 // a floor of boards between x0,y0 and x1,y1 (v: the boards run north-south): every board has a tone of its own and a butt joint or two
@@ -3484,10 +3484,11 @@ const fh=P.driving?freeHost():null;
   g.strokeStyle='rgba(255,170,60,.85)';g.lineWidth=2;g.setLineDash([4,5]);g.stroke();g.setLineDash([])}   // a semi truck with a hitch shows its saddle and its hitch
   const st=nearTip(fh);
   if(st){const p=tipPt(st);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(p.x,p.y,10,0,7);g.stroke();txt('C: couple',p.x,p.y-16,'#ffd166')}}}
+const PR=.39;   // a person's size: r = S*PR, so arms and hands span 1 square (20 px) and he fits in a seat
 function drawPlayer(){drawPlayer0()}   /* the player lives in the world: his size and place follow the map and the zoom, outside and inside */
 function drawPlayer0(){
  const seated=P.driving&&T.out?[T,-1]:P.pass?[P.pass,P.seatSd]:null;
- let px=P.x,py=P.y,pa=P.a,r=S*.55;
+ let px=P.x,py=P.y,pa=P.a,r=S*PR;
  if(seated){const h=hoverSeat();if(seated[0].kind==='forklift'||seated[0].kind==='atv'?!drawPlayer0.fk:!h||h.v!==seated[0])return;   /* inside a cab the player is hidden; hovering the cab shows him in his seat. On the forklift's open seat he always shows, drawn by the forklift itself under its overhead guard */
   const q=seatPos(seated[0],seated[1]);px=q[0];py=q[1];pa=seated[0].a+(seated[0].kind==='crane'&&seated[1]===CSEAT?crOf(seated[0]).rot:0);}   // the crane cab turns with the craneelse if(P.driving)return;
  const ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:Math.sin((px+py)*.22)*r*.45;
@@ -3634,10 +3635,11 @@ function worldLayers(t){
  for(const v of Object.values(veh))if(v.out&&v.fk)drawKind(v);for(const t of Object.values(trl))if(t.out&&t.fk)drawTrailer(t);   // a vehicle or container on a crane's cables, under the boom
  for(const v of Object.values(veh))if(v.out&&v.kind==='crane')drawTool(v);   // the crane's tool under what it holds (a pallet sits on the forks), the boom over both
  for(const p of PALS)if(p.fk)drawPallet(p);for(const o of ATT)if(o.onP)drawAtt(o);for(const l of LG)if(l.fk)drawLog(l);for(const o of ATT)if(o.fk)drawAtt(o);for(const it of GI)if(it.fk){if(isBar(it)||it.type==='cone'||it.type==='chair')drawObst(it);else{g.save();g.translate(it.x,it.y);g.rotate(it.a||0);itemSprite(it,0,0,it.type==='canister'?S*.46:S*.38);g.restore()}}
+ const inCr=(P.driving&&T&&T.kind==='crane')||(P.pass&&P.pass.kind==='crane');if(!inCr)drawPlayer();   /* the player on foot walks under a crane's boom: drawn before it (in the crane's cab he is drawn after) */
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  if(!SEEO)drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(isBar(it)||it.type==='cone'||it.type==='chair'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
- drawSeats();drawPlayer();drawTop();drawMinePipe();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
+ drawSeats();if(inCr)drawPlayer();drawTop();drawMinePipe();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
 function draw(t){viewHalf();
  if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
  g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
@@ -4015,6 +4017,25 @@ function chatSend(t){t=(t||'').trim();if(!t)return;if(t[0]==='/')return chatCmd(
 function chatPoll(){const r=NET.room;if(!r)return;try{for(const p of r.peers()){if(p.sameTab)continue;const q=p.presence;if(!q||!q.ch)continue;for(const m of q.ch){if(!m||CHAT.seen.has(m.id))continue;CHAT.seen.add(m.id);sfx('msg');chatLine(chatWho(q.nm,q.hue)+': '+esc(m.t))}}}catch(e){}}
 // kits for /kit: each sets out a set of things to try at the garage. More are added here
 const KITS={crane:()=>$('tcrane').click()};
+// /test: a whole test world in place of the map. Autosave stays off from then on (your saves are untouched; reload the page to go back to your game)
+let TESTW=false;
+function testWorld(){const L=TEST_LAYOUT,ns=Object.keys(L.at),acts=[];if(IN){IN=null;Z=Zsave}P.driving=false;P.pass=null;
+ for(const m of MINES)if(m!==mine&&!isGone(m.id)){const p=parkAt(m.id);acts.push(['m',m.id,p[0],p[1],0])}   // the coal mine copies go
+ for(const n of ns){const p=parkAt(n);acts.push(['m',n,p[0],p[1],YU(n).rot])}   // every building is lifted off, every street goes, the old two rows are laid along their street
+ const rd=new Set([...RC.keys(),...WT.keys(),...WD.keys()]);for(const k of rd){const[c,r]=k.split(',').map(Number);for(let i=0;i<3;i++)acts.push(['d',c,r])}
+ for(const c of L.street)acts.push(['X',c,L.row]);for(const n of ns)acts.push(['m',n,L.at[n][0],L.at[n][1],L.at[n][2]]);
+ for(const a of acts)netApplyAct(a,1);
+ for(const q of SITES){q.b.got=q.b.need;if(q.b.reqs)q.b.reqs.forEach(r=>r.got=r.need);q.b.built=true}   // every building finished and switched on, the coal mine full
+ plantOn=lumberOn=sawOn=factoryOn=foundryOn=quarryOn=ironOn=crusherOn=true;mine.sw=1;mine.stock=mine.cap;plant.stock=Math.max(plant.stock||0,50);cash=Math.max(cash,100000);
+ applyUnits();ensureDesk();ensurePlantSign();if(typeof GCH!=='undefined')GCH.clear();START=startAt();TESTW=true;
+ const o=offOf('garage');[P.x,P.y,P.a]=doorOut(o);cam.x=P.x;cam.y=P.y}
+const TESTS={
+ full:['the old map: every building built and switched on along one street, the coal mine full, $100,000; you at the garage',()=>{}],
+ haul:['the full map, and you in a dump truck with its bed under the coal mine\'s pipe (hold Space to load), a pickup with a small bulk trailer next to it',()=>{
+  const v=addVeh('dump',{});v.out=true;v.a=0;v.fuel=KOF(v).fuel;setActive(v);P.driving=true;P.pass=null;const pb=minePipe(mine).b,c=carriers().find(q=>q.ent===v);v.x=pb[0]-(c.e0+c.e1)/2*S;v.y=pb[1];
+  const pk=addVeh('pickup',{bed:'coal'}),l=addTrl('pc'),d=TRL.pc;pk.out=l.out=true;pk.hitch=true;l.coupled=true;l.host=pk;pk.tr=l;pk.a=l.b=0;l.x=v.x-2*S;l.y=v.y-4.5*S;l.hx=l.x+d.bar*S;l.hy=l.y;pk.x=l.hx-hitchX(pk)*S;pk.y=l.hy;
+  cam.x=v.x;cam.y=v.y}],
+ crane:['the full map, and the crane kit in front of the garage: crane truck, forks, log claw, log grab, a pallet, 3 logs and a container',()=>$('tcrane').click()]};
 // ---------- the self-check (/check in the chat; tools/check.py runs the same in a test browser) ----------
 // It reads the game's own lists, so whatever is added to them is checked from then on: every building (RWKN), vehicle kind (TKINDS), trailer kind (TRL), item (ITEMS), shop item (ITEMSHOP), window (every panelMode the game draws), settings tab (SETTABS), and a save written and read back.
 // A new KIND of thing (boats, poles, a train) needs its own check written here once, in the same change that adds it.
@@ -4079,6 +4100,9 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
    const o={};for(const q of vehLights(1))o[q.k]=(o[q.k]||0)+1;const n=TRL[tk].king?2:4;delete trl[l.id];delete veh[v.id];return o.tail===n&&o.rev===n?true:'expected '+n+' tail and '+n+' reversing lamps, got '+JSON.stringify(o)})}
  // 5a2. the coal mine's pipe: only the cargo space under its spout is loaded; a bed next to the spout (where the old pad was) gets nothing
  {let m2=null,o2=null,spot=null;   /* added 19 Nov when the coal mine became a list: a second coal mine, and everything it has is its own (store, digging, pipe, room, switch, desk, save) */
+ t('mines','walking into a coal mine turned any way: no jump of the player or the view',()=>{const U=YU('mine'),keep=[U.c0,U.r0,U.rot],bad=[];try{for(const rot of[0,1,2,3]){placeBlds([['mine',keep[0],keep[1],rot]]);ENTERLOCK=null;if(IN)exitMine();IN=null;const o=offOf('mine'),gm=interiorGeo(o),d=r2w(o,-4000,gm.Y1+50),c=r2w(o,-4000,-4030),vx=c[0]-d[0],vy=c[1]-d[1],dir=Math.abs(vx)>Math.abs(vy)?(vx>0?'right':'left'):(vy>0?'down':'up');
+  P.driving=false;P.pass=null;P.x=d[0];P.y=d[1];P.a=Math.atan2(vy,vx);cam.x=P.x+37;cam.y=P.y-21;let l=null,lc=null,mx=0,mc=0,inn=false;K[dir]=1;for(let i=0;i<70;i++){step(1/60);const w=IN?r2w(IN.o,P.x,P.y):[P.x,P.y],cw=IN?r2w(IN.o,cam.x,cam.y):[cam.x,cam.y];if(l){mx=Math.max(mx,Math.hypot(w[0]-l[0],w[1]-l[1]));mc=Math.max(mc,Math.hypot(cw[0]-lc[0],cw[1]-lc[1]))}if(IN)inn=true;l=w;lc=cw}K[dir]=0;if(IN)exitMine();
+  if(!inn||mx>6||mc>8)bad.push('turn '+rot+(inn?'':' (did not get in)')+': player '+mx.toFixed(1)+' px, view '+mc.toFixed(1)+' px in one frame')}}finally{placeBlds([['mine',...keep]]);IN=null}return bad.length?bad.join('; '):true});   /* added 19 Nov: entering a turned building made the view jump */
  t('mines','a second coal mine can be added',()=>{const o1=mineOff(mine),c=uRot(MS,o1.X,o1.Y);m2=mineSpot(c[0],c[1],true);if(!m2)return'no free place for it';o2=mineOff(m2);return MINES.length===2&&LOTS[m2.li]&&LOTK[m2.li]===m2.id&&YB[m2.id]&&RWK[m2.id]&&o2&&o2.n==='mine'&&BLDS.length?true:'it is missing a part (lot, yards entry, room or office)'});
  t('mines','drawn on the map: its lot, building and pipe',()=>{if(!m2)return'no second mine';const cx=cam.x,cy=cam.y;cam.x=(m2.U.c0+1.5)*TS;cam.y=(m2.U.r0+1.5)*TS;if(typeof GCH!=='undefined')GCH.clear();try{draw1()}finally{cam.x=cx;cam.y=cy}return true});
  t('mines','every coal mine has the thick yard walls and its storage sign at the back wall, in line with its pipe',()=>{if(!m2)return'no second mine';m2.sgn=0;ensurePlantSign();const bad=MINES.filter(m=>!isGone(m.id)).filter(m=>{const q=uRot(m.U,LYM.pad.x,m.U.br*TS+1.5*S);return!THICKW.has(m.li)||!GI.some(it=>it.type==='psign'&&yardOf(it)===m.id&&Math.hypot(it.x-q[0],it.y-q[1])<S)}).map(m=>m.id+(THICKW.has(m.li)?'':' (walls)')+(GI.some(it=>it.type==='psign'&&yardOf(it)===m.id)?'':' (sign)')+' (or its sign is not at the back wall)');return bad.length?'missing: '+bad.join(', '):true});   /* added 19 Nov: new mines had thin walls and only the first had its sign */
@@ -4123,6 +4147,8 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
   fill();selVeh=null;selT=l;dumpCargo();if(l.cargo.amt!==0||v.cargo.amt!==3)bad='with the trailer selected: truck '+v.cargo.amt+' t, trailer '+l.cargo.amt+' t';
   if(!bad){fill();selVeh=v;selT=null;dumpCargo();if(v.cargo.amt!==0||l.cargo.amt!==4)bad='with the truck selected: truck '+v.cargo.amt+' t, trailer '+l.cargo.amt+' t'}
   P.driving=false;v.tr=null;delete trl[l.id];delete veh[v.id];return bad||true});
+ t('crane','a player on foot is drawn under a crane\'s boom, a person spans one square',()=>{const span=2*(.9+.36)*S*PR;if(span>S+.5)return'a person is '+(span/S).toFixed(2)+' squares across';const c=addVeh('crane',{});c.out=true;c.x=P.x+60;c.y=P.y;const seen=[],dp=drawPlayer,dc=drawCraneTop;drawPlayer=function(){seen.push('player');return dp.apply(this,arguments)};drawCraneTop=function(){seen.push('boom');return dc.apply(this,arguments)};const d0=P.driving,p0=P.pass,i0=IN;P.driving=false;P.pass=null;IN=null;
+  try{draw1()}finally{drawPlayer=dp;drawCraneTop=dc;P.driving=d0;P.pass=p0;IN=i0;delete veh[c.id]}const a=seen.indexOf('player'),b=seen.indexOf('boom');return a>=0&&b>=0&&a<b?true:'drawn in this order: '+seen.join(', ')});   /* added 24 Nov: the player walked over the boom and was 1.4 squares wide */
  // 5b. the crane's cables: over a container on a flatbed they take the container, never the vehicle or trailer under it (every flatbed kind)
  {const C0=[...Object.keys(TKINDS).filter(k=>(TKINDS[k].flat|0)>=2).map(k=>['v',k]),...Object.keys(TRL).filter(k=>TRL[k].cargo==='flat'&&(TRL[k].places|0)>=2).map(k=>['t',k])],ck=Object.keys(TRL).find(k=>TRL[k].cls==='box');
   if(ck)for(const[w,k]of C0)t('crane',(w==='v'?TKINDS[k].n:TRL[k].n)+': the cables take the container on it',()=>{
@@ -4136,12 +4162,18 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
  // 6. every window and every settings tab
  for(const m of chkPanels())t('windows',m,()=>{supB=supB||quarry;if(m==='sup')supB=quarry;if(m==='yup')yupB=lumber;if(m==='fac'||m==='fnd')facView='ctl';openP(m);const ok=$('gp').innerHTML.length>40;closeGarage();return ok||'empty'});
  {const keep=SETTAB,o=document.createElement('div');for(const[k]of SETTABS)t('settings',k,()=>{SETTAB=k;pageSettings(o,()=>{});return o.innerHTML.length>200||'empty'});SETTAB=keep}
+ {const o=document.createElement('div');t('settings','autosave: an interval in General (off never saves), and only one autosave in the load list',()=>{const k0=SETTAB;SETTAB='general';pageSettings(o,()=>{});SETTAB=k0;const sl=o.querySelector('#st-auto');if(!sl)return'no autosave setting in General';if(![...sl.options].some(q=>q.value==='0'))return'it cannot be switched off';
+   pageLoad(o,()=>{});const h=o.innerHTML;if(/Before the last autosave/.test(h))return'the second autosave is still listed';const a0=SET.auto;SET.auto=0;const ok=!(+SET.auto>0);SET.auto=a0;return ok||'off still saves'});   /* added 24 Nov */
+  t('settings','the main menu\'s 3D background draws',()=>{const c=document.createElement('canvas');c.width=640;c.height=400;artDraw(c.getContext('2d'),640,400,1,3.2);artDraw(c.getContext('2d'),390,800,1,7);return true})}
  // 7. a save written and read back
  t('saves','every building keeps its own stores in the save (sawmill planks, garage and shop storage and their room)',()=>{const keep=[sawmill.planks,garageB.store.coal,garageB.cap.coal,shopB.store.rock,shopB.cap.rock];sawmill.planks=3.5;garageB.store.coal=7;garageB.cap.coal=150;shopB.store.rock=4;shopB.cap.rock=100;
   try{const d=JSON.parse(JSON.stringify(gameSave())),v=d.s||{},want={planks:3.5,'store.coal':7,'storecap.coal':150,'shop.rock':4,'shopcap.rock':100},bad=Object.keys(want).filter(k=>v[k]!==want[k]);return bad.length?'not in the save: '+bad.join(', '):true}
   finally{[sawmill.planks,garageB.store.coal,garageB.cap.coal,shopB.store.rock,shopB.cap.rock]=keep}});   /* added 19 Nov when the stores moved into their buildings: the garage's room for each material was not saved before, and this fails on that */
  t('saves','every building\'s place and turn is in the save',()=>{const d=JSON.parse(JSON.stringify(gameSave())),L=d.bld||[];if(L.length!==NETX.units.length)return'buildings in the save: '+L.length+' of '+NETX.units.length;const bad=NETX.units.filter(([k,U])=>{const q=L.find(x=>x[0]===k);return!q||q[1]!==U.c0||q[2]!==U.r0||q[3]!==U.rot}).map(u=>u[0]);return bad.length?'wrong: '+bad.join(', '):true});   /* added 19 Nov: places were only replayed from the map steps, so a step that failed lost the building */
  t('saves','written and read back',()=>{const s=JSON.stringify(gameSave()),d=JSON.parse(s);migrateSave(d);return Array.isArray(d.e)&&d.e.length>0?true:'no entities in the save'});
+ for(const k of Object.keys(TESTS))t('test worlds','/test '+k+': every building stands, built, along a street; autosave off',()=>{if(NET.room&&WS.on&&NET.room.peers().some(p=>!p.sameTab))return true;testWorld();TESTS[k][1]();const st=NETX.units.filter(([n])=>!isGone(n)).map(u=>u[0]),need=Object.keys(TEST_LAYOUT.at);
+  const bad=need.filter(n=>!st.includes(n)||NETX.units.find(u=>u[0]===n)[1].c0!==TEST_LAYOUT.at[n][0]);if(bad.length)return'not where they belong: '+bad.join(', ');if(SITES.some(q=>!q.b.built))return'a site is not built';if(!WT.size&&!RC.size)return'no street';if(canAuto())return'autosave is still on';
+  if(k==='haul'){const c=carriers().find(q=>q.ent===T);if(!P.driving||T.kind!=='dump'||!c||underPipe(c)!==mine)return'the dump truck is not under the coal mine\'s pipe'}draw1();return true});   /* added 24 Nov with /test */
  return R}
  finally{removeEventListener('error',onErr);removeEventListener('unhandledrejection',onErr);for(const k in K)K[k]=0;SPK.down=false;
   R.errors=errs.slice(0,10);if(!dry)CHK.res=R;
@@ -4181,6 +4213,8 @@ const CMDS={
  cash:['<amount>','test: set your cash',a=>{$('tcash').value=a;$('tset').click();tout()}],
  build:['<building>|all','test: finish a construction site, or all of them',a=>{const q=a.trim().toLowerCase();if(!q)return chatLine('Build what? all, '+SITES.map(x=>x.off).join(', '),1);const st=q==='all'?null:SITES.find(x=>x.off.includes(q));if(q!=='all'&&!st)return chatLine('No construction site called '+esc(q)+'. Sites: '+SITES.map(x=>x.off).join(', '),1);if(st&&st.b.built)return chatLine('The '+st.off+' is already built.',1);buildSites(st?st.off:'all');tout()}],
  tp:['<building>','test: go to a building (mine1, mine2, powerplant, garage…)',a=>{const e=tpTo(a);if(e)return chatLine(esc(e),1);const o=OFFICES.find(x=>!bGone(bkey(x))&&tpId(x)===a.trim().toLowerCase().replace(/\s+/g,''))||null;chatLine('You are at the door of '+(o?tpId(o):'it')+'.',1)}],
+ test:['<name>','test: put a whole test world in place of the map (worlds: '+Object.keys(TESTS).join(', ')+'). Autosave is then off: reload the page to get your game back',a=>{const k=a.trim().toLowerCase(),w=TESTS[k];if(!w)return chatLine('Test worlds: '+Object.keys(TESTS).map(n=>'<b>'+n+'</b> ('+TESTS[n][0]+')').join('; ')+'. Use /test full.',1);if(MENU)return chatLine('Start or load a game first.',1);if(NET.room&&WS.on&&NET.room.peers().some(p=>!p.sameTab))return chatLine('/test only works when you play alone: it rebuilds the whole map.',1);
+  testWorld();w[1]();chatLine('Test world <b>'+k+'</b> set up. Autosave is off now, so your saves are untouched: reload the page to go back to your game.',1)}],
  kit:['<name>','test: set out a kit at the garage (kits: '+Object.keys(KITS).join(', ')+')',a=>{const k=KITS[a.trim().toLowerCase()];if(!k)return chatLine('Kits: '+Object.keys(KITS).join(', ')+'. Use /kit crane.',1);k();tout()}],
  collision:['[on|off]','test: collision with kerbs, walls, buildings',a=>tog('tcol',a)],
  grid:['[on|off]','test: show tiles and chunks',a=>tog('tgrid',a)]};
@@ -4222,7 +4256,7 @@ function playersWin(){let o=document.getElementById('plwin');if(o){o.remove();re
   paint()};
  o.addEventListener('keydown',e=>e.stopPropagation());document.body.appendChild(o);paint();o._iv=setInterval(paint,1000)}
 const angLerp=(a,b,k)=>a+(((b-a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)*k;
-function drawPerson(px,py,pa,hue,seated){const r=S*.55,ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:Math.sin((px+py)*.22)*r*.45;   // seated (on an ATV or a forklift): no walking swing and no shadow of his own
+function drawPerson(px,py,pa,hue,seated){const r=S*PR,ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:Math.sin((px+py)*.22)*r*.45;   // seated (on an ATV or a forklift): no walking swing and no shadow of his own
  if(!seated)for(const[k,c]of[[1.5,'rgba(8,12,20,.2)'],[3.2,'rgba(8,12,20,.16)']]){g.fillStyle=c;g.beginPath();g.ellipse(px+SUN[0]*k,py+SUN[1]*k,r*.68,r,pa,0,7);g.fill()}
  const hp=[];for(const sd of[-1,1]){const f=r*.95+sd*sw,l=sd*r*(seated?.75:.9);hp.push([px+ca*f-sa*l,py+sa*f+ca*l,px-sa*sd*r*.7,py+ca*sd*r*.7])}
  g.lineCap='round';for(const[w,c]of[[r*.44+2,INK],[r*.44,typeof hue==='string'?shd(hue,.8):'hsl('+hue+',60%,34%)']]){g.strokeStyle=c;g.lineWidth=w;g.beginPath();for(const h of hp){g.moveTo(h[2],h[3]);g.lineTo(h[0],h[1])}g.stroke()}g.lineCap='butt';
@@ -4437,19 +4471,20 @@ function svSet(k,v){const old=SV.get(k);SV.set(k,v);
  return idbTx('readwrite',st=>st.put(v,k)).catch(()=>{if(old===undefined)SV.delete(k);else SV.set(k,old);flash('Could not save: the browser refused to store it (the disk may be full).');return false})}
 function svDel(k){SV.delete(k);if(SVKIND!=='idb'){try{localStorage.removeItem(k)}catch(e){}return Promise.resolve()}return idbTx('readwrite',st=>st.delete(k)).catch(()=>{})}
 let SVPERS=false;const svPersist=()=>{if(SVPERS||SVKIND!=='idb')return;SVPERS=true;try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}};   // asks the browser to keep the saves even when it runs short of space
-function saveTo(key,name){try{if(key===SAVEK+'auto'){const o=svGet(key);if(o)svSet(SAVEK+'prev',o)}if(name)SAVENM=String(name).slice(0,32);const d=gameSave();{const p=shot();if(p)d.pic=p}const v=JSON.stringify(d);
+function saveTo(key,name){try{if(name)SAVENM=String(name).slice(0,32);const d=gameSave();{const p=shot();if(p)d.pic=p}const v=JSON.stringify(d);
  if(SVKIND!=='idb'){svSet(key,v);if(key!==SAVEK+'auto'&&SV.get(key)===v)sfx('saved');return SV.get(key)===v}   /* localStorage writes at once: a refused save is already taken back */
  if(key!==SAVEK+'auto')sfx('saved');svSet(key,v);svPersist();if(key===SAVEK+'auto'){try{localStorage.setItem(key,v)}catch(e){try{localStorage.removeItem(key)}catch(x){}}}   /* the autosave also goes to localStorage: written at once, it survives a page closed before the database has finished */
  return true}catch(e){return false}}
 const saveName=(d,label)=>d&&d.name?esc(d.name):label;   // a slot shows the name it was saved under, or its own label
 const readSave=key=>{try{const r=svGet(key);return r?JSON.parse(r):null}catch(e){return null}};
 function loadFrom(raw){if(othersHere()){flash('Other players are connected: only a game with nobody else can load a save.');return false}try{const d=JSON.parse(raw);if(!d||!Array.isArray(d.e)||typeof d.cash!=='number')throw 0;svSet(PENDK,raw).then(ok=>{if(ok!==false)location.reload();else flash('Could not load: the browser storage refused it.')});return true}catch(e){flash('That is not a Coal Haul save.');return false}}
-const canAuto=()=>!MENU&&NET.mode!=='join'&&!CHK.on;   // a player in somebody else's game does not autosave it over his own
-setInterval(()=>{if(sNow()>30000&&!bigMap&&canAuto())saveTo(SAVEK+'auto')},60000);   // not in the first seconds: a page opened by mistake must not replace a good autosave
-addEventListener('pagehide',()=>{if(sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
+const canAuto=()=>!MENU&&NET.mode!=='join'&&!CHK.on&&!TESTW;   // TESTW: a /test world is never autosaved over your game   // a player in somebody else's game does not autosave it over his own
+let LASTAUTO=performance.now();SVREADY.then(()=>{try{svDel(SAVEK+'prev')}catch(e){}});   // the old second autosave ('before the last autosave') is not kept any more
+setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*60000&&sNow()>30000&&!bigMap&&canAuto()){LASTAUTO=performance.now();saveTo(SAVEK+'auto')}},5000);   // every SET.auto minutes (0: never), chosen in Settings → General   // not in the first seconds: a page opened by mistake must not replace a good autosave
+addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.10',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.11',VERSION='v'+VER+' · 19 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
@@ -4460,7 +4495,7 @@ const MB=(id,t,x)=>'<button id="'+id+'" style="'+UI.btn+';'+(x||'')+'">'+t+'</bu
 // two clicks for anything that cannot be undone: the first turns the button red and asks
 function sure(b,ask,then){if(!b.dataset.sure){b.dataset.sure=1;b.dataset.was=b.textContent;b.textContent=ask;b.style.background='#7a3b2e';setTimeout(()=>{if(b.isConnected&&b.dataset.sure){delete b.dataset.sure;b.textContent=b.dataset.was;b.style.background=''}},4000);return}then()}
 // a menu window: the box, its pages, and a way back
-function menuWin(id,z){let o=document.getElementById(id);if(!o){o=document.createElement('div');o.id=id;o.style.cssText='position:fixed;inset:0;background:'+(id==='mmenu'?'radial-gradient(ellipse at center,#0b120c99,#0b120cf2)':'#0b120cbb')+';z-index:'+z+';display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';document.body.appendChild(o)}return o}
+function menuWin(id,z){let o=document.getElementById(id);if(!o){o=document.createElement('div');o.id=id;o.style.cssText='position:fixed;inset:0;background:'+(id==='mmenu'?'radial-gradient(ellipse at center,#0b120c30,#0b120c90)':'#0b120cbb')+';z-index:'+z+';display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;touch-action:auto';document.body.appendChild(o)}return o}
 function menuPage(o,html){o.innerHTML='<div class="mbox" style="background:#1a2630ee;border:1px solid #ffffff30;border-radius:14px;padding:20px 24px;color:#eee;width:min(92vw,420px);max-height:92vh;overflow:auto;box-shadow:0 20px 60px #0008">'+html+'<div id="m-msg" style="min-height:16px;margin-top:8px;font-size:13px;color:#ffcfa8"></div></div>';
  const q=s=>o.querySelector(s);return{q,say:t=>{const m=q('#m-msg');if(m)m.textContent=t||''}}}
 
@@ -4482,9 +4517,9 @@ function storeBar(){const u=storeUsed(),id='stb'+Math.random().toString(36).slic
  return'<div id="'+id+'" style="margin:2px 0 10px">'+barHTML(u.all,SVKIND==='idb'?0:STQ,u.saves,SVKIND==='idb')+'</div>'}
 const sline=(d,lbl,k)=>'<div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(d&&d.name?esc(d.name):lbl||'Saved game')+'</b><small style="opacity:.7">'+(d?(d.name&&lbl?lbl+' · ':'')+'Day '+(d.dn||1)+' · '+fmtT(d)+' · '+(d.ver?'v'+esc(d.ver)+(saveNewer(d)?' <span style="color:#ffb35c">(newer than this game)</span>':''):'before 0.1.0')+(k?' · <span style="color:#9fd3ff">'+fmtB(szKey(k))+'</span>':''):'empty')+'</small></div>';
 // the load page (both menus): every save, newest first, then the autosaves and a file
-function pageLoad(o,back){const L=saveKeys(),au=readSave(SAVEK+'auto'),pr=readSave(SAVEK+'prev');
+function pageLoad(o,back){const L=saveKeys(),au=readSave(SAVEK+'auto');
  const row=(k,d,lbl)=>'<div style="display:flex;gap:10px;align-items:center;margin:7px 0">'+thumb(d)+sline(d,lbl,k)+'<button data-load="'+k+'" style="'+UI.btn+'"'+(d?'':' disabled')+'>Load</button></div>';
- const P=menuPage(o,H2('Load game')+storeBar()+(L.length?L.map(([k,d])=>row(k,d,'')).join(''):'<div style="opacity:.6;font-size:13px;margin:6px 0">No saved games yet.</div>')+SEC('Autosaves')+row(SAVEK+'auto',au,'Autosave')+row(SAVEK+'prev',pr,'Before the last autosave')+
+ const P=menuPage(o,H2('Load game')+storeBar()+(L.length?L.map(([k,d])=>row(k,d,'')).join(''):'<div style="opacity:.6;font-size:13px;margin:6px 0">No saved games yet.</div>')+SEC('Autosave')+row(SAVEK+'auto',au,'Autosave')+
   '<div style="display:flex;gap:8px;margin-top:12px">'+MB('m-file','From a file…','flex:1')+MB('m-back','Back','flex:1')+'</div><input id="m-f" type="file" accept=".json,application/json" style="display:none">'+(NET.mode==='join'?'<div style="font-size:12px;opacity:.7;margin-top:8px">You are in somebody else\'s game: loading leaves it and starts your own.</div>':''));
  o.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const r=svGet(b.dataset.load);if(r&&!loadFrom(r))P.say('That save could not be loaded.')});
  const fi=P.q('#m-f');P.q('#m-file').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))P.say('That is not a Coal Haul save.')};rd.readAsText(f)};
@@ -4508,7 +4543,7 @@ function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · $'+Mat
 // ---------- settings: kept in this browser ----------
 const KEYDEF={up:'w',down:'s',left:'a',right:'d',action:' ',hitch:'c',select:'v',dump:'g',turn:'r',hookl:'q',hookr:'e',horn:'h',lights:'l',camera:'tab',map:'m',goals:'j'};
 const KEYN={up:'Forward / up',down:'Back / down',left:'Left',right:'Right',action:'Action',hitch:'Hitch · crane tool',select:'Pick trailer · hook',dump:'Dump cargo',turn:'Turn',hookl:'Crane hook ⟲',hookr:'Crane hook ⟳',horn:'Horn',lights:'Lights',camera:'Camera',map:'Big map',goals:'All goals'};
-const SETDEF={cam:'north',tap:320,stick:140,night:1,low:false,coords:false,vol:.7,mute:false,sv:{},keys:{}};
+const SETDEF={auto:1,cam:'north',tap:320,stick:140,night:1,low:false,coords:false,vol:.7,mute:false,sv:{},keys:{}};
 const SET=(()=>{let s={};try{s=JSON.parse(localStorage.getItem('coalhaul.settings')||'{}')||{}}catch(e){}return Object.assign({},SETDEF,s,{keys:Object.assign({},KEYDEF,s.keys||{})})})();
 function setSave(){try{localStorage.setItem('coalhaul.settings',JSON.stringify(SET))}catch(e){}setApply()}
 function setApply(){LOWG=!!SET.low;sndVol();document.documentElement.style.setProperty('--js',SET.stick+'px');try{rs()}catch(e){}keyTable()}
@@ -4523,7 +4558,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
  const sel=(id,opts,v)=>'<select id="'+id+'" style="'+UI.inp+';padding:6px 8px;font-size:14px">'+opts.map(([k,t])=>'<option value="'+k+'"'+(k==v?' selected':'')+'>'+t+'</option>').join('')+'</select>';
  const T=SETTAB,tabs='<div style="display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px">'+SETTABS.map(([k,t])=>'<button data-tab="'+k+'" style="'+UI.btn+';flex:1;min-width:70px;padding:7px 8px;font-size:13px'+(k===T?';background:#c9832b;color:#111;font-weight:700':'')+'">'+t+'</button>').join('')+'</div>';   // the categories, as tabs along the top
  const P=menuPage(o,H2('Settings')+tabs+(
-  T==='general'?'<label style="font-size:12px;opacity:.75">Your name</label><input id="st-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 4px">'+SEC('Camera')+R('When driving, start in',sel('st-cam',[['north','north up'],['follow','turning with the vehicle']],SET.cam))+'<div style="font-size:12px;opacity:.6">The crane cab always starts in its own view. TAB switches.</div>':
+  T==='general'?'<label style="font-size:12px;opacity:.75">Your name</label><input id="st-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 4px">'+SEC('Saving')+R('Autosave',sel('st-auto',[[0,'off'],[1,'every minute'],[2,'every 2 minutes'],[5,'every 5 minutes'],[10,'every 10 minutes']],+SET.auto||0))+'<div style="font-size:12px;opacity:.6">One autosave, written over each time; your own saves are never touched.</div>'+SEC('Camera')+R('When driving, start in',sel('st-cam',[['north','north up'],['follow','turning with the vehicle']],SET.cam))+'<div style="font-size:12px;opacity:.6">The crane cab always starts in its own view. TAB switches.</div>':
   T==='sound'?SEC('Sound')+R('<b>Volume</b>',rng('st-vol',0,1,.05,SET.vol))+R('Mute all','<input id="st-mute" type="checkbox"'+(SET.mute?' checked':'')+' style="width:20px;height:20px">')+SGRP.map(([k,n,d])=>R(n+'<br><small style="opacity:.55">'+d+'</small>','<input data-ch="'+k+'" type="range" min="0" max="1" step=".05" value="'+grpVol(k)+'" style="width:150px">')).join(''):
   T==='display'?SEC('Display')+R('Night darkness',rng('st-night',0,1,.05,SET.night))+R('Lighter graphics (slow phones)','<input id="st-low" type="checkbox"'+(SET.low?' checked':'')+' style="width:20px;height:20px">')+R('Coordinates on the minimap<br><small style="opacity:.55">where you are: x y, tile, square</small>','<input id="st-crd" type="checkbox"'+(SET.coords?' checked':'')+' style="width:20px;height:20px">'):
   T==='controls'?SEC('Touch')+R('Tap time (ms)<br><small style="opacity:.6">longer: easier taps, slower stick</small>',rng('st-tap',150,600,10,SET.tap)+'<small id="st-tapv" style="width:34px">'+SET.tap+'</small>')+R('Stick size',rng('st-stick',100,200,5,SET.stick))+SEC('Controls')+controlsHTML():
@@ -4534,7 +4569,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
  q('#st-name').oninput=e=>{CHAT.name=e.target.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(x){}NET.last=0;const m=document.getElementById('mm-name');if(m)m.value=CHAT.name};
  q('#st-name').onkeydown=e=>e.stopPropagation();
  num('st-vol','vol');q('#st-mute').onchange=e=>{SET.mute=e.target.checked;setSave()};o.querySelectorAll('[data-ch]').forEach(i=>i.oninput=()=>{SET.sv=Object.assign({},SET.sv,{['g:'+i.dataset.ch]:+i.value});setSave();const k=i.dataset.ch;if(k==='game')sfx('coin');else if(k==='veh')sfx('switch')});num('st-night','night');num('st-stick','stick');num('st-tap','tap',()=>{q('#st-tapv').textContent=SET.tap});
- q('#st-cam').onchange=e=>{SET.cam=e.target.value;setSave()};q('#st-low').onchange=e=>{SET.low=e.target.checked;setSave()};q('#st-crd').onchange=e=>{SET.coords=e.target.checked;setSave()};
+ q('#st-cam').onchange=e=>{SET.cam=e.target.value;setSave()};if(q('#st-auto'))q('#st-auto').onchange=e=>{SET.auto=+e.target.value;LASTAUTO=performance.now();setSave()};q('#st-low').onchange=e=>{SET.low=e.target.checked;setSave()};q('#st-crd').onchange=e=>{SET.coords=e.target.checked;setSave()};
  o.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{b.textContent='press a key…';b.style.background='#5a4a1e';
   const h=e=>{e.preventDefault();e.stopPropagation();removeEventListener('keydown',h,true);const k=e.key.toLowerCase();if(k!=='escape'&&!k.startsWith('arrow')&&k!=='enter'&&k!=='/'){const a=b.dataset.key,other=Object.keys(SET.keys).find(x=>x!==a&&SET.keys[x]===k);if(other)SET.keys[other]=SET.keys[a];SET.keys[a]=k;setSave()}pageSettings(o,back)};
   addEventListener('keydown',h,true)});
@@ -4580,11 +4615,85 @@ function saveMenu(page){let o=document.getElementById('gmenu');if(o&&!page){o.re
   playersBox()+'<button id="gm-new" style="'+UI.btn+';width:100%;margin-top:14px">Quit to main menu</button><div style="text-align:center;font-size:11px;opacity:.45;margin-top:8px">'+VERSION+'</div>');
  const q=P.q;q('#gm-x').onclick=close;q('#gm-save').onclick=()=>saveMenu('save');q('#gm-load').onclick=()=>saveMenu('load');q('#gm-set').onclick=()=>saveMenu('set');q('#gm-how').onclick=()=>saveMenu('how');
  if(q('#m-cc'))q('#m-cc').onclick=()=>copyText(NET.code,P.say,'Code');if(q('#m-cl'))q('#m-cl').onclick=()=>copyText(inviteLink(),P.say,'Invite link');
- q('#gm-new').onclick=e=>sure(e.currentTarget,'Sure? Click again to quit',()=>{if(canAuto())saveTo(SAVEK+'auto');try{sessionStorage.removeItem('coalhaul.code')}catch(x){}location.href=location.href.split('?')[0]+location.search.replace(/[?&]join=[^&]*/,'').replace(/^&/,'?')});
+ q('#gm-new').onclick=e=>sure(e.currentTarget,'Sure? Click again to quit',()=>{if(+SET.auto>0&&canAuto())saveTo(SAVEK+'auto');try{sessionStorage.removeItem('coalhaul.code')}catch(x){}location.href=location.href.split('?')[0]+location.search.replace(/[?&]join=[^&]*/,'').replace(/^&/,'?')});
  P.say(NET.mode==='join'?'':othersHere()?'Quitting autosaves first; one of the others takes over as host.':'')}
+// ---------- the main menu's background: a drawn 3D (isometric) scene of the game, on a canvas of its own behind the menu (the map is not shown there) ----------
+function menuArt(){if(document.getElementById('mmart'))return;const c=document.createElement('canvas');c.id='mmart';c.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;z-index:59;pointer-events:none';document.body.appendChild(c);
+ const x=c.getContext('2d');let W=0,H=0,DP=1;const fit=()=>{DP=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;c.width=W*DP;c.height=H*DP};fit();addEventListener('resize',fit);
+ const T0=performance.now();
+ const frame=now=>{if(!MENU||!document.body.contains(c)){c.remove();removeEventListener('resize',fit);return}if(SET.low&&c._done){requestAnimationFrame(frame);return}c._done=1;artDraw(x,W,H,DP,(now-T0)/1000);requestAnimationFrame(frame)};requestAnimationFrame(frame)}
+function artDraw(x,W,H,DP,t){x.setTransform(DP,0,0,DP,0,0);
+ const k=Math.min(W/70,H/56),ox=W*.5,oy=H*.5-20*k;   // one unit = k px: the 40 x 40 ground fits the screen, wide or tall, and its middle is the screen's middle
+ const P=(a,b,z=0)=>[ox+(a-b)*k*.866,oy+(a+b)*k*.5-z*k+6*k];
+ const poly=(pts,f,s)=>{x.beginPath();pts.forEach((p,i)=>{const q=P(p[0],p[1],p[2]||0);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.closePath();if(f){x.fillStyle=f;x.fill()}if(s){x.strokeStyle=s;x.lineWidth=1;x.stroke()}};
+ const sh=(h,f)=>{const n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,m=v=>Math.max(0,Math.min(255,Math.round(v*f)));return'rgb('+m(r)+','+m(g)+','+m(b)+')'};
+ // a box from a0,b0 to a1,b1, from z0 to z1: its top, its +a face and its +b face (the ones that face us)
+ const box=(a0,b0,a1,b1,z0,z1,col,o={})=>{poly([[a1,b0,z0],[a1,b1,z0],[a1,b1,z1],[a1,b0,z1]],sh(col,.78),o.ln);poly([[a0,b1,z0],[a1,b1,z0],[a1,b1,z1],[a0,b1,z1]],sh(col,.6),o.ln);poly([[a0,b0,z1],[a1,b0,z1],[a1,b1,z1],[a0,b1,z1]],o.top||col,o.ln)};
+ const shadow=(a0,b0,a1,b1,h)=>{const d=h*.55;poly([[a0,b1],[a1,b1],[a1+d,b1+d*.25],[a0+d,b1+d*.25]],'rgba(0,0,0,.22)');poly([[a1,b0],[a1+d,b0+d*.25],[a1+d,b1+d*.25],[a1,b1]],'rgba(0,0,0,.22)')};
+ // the sky: dusk, with the sun low on the left
+ const hz=P(-6,-6)[1]-5*k,hf=Math.max(.05,Math.min(.95,hz/H));   // the horizon: just above the back corner of the ground
+ const sk=x.createLinearGradient(0,0,0,H);sk.addColorStop(0,'#1d3550');sk.addColorStop(hf*.7,'#e9965a');sk.addColorStop(hf,'#f6c98a');sk.addColorStop(1,'#f6c98a');x.fillStyle=sk;x.fillRect(0,0,W,H);
+ {const s=x.createRadialGradient(W*.2,hz,0,W*.2,hz,W*.35);s.addColorStop(0,'rgba(255,226,160,.9)');s.addColorStop(.12,'rgba(255,200,120,.35)');s.addColorStop(1,'rgba(255,200,120,0)');x.fillStyle=s;x.fillRect(0,0,W,H)}
+ // far hills
+ for(const[y0,c0,amp,f]of[[.2,'#6d7d64',.035,1.3],[1.2,'#4f6a4b',.03,2.1]]){x.fillStyle=c0;x.beginPath();x.moveTo(0,H);for(let i=0;i<=40;i++){const px=W*i/40;x.lineTo(px,hz+y0*k*3-Math.sin(i*f*.37+1)*H*amp-Math.sin(i*.9)*H*amp*.4)}x.lineTo(W,H);x.fill()}
+ // the ground: grass, with a darker tile checker
+ poly([[-6,-6],[46,-6],[46,46],[-6,46]],'#4f8a3c');
+ for(let a=-6;a<46;a+=4)for(let b=-6;b<46;b+=4)if(((a+b)/4)%2===0)poly([[a,b],[a+4,b],[a+4,b+4],[a,b+4]],'rgba(255,255,255,.035)');
+ // the roads: one along a, one along b, crossing; dashed middle lines
+ poly([[-6,18],[46,18],[46,22],[-6,22]],'#3a3d44');poly([[18,-6],[22,-6],[22,46],[18,46]],'#3a3d44');poly([[18,18],[22,18],[22,22],[18,22]],'#41444c');
+ x.setLineDash([k*.9,k*.9]);x.strokeStyle='#e8c45a';x.lineWidth=Math.max(1,k*.12);for(const[p,q]of[[[-6,20],[18,20]],[[22,20],[46,20]],[[20,-6],[20,18]],[[20,22],[20,46]]]){const A=P(p[0],p[1]),B=P(q[0],q[1]);x.beginPath();x.moveTo(A[0],A[1]);x.lineTo(B[0],B[1]);x.stroke()}x.setLineDash([]);
+ for(const[a0,b0,a1,b1]of[[-6,17.7,18,18],[22,17.7,46,18],[-6,22,18,22.3],[22,22,46,22.3],[17.7,-6,18,18],[22,-6,22.3,18],[17.7,22,18,46],[22,22,22.3,46]])poly([[a0,b0],[a1,b0],[a1,b1],[a0,b1]],'#b9b3a4');
+ // the coal mine's yard: dark ground and its thick yellow walls
+ poly([[2,2],[16,2],[16,16],[2,16]],'#33302c');for(let i=0;i<40;i++){const a=2.5+((i*7.3)%13),b=2.5+((i*4.1)%13);poly([[a,b],[a+.25,b],[a+.25,b+.25],[a,b+.25]],'rgba(201,160,90,.5)')}
+ // the power plant's yard
+ poly([[24,2],[38,2],[38,16],[24,16]],'#3b434c');
+ // trees at the back
+ const tree=(a,b,s=1)=>{const p=P(a,b);x.fillStyle='rgba(0,0,0,.2)';x.beginPath();x.ellipse(p[0]+k*.5*s,p[1]+k*.1,k*1.1*s,k*.5*s,0,0,7);x.fill();box(a-.15,b-.15,a+.15,b+.15,0,1.2*s,'#6b4a2b');for(const[dz,r,cc]of[[1.6,1.15,'#2f6b2a'],[2.4,.9,'#3c8034'],[3.1,.55,'#4c9640']]){const q=P(a,b,dz*s);x.fillStyle=cc;x.beginPath();x.arc(q[0],q[1],r*k*s,0,7);x.fill()}};
+ for(const[a,b,s]of[[-3,-3,1.2],[-2,8,1],[-4,13,1.1],[10,-4,1],[30,-4,1.2],[42,4,1.1],[43,12,.9],[-3,30,1]])tree(a,b,s);
+ // walls of the mine yard (back ones first)
+ box(2,2,16,2.5,0,.7,'#d9a531');box(2,2,2.5,16,0,.7,'#d9a531');
+ // the coal mine: the building, the winding house, the headframe with its wheel, the pipe and its housing
+ shadow(5,5,13,11,4);box(5,5,13,11,0,4,'#7a5a3a',{top:'#a3784a'});
+ for(let i=0;i<4;i++)poly([[5+i*2,5,4],[6+i*2,5,4],[6+i*2,11,4],[5+i*2,11,4]],i%2?'#b88a56':'#9c7144');
+ {const a=7,b=7,h=11;for(const[da,db]of[[0,0],[1.6,0],[0,1.6],[1.6,1.6]])box(a+da-.1,b+db-.1,a+da+.1,b+db+.1,4,h,'#c9ced6');for(let z=5;z<h;z+=1.4){box(a-.1,b-.1,a+1.7,b+.05,z,z+.12,'#aab2bd');box(a-.1,b+1.55,a+1.7,b+1.7,z,z+.12,'#aab2bd')}
+  const w=P(a+.8,b+.8,h+.7);x.strokeStyle='#e2e6ea';x.lineWidth=k*.18;x.beginPath();x.ellipse(w[0],w[1],k*.9,k*.9,0,0,7);x.stroke();x.lineWidth=k*.06;for(let i=0;i<6;i++){const an=t*1.6+i*Math.PI/3;x.beginPath();x.moveTo(w[0],w[1]);x.lineTo(w[0]+Math.cos(an)*k*.85,w[1]+Math.sin(an)*k*.85);x.stroke()}
+  x.strokeStyle='#555';x.lineWidth=k*.04;x.beginPath();const r0=P(a+.8,b+.8,h+.7),r1=P(a+.8,b+.8,4.2);x.moveTo(r0[0],r0[1]);x.lineTo(r1[0],r1[1]);x.stroke()}
+ box(8.2,11,9.8,12,0,3.4,'#4b5058',{top:'#5d636c'});   // the pipe's housing on the back wall
+ {const a=9,b0=12,b1=16.2,z=3.1,rr=.32;for(let i=0;i<14;i++){const bb=b0+(b1-b0)*i/13;}poly([[a-rr,b0,z+rr],[a+rr,b0,z+rr],[a+rr,b1,z+rr],[a-rr,b1,z+rr]],'#c4cad1');poly([[a+rr,b0,z-rr],[a+rr,b1,z-rr],[a+rr,b1,z+rr],[a+rr,b0,z+rr]],'#8e959e');
+  for(const bb of[13,14.4,15.6])box(a-rr-.05,bb,a+rr+.05,bb+.18,z-rr-.05,z+rr+.05,'#727a84');
+  box(a-.55,b1-.3,a+.55,b1+.5,z-1.1,z+.4,'#5a6069',{top:'#6b727b'});   // the spout's hood
+  // coal falling from the spout into the truck
+  for(let i=0;i<14;i++){const f=((t*1.7+i*.37)%1),p=P(a+Math.sin(i*2.3)*.18,b1+.1+Math.cos(i*1.7)*.15,z-1.1-f*1.9);x.fillStyle='#1b1b1d';x.fillRect(p[0]-k*.07,p[1]-k*.07,k*.14,k*.14)}}
+ // the dump truck under the spout: cab, tipper with a heap of coal, wheels
+ const truck=(a,b,col,heap,tl)=>{shadow(a,b,a+5.2,b+2,1.6);for(const da of[.9,3.4,4.4])for(const db of[-.05,1.85]){const p=P(a+da,b+db,.45);x.fillStyle='#16181b';x.beginPath();x.ellipse(p[0],p[1],k*.48,k*.42,0,0,7);x.fill()}
+  box(a,b,a+3.6,b+2,.55,2.3,'#4a4f57',{top:'#575d66'});if(heap){const p=P(a+1.8,b+1,2.3);x.fillStyle='#1d1d20';x.beginPath();x.ellipse(p[0],p[1],k*1.5,k*.55,0,Math.PI,0);x.fill();x.fillStyle='#2b2b2f';x.beginPath();x.ellipse(p[0],p[1]-k*.2,k*1.1,k*.35,0,Math.PI,0);x.fill()}
+  box(a+3.7,b+.05,a+5.2,b+1.95,.55,2.6,col);poly([[a+5.2,b+.25,1.7],[a+5.2,b+1.75,1.7],[a+5.2,b+1.75,2.4],[a+5.2,b+.25,2.4]],'#9fd0ef');poly([[a+3.9,b+.2,2.6],[a+5,b+.2,2.6],[a+5,b+1.8,2.6],[a+3.9,b+1.8,2.6]],sh(col,1.12));
+  if(tl){for(const db of[.25,1.75]){const p=P(a+5.25,b+db,1);x.fillStyle='rgba(255,236,170,.95)';x.beginPath();x.arc(p[0],p[1],k*.14,0,7);x.fill()}}};
+ truck(6.3,15.6,'#e0a21c',true,false);
+ // walls of the mine yard (front ones, after the truck stands inside)
+ box(15.5,2,16,16,0,.7,'#d9a531');box(2,15.5,6,16,0,.7,'#d9a531');box(12,15.5,16,16,0,.7,'#d9a531');
+ // the power plant: hall, two stacks with red and white bands, smoke
+ shadow(26,5,35,12,5);box(26,5,35,12,0,5,'#5c7c96',{top:'#7f9db5'});for(let i=0;i<5;i++)poly([[26.5+i*1.7,5,5],[27.3+i*1.7,5,5],[27.3+i*1.7,12,5],[26.5+i*1.7,12,5]],'rgba(255,255,255,.12)');
+ for(const[a,b]of[[28,7.5],[31.5,7.5]]){for(let s=0;s<6;s++)box(a,b,a+1.2,b+1.2,5+s*2,7+s*2,s%2?'#e9e2d8':'#c0392b');
+  for(let i=0;i<9;i++){const f=((t*.12+i/9)%1),q=P(a+.6+f*6,b+.6-f*3,17+f*8);x.fillStyle='rgba(230,230,235,'+(.5*(1-f)).toFixed(3)+')';x.beginPath();x.arc(q[0],q[1],k*(.8+f*2.6),0,7);x.fill()}}
+ // the pickup with its small trailer, driving along the road
+ {const L=58,a=((t*3.2)%L)-8,b=18.4;const tr=a-3.4;shadow(tr,b,tr+2.6,b+1.6,1);for(const db of[0,1.55]){const p=P(tr+1.2,b+db,.35);x.fillStyle='#16181b';x.beginPath();x.ellipse(p[0],p[1],k*.36,k*.3,0,0,7);x.fill()}
+  box(tr,b,tr+2.6,b+1.6,.45,1.3,'#c0392b',{top:'#3a3d44'});{const p=P(tr+1.3,b+.8,1.3);x.fillStyle='#1d1d20';x.beginPath();x.ellipse(p[0],p[1],k*.9,k*.35,0,Math.PI,0);x.fill()}
+  x.strokeStyle='#2a2d33';x.lineWidth=k*.12;{const p0=P(tr+2.6,b+.8,.6),p1=P(a,b+.8,.6);x.beginPath();x.moveTo(p0[0],p0[1]);x.lineTo(p1[0],p1[1]);x.stroke()}
+  shadow(a,b-.1,a+4.4,b+1.8,1.6);for(const da of[.8,3.6])for(const db of[-.1,1.7]){const p=P(a+da,b+db,.4);x.fillStyle='#16181b';x.beginPath();x.ellipse(p[0],p[1],k*.4,k*.34,0,0,7);x.fill()}
+  box(a,b-.1,a+2.2,b+1.8,.5,1.4,'#c0392b',{top:'#2c2f35'});box(a+2.2,b-.1,a+4.4,b+1.8,.5,2.3,'#c0392b');poly([[a+4.4,b+.1,1.6],[a+4.4,b+1.6,1.6],[a+4.4,b+1.6,2.15],[a+4.4,b+.1,2.15]],'#9fd0ef');poly([[a+2.5,b+.05,2.3],[a+3.6,b+.05,2.3],[a+3.6,b+1.65,2.3],[a+2.5,b+1.65,2.3]],'#d04535')}
+ // the garage: its lot, a hall with a red roof and the HOME sign, a car parked
+ poly([[24,24],[38,24],[38,38],[24,38]],'#41404c');for(let i=0;i<5;i++)poly([[25+i*2.4,34],[25.15+i*2.4,34],[25.15+i*2.4,37.5],[25+i*2.4,37.5]],'#e6e6e6');
+ shadow(27,26,35,32,4);box(27,26,35,32,0,3,'#b9a48a');{const r=(a,b,z)=>[a,b,z];poly([r(27,26,3),r(35,26,3),r(35,29,5.2),r(27,29,5.2)],'#9c3b28');poly([r(27,29,5.2),r(35,29,5.2),r(35,32,3),r(27,32,3)],'#c2513a');poly([r(35,26,3),r(35,32,3),r(35,29,5.2)],sh('#b9a48a',.78))}
+ {const p=P(31,32,2.2);x.fillStyle='#2b2f8a';x.fillRect(p[0]-k*1.4,p[1]-k*.4,k*2.8,k*.8);x.fillStyle='#fff';x.font='bold '+Math.round(k*.62)+'px system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('HOME',p[0],p[1]+k*.02)}
+ // trees at the front
+ for(const[a,b,s]of[[2,26,1.2],[6,33,1],[12,28,1.1],[-2,40,1.2],[15,41,1],[42,26,1.1],[43,36,1]])tree(a,b,s);
+ // a soft vignette so the menu reads well
+ const v=x.createRadialGradient(W/2,H/2,Math.min(W,H)*.25,W/2,H/2,Math.max(W,H)*.75);v.addColorStop(0,'rgba(8,12,10,0)');v.addColorStop(1,'rgba(8,12,10,.55)');x.fillStyle=v;x.fillRect(0,0,W,H)}
+
 // ---------- the main menu: every player starts here ----------
 let MENU=true;
-function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');const o=menuWin('mmenu',60),home=()=>mainMenu();o.onpointerdown=null;
+function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');menuArt();const o=menuWin('mmenu',60),home=()=>mainMenu();o.onpointerdown=null;
  if(view==='load')return pageLoad(o,home);if(view==='set')return pageSettings(o,home);if(view==='how')return pageHowto(o,home);
  const auto=readSave(SAVEK+'auto');
  if(view==='join'){const P=menuPage(o,H2('Join game')+'<div style="opacity:.75;font-size:13px;margin-bottom:10px">Ask the host for the game code or the invite link: they are in his Esc menu.</div><input id="mm-code" maxlength="5" autocomplete="off" spellcheck="false" placeholder="CODE" value="'+esc(pre||'')+'" style="width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid #ffffff40;background:#0f171e;color:#ffd166;font-size:26px;letter-spacing:8px;text-align:center;text-transform:uppercase">'+BIG('mm-go','Join','')+MB('m-back','Back'));

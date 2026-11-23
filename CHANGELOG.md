@@ -4,6 +4,19 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.11 · 24 Nov 2026
+- Fixed: walking into a building that is turned (a coal mine set down with R, for example) made the view jump: the camera kept its offset from the player without turning it with the room. The view now stays put however the building is turned
+- Added: Settings → General → Saving: how often to autosave (off, every minute, 2, 5 or 10 minutes; every minute as before). Off also means no autosave when the page closes or when you quit to the menu
+- Changed: one autosave only: "Before the last autosave" is gone (the old copy is deleted from the browser)
+- Changed: the main menu no longer shows a running new game behind it, but a drawn 3D scene of the game: a coal mine with its headframe and pipe pouring coal into a dump truck, the power plant with smoking stacks, a pickup with its trailer driving along the road, the garage, trees and a dusk sky. It fits wide and tall screens, and stands still with "Lighter graphics"
+- Added to /check: the autosave setting (with off) and a single autosave in the load list; the menu's 3D background draws
+- Added: /test <world> puts a whole test world in place of the map, alone only: /test full (the old map: every building built and switched on along one street, the coal mine full, $100,000), /test haul (the same, and you in a dump truck under the coal mine's pipe, a pickup with a small bulk trailer next to it), /test crane (the same, and the crane kit at the garage). /test alone lists them. Autosave is off from then on, so your saves are untouched: reload the page to get your game back
+- Added to /check: each test world sets every building down built along its street with autosave off, and /test haul puts the dump truck under the pipe
+- Changed: people are smaller: the player and the other players span one square, arms and hands included (they were 1.4), and fit in a vehicle's seat
+- Fixed: the player on foot was drawn on top of a crane's boom; he now walks under it (in the crane's cab he is still drawn on top)
+- Added to /check: a person spans one square, and a player on foot is drawn before (under) a crane's boom
+- Added to /check: walking into a coal mine turned each of the 4 ways moves neither the player nor the view by more than a normal step
+
 ## 0.1.10 · 19 Nov 2026
 - Changed: a new game starts on an empty map: no roads and no buildings, only the garage in the top-left corner (chunk 0,0, gate south) with your pickup. You build the rest from the map's Build tab: roads with Roads, buildings with Yards (the power plant and the other production buildings start as construction sites; the shop and the fuel station are built at once). Saved games keep their map
 - Changed: the first goal is now "Build a coal mine"; the goals that need the power plant, the fuel station or the shop say to build it first when there is none
