@@ -312,6 +312,8 @@ function cp(){if(typeof supB!=='undefined'&&PLANTS.includes(supB))return supB;co
 // ---- power: a power plant gives power to every yard that touches its wall. Where the two walls meet stands a shared pillar: at a corner of the plant's yard it is live while that corner's switch is on, along one of its walls while both corner switches of that wall are on. One live pillar is enough. The power does not go on from yard to yard.
 const plantMW=p=>p.built&&p.on&&p.stock>0&&!isGone(p.id)?100+50*p.lvl:0;
 function plantCorners(p){const o={},l=LOTS[p.li],B=offOf(p.id),c0=r2w(B,-4000,-4100);for(const[k,sx,sy]of[['lpnw',-1,-1],['lpne',1,-1],['lpsw',-1,1],['lpse',1,1]]){const q=r2w(B,-4000+sx*100,-4100+sy*100);o[(q[0]<c0[0]?l.x0:l.x1)+','+(q[1]<c0[1]?l.y0:l.y1)]=k}return o}   // which switch each corner of its yard has: by the building (back = the lever wall), however it is turned
+var PGEO=null;   // every square of every corner pillar on the map, with the lot it stands in: [x, y, lot], the middle of the square
+function pillarSquares(){if(PGEO)return PGEO;const m=new Map(),seen=new Set();for(const n of LOTK){if(isGone(n))continue;const l=LOTS[LOTK.indexOf(n)];if(!l||l.x0===undefined||!THICKW.has(LOTK.indexOf(n)))continue;for(const x of[l.x0,l.x1])for(const y of[l.y0,l.y1]){if(seen.has(x+','+y))continue;seen.add(x+','+y);for(const q of pillarQs(x,y))m.set(q.x+','+q.y,[q.x+WT_/2,q.y+WT_/2,q.j,x,y])}}return PGEO=[...m.values()]}
 var PCN=null;   // the pillars each yard shares with power plants, worked out again whenever a building is set down, turned or demolished
 function pwLinks(n){PCN=PCN||{};if(PCN[n])return PCN[n];const out=PCN[n]=[],l=LOTS[LOTK.indexOf(n)];if(!l||l.x0===undefined||isGone(n))return out;
  const cs=q=>[[q.x0,q.y0],[q.x1,q.y0],[q.x0,q.y1],[q.x1,q.y1]],inq=(q,[x,y])=>x>=q.x0&&x<=q.x1&&y>=q.y0&&y<=q.y1;
@@ -388,7 +390,7 @@ function lotFit(li,U){U.h0??=[U.c0,U.r0];const ok=l=>{if(!U.moved&&(l.c0<0||l.r0
 function lotFit0(li,U){const B={x0:U.bc*TS,y0:U.br*TS,x1:(U.bc+3)*TS,y1:(U.br+3)*TS},a=uBox(U,B),b=uBox(U,{x0:B.x1,y0:B.y0,x1:B.x1+TS,y1:B.y1}),l=LOTS[li];
  l.x0=Math.min(a.x0,b.x0);l.y0=Math.min(a.y0,b.y0);l.x1=Math.max(a.x1,b.x1);l.y1=Math.max(a.y1,b.y1);l.c0=Math.round(l.x0/TS);l.r0=Math.round(l.y0/TS);l.c1=Math.round(l.x1/TS);l.r1=Math.round(l.y1/TS)}
 function lotsFit(){for(const[U,li]of[...MINES.map(m=>[m.U,m.li]),...PLANTS.map(p=>[p.U,p.li]),[GS,2],[FS,6],[QS,7],[IRS,8],[CRS,9]]){const l=LOTS[li];l.c0=U.c0;l.r0=U.r0;l.c1=U.c0+3;l.r1=U.r0+3;l.x0=l.c0*TS;l.y0=l.r0*TS;l.x1=l.c1*TS;l.y1=l.r1*TS}{const b=uBox(SS,S0.lot),l=LOTS[5];Object.assign(l,b);l.c0=Math.round(b.x0/TS);l.r0=Math.round(b.y0/TS);l.c1=Math.round(b.x1/TS);l.r1=Math.round(b.y1/TS)}lotFit(3,LS);lotFit(4,SWS);lotFit(10,FCS);lotFit(11,FNS);LOTT.clear();for(const l of LOTS)for(let c=l.c0;c<l.c1;c++)for(let r=l.r0;r<l.r1;r++)LOTT.add(ck(c,r))}
-function applyUnits(){PCN=null;lotsFit();garage=gRect(G0.garage);gUnl=gRect(G0.gUnl);gPanel=gRect(G0.gPanel);gLoad=gRect(G0.gLoad);LOTS[2].gate=uGate(GS,LOTS[2],G0.gate);
+function applyUnits(){PCN=null;PGEO=null;lotsFit();garage=gRect(G0.garage);gUnl=gRect(G0.gUnl);gPanel=gRect(G0.gPanel);gLoad=gRect(G0.gLoad);LOTS[2].gate=uGate(GS,LOTS[2],G0.gate);
  load=uRect(MS,LYM.pad);applyPlant(1);for(const m of MINES)LOTS[m.li].gate=uGate(m.U,LOTS[m.li],LYM.gate);FZS=F0.fzs.map(z=>uRect(FS,z));fsz=uRect(FS,F0.fsz);sellZ=uRect(SS,S0.sell);spawnZ=uRect(SS,S0.spawn);LOTS[5].gates=S0.gates.map(q=>uGate(SS,LOTS[5],q));LOTS[5].gate=LOTS[5].gates[0];const lf=LOTS[6];lf.gates=F0.gates.map(q=>uGate(FS,lf,q));lf.gate=lf.gates[0];applyLumber(1);applySaw(1);applyFactory(1);applyFoundry(1);applyQuarry(1);applyIron(1);applyCrusher(1);applyMineV();snapGates();
  if(typeof WALLS!=='undefined'){buildWalls();boardsBuild();buildBlds();if(typeof GCH!=='undefined')GCH.clear()}}
 const applyGarage=applyUnits;
@@ -2268,7 +2270,7 @@ function paintLot(l,i,c0,r0,c1,r1,fine){const sq=siteOfLot(l),W=l.x1-l.x0,H=l.y1
   else if(fine){   // worn asphalt: grit and cracks
    for(const[col,k]of[['rgba(255,255,255,.1)',0],['rgba(0,0,0,.2)',1]]){g.fillStyle=col;for(let n=0;n<44;n++){const q=1.2+h(700+n)*2;g.fillRect(X+h(750+n*2+k)*(TS-3),Y+h(850+n*2+k)*(TS-3),q,q*.8)}}
    for(let n=0;n<2;n++)if(h(950+n)<.6){let x=X+20+h(952+n)*(TS-130),y=Y+30+h(954+n)*(TS-60);g.strokeStyle='rgba(0,0,0,.34)';g.lineWidth=1.3;g.beginPath();g.moveTo(x,y);for(let q=0;q<6;q++){x+=8+h(960+n*10+q)*14;y+=(h(980+n*10+q)-.5)*16;g.lineTo(x,y)}g.stroke()}}});
- if(dust&&fine){const z=dust[0];for(let k=0;k<90;k++){const u=hsh(k,i+41)*6.28,rr=Math.sqrt(hsh(k,i+43))*(Math.max(z.w,z.h)*.5+110),x=z.x+Math.cos(u)*rr*(z.w>z.h?1:.75),y=z.y+Math.sin(u)*rr*(z.w>z.h?.75:1),q=1.3+hsh(k,i+47)*2.6;g.fillStyle=i<2?(hsh(k,3)<.3?'#4a4b52':'#17181b'):hsh(k,3)<.4?'#e6cf9e':'#b08a52';g.fillRect(x,y,q*1.3,q)}}   // crumbs of coal, chips of wood
+ if(dust&&fine){const z=dust[0];for(let k=0;k<90;k++){const u=hsh(k,i+41)*6.28,rr=Math.sqrt(hsh(k,i+43))*(Math.max(z.w,z.h)*.5+110),x=z.x+Math.cos(u)*rr*(z.w>z.h?1:.75),y=z.y+Math.sin(u)*rr*(z.w>z.h?.75:1),q=1.3+hsh(k,i+47)*2.6;g.fillStyle=COPYT(LOTK[i])?(hsh(k,3)<.3?'#4a4b52':'#17181b'):hsh(k,3)<.4?'#e6cf9e':'#b08a52';g.fillRect(x,y,q*1.3,q)}}   // crumbs of coal, chips of wood
  // grime gathers along the kerb
  for(const[x,y,w,h,vx,vy]of[[l.x0,l.y0,W,30,0,1],[l.x0,l.y1-30,W,30,0,-1],[l.x0,l.y0,30,H,1,0],[l.x1-30,l.y0,30,H,-1,0]]){const q=g.createLinearGradient(vx>0?x:vx<0?x+w:0,vy>0?y:vy<0?y+h:0,vx>0?x+w:vx<0?x:0,vy>0?y+h:vy<0?y:0);q.addColorStop(0,'rgba(0,0,0,.26)');q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(x,y,w,h)}
  if(sq){const z=sq.zone,x0=z.x-z.w/2-34,y0=z.y-z.h/2-34,w=z.w+68,h=z.h+68;   // the unloading yard: a darker pad
@@ -2450,7 +2452,7 @@ const RWK={'power plant':rwkPlant(plant),
  foundry:{b:()=>foundry,on:()=>foundryOn,set:v=>{foundryOn=v},panel:'fnd',open:()=>{facView='ctl'},main:'Main switch: the whole foundry',off:'off: it makes nothing and burns none of the plant\'s coal.',st:()=>!foundryOn?'off':pw('foundry')>0?'ok':'low'}};   // the other buildings: the main lever is their on/off switch; the desk opens their window (the upgrades; the factory's and foundry's control panel, with the upgrades a tab away)   // st: its desk's screens and main lamp: green working, amber on but idle (no coal / store full), red off
 const PLEV=[['lpnw','Back-left corner pillar'],['lpne','Back-right corner pillar'],['lpsw','Front-left corner pillar'],['lpse','Front-right corner pillar'],['lpg','Gate pillars'],['main','']];   // back = the lever wall, front = the door side
 const plevNm=(n,k)=>k==='main'?RWK[n].main:PLEV.find(q=>q[0]===k)[1];
-const RWLEV=n=>n!=='power plant'?[{k:'main',x:-4020,w:2*S}]:PLEV.map((q,i)=>({k:q[0],x:-4060+i*S,w:S})),PLEVY=-4240;   // the power plant: 6 levers of 1 square, squares 4 to 9 of the north wall's row; the mine: its main switch alone, 2 squares wide in the middle
+const RWLEV=n=>ytype(n)!=='power plant'?[{k:'main',x:-4020,w:2*S}]:PLEV.map((q,i)=>({k:q[0],x:-4060+i*S,w:S})),PLEVY=-4240;   // the power plant: 6 levers of 1 square, squares 4 to 9 of the north wall's row; the mine: its main switch alone, 2 squares wide in the middle
 const plevOn=(n,k)=>k==='main'?RWK[n].on():!!RWK[n].b()[k];
 const rwLit=n=>{const b=RWK[n].b();return RWK[n].on()&&(PLANTS.includes(b)?plantMW(b)>0:pw(n)>0)};   // its lamps can shine
 function plevAt(m){if(!IN||!RWK[bkey(IN.o)]||!m||P.driving)return null;const L=RWLEV(IN.o.n);for(let i=0;i<L.length;i++){const{x,w,k}=L[i];if(m[0]>=x&&m[0]<x+w&&m[1]>=PLEVY&&m[1]<PLEVY+S)return{n:bkey(IN.o),i,k,far:Math.hypot(P.x-(x+w/2),P.y-(PLEVY+S/2))>RCH()+S*.3}}return null}
@@ -2471,10 +2473,13 @@ function plantLevers(c){const n=bkey(IN.o),m=mouseWorld(),hv=plevAt(m),lit=rwLit
   g.restore();
   if(hv&&hv.i===i){g.strokeStyle=c;g.lineWidth=1.2;g.setLineDash([3,2]);g.strokeRect(x,y,w,S);g.setLineDash([]);txt(plevNm(n,k)+': '+(on?'on':'off'),x+w/2,y+S+8,'#fff','bold 8px sans-serif')}}}
 // the lamps on the reworked buildings' yard pillars: the 4 corners and the 2 gate posts, each lit while its lever is on, its building is on and the plant gives power
-function pillarLamps(){const o=[],h=WT_/2;for(const n in RWK){const b=RWK[n].b();if(b.built===false||isGone(n)||!rwLit(n))continue;const l=LOTS[LOTK.indexOf(n)];if(!l||l.x0===undefined)continue;
- const B=offOf(n),c0=r2w(B,-4000,-4100);   // the corners go by the building, not the compass: 'nw' is back-left as you face the lever wall, however the building is turned
- for(const[k,sx,sy]of[['lpnw',-1,-1],['lpne',1,-1],['lpsw',-1,1],['lpse',1,1]])if(b[k]){const q=r2w(B,-4000+sx*100,-4100+sy*100),dx=q[0]-c0[0],dy=q[1]-c0[1];o.push([dx<0?l.x0+h:l.x1-h,dy<0?l.y0+h:l.y1-h])}
- if(b.lpg)for(const q of GATES(l))for(const a0 of[q.a,q.b]){const a=postOnPillar(l,...gateAt(l,q,a0))?a0+(a0===q.a?-h:h):a0;o.push(q.side==='S'?[a,l.y1-h]:q.side==='N'?[a,l.y0+h]:q.side==='W'?[l.x0+h,a]:[l.x1-h,a])}}return o}
+const gateLamps=(l,o,own)=>{const h=WT_/2;for(const q of GATES(l))for(const a0 of[q.a,q.b]){const pp=postOnPillar(l,...gateAt(l,q,a0));if(pp&&own)continue;const a=pp?a0+(a0===q.a?-h:h):a0;o.push(q.side==='S'?[a,l.y1-h]:q.side==='N'?[a,l.y0+h]:q.side==='W'?[l.x0+h,a]:[l.x1-h,a])}};
+function pillarLamps(){const o=[],lit={};   // a pillar square is lit: in a powered yard always; in a power plant's yard a corner with its switch, a pillar along a wall (a neighbour's corner meets it) with both corner switches of that wall
+ for(const[x,y,j,cx,cy]of pillarSquares()){const n=LOTK[j],l=LOTS[j],p=PLANTS.find(p=>p.li===j);
+  if(p){if(!plantMW(p))continue;const C=lit[j]||(lit[j]=plantCorners(p)),k=C[cx+','+cy],ks=k?[k]:cx===l.x0||cx===l.x1?[C[cx+','+l.y0],C[cx+','+l.y1]]:[C[l.x0+','+cy],C[l.x1+','+cy]];if(ks.every(k=>p[k]))o.push([x,y])}
+  else{if(lit[j]===undefined)lit[j]=pw(n)>0;if(lit[j])o.push([x,y])}}
+ LOTK.forEach((n,j)=>{const l=LOTS[j];if(!l||l.x0===undefined||isGone(n))return;const p=PLANTS.find(p=>p.li===j);if(p?plantMW(p)&&p.lpg:pw(n)>0)gateLamps(l,o,!p)});   // the gate posts: a plant's by its gate switch, a powered yard's always
+ return o}
 function drawPillarLamps(){const D=darkness();for(const[x,y]of pillarLamps()){if(Math.abs(x-cam.x)>CHW+80||Math.abs(y-cam.y)>CHH+80)continue;g.save();g.globalCompositeOperation='lighter';const gr=g.createRadialGradient(x,y,0,x,y,22);gr.addColorStop(0,'rgba(255,233,168,'+(.35+.4*D)+')');gr.addColorStop(1,'rgba(255,233,168,0)');g.fillStyle=gr;g.beginPath();g.arc(x,y,22,0,7);g.fill();g.restore();
   g.fillStyle='#fff6d8';g.beginPath();g.arc(x,y,3.6,0,7);g.fill();g.strokeStyle='rgba(120,90,30,.7)';g.lineWidth=1;g.stroke()}}
 // ----- the control desk and its chair: things you can carry. A desk (2 x 1, both hands, turned with R) works for the reworked building whose yard or room it stands in: its 2 screens show that building, Space on it opens its window; the chair (1 square, one hand) sits centred on a desk's long side when put down against it -----
@@ -3545,13 +3550,16 @@ const fh=P.driving?freeHost():null;
   const st=nearTip(fh);
   if(st){const p=tipPt(st);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(p.x,p.y,10,0,7);g.stroke();txt('C: couple',p.x,p.y-16,'#ffd166')}}}
 const PR=.39;   // a person's size: r = S*PR, so arms and hands span 1 square (20 px) and he fits in a seat
+const WALKD={};
+// how far somebody has walked, for the swing of the arms: by the distance, so it swings the same in every direction (a jump, such as through a door, does not count)
+function walkSw(k,x,y){const w=WALKD[k]||(WALKD[k]={x,y,d:0}),d=Math.hypot(x-w.x,y-w.y);if(d<40)w.d+=d;w.x=x;w.y=y;return Math.sin(w.d*.22)}
 function drawPlayer(){drawPlayer0()}   /* the player lives in the world: his size and place follow the map and the zoom, outside and inside */
 function drawPlayer0(){
  const seated=P.driving&&T.out?[T,-1]:P.pass?[P.pass,P.seatSd]:null;
  let px=P.x,py=P.y,pa=P.a,r=S*PR;
  if(seated){const h=hoverSeat();if(seated[0].kind==='forklift'||seated[0].kind==='atv'?!drawPlayer0.fk:!h||h.v!==seated[0])return;   /* inside a cab the player is hidden; hovering the cab shows him in his seat. On the forklift's open seat he always shows, drawn by the forklift itself under its overhead guard */
   const q=seatPos(seated[0],seated[1]);px=q[0];py=q[1];pa=seated[0].a+(seated[0].kind==='crane'&&seated[1]===CSEAT?crOf(seated[0]).rot:0);}   // the crane cab turns with the craneelse if(P.driving)return;
- const ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:Math.sin((px+py)*.22)*r*.45;
+ const ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:walkSw('me',px,py)*r*.45;
  if(!seated)for(const[k,c]of[[1.5,'rgba(8,12,20,.2)'],[3.2,'rgba(8,12,20,.16)']]){g.fillStyle=c;g.beginPath();g.ellipse(px+SUN[0]*k,py+SUN[1]*k,r*.68,r,pa,0,7);g.fill()}
  // arms and hands out to the sides and a little forward; they swing while walking
  const two=P.hands[0]&&P.hands[0]===P.hands[1],hp=[];
@@ -3683,7 +3691,7 @@ function drawSeeThru(t){const o=IN.o,gm=interiorGeo(o),U=o.site,in0=IN,px=P.x,py
  const wp=r2w(o,px,py),wc=r2w(o,cx,cy);IN=null;SEEO=o;P.x=wp[0];P.y=wp[1];P.a=pa+U.rot*Math.PI/2;cam.x=wc[0];cam.y=wc[1];
  try{worldLayers(t)}finally{IN=in0;SEEO=null;P.x=px;P.y=py;P.a=pa;cam.x=cx;cam.y=cy;g.restore()}}
 // other players in the same room
-function drawPeersIn(){const r=NET.room;if(!r||!IN)return;try{for(const p of r.peers()){const q=p.presence;if(p.sameTab||!q||!q.in||q.inb!==bkey(IN.o)||typeof q.rx!=='number')continue;const hue=q.col||(typeof q.hue==='number'?q.hue:200);drawPerson(q.rx,q.ry,q.ra||0,hue);txt((q.nm&&q.nm.trim())||'Player',q.rx,q.ry-S*1.7,'#fff','bold 10px sans-serif')}}catch(e){}}
+function drawPeersIn(){const r=NET.room;if(!r||!IN)return;try{for(const p of r.peers()){const q=p.presence;if(p.sameTab||!q||!q.in||q.inb!==bkey(IN.o)||typeof q.rx!=='number')continue;const hue=q.col||(typeof q.hue==='number'?q.hue:200);drawPerson(q.rx,q.ry,q.ra||0,hue,0,'in'+p.peer);txt((q.nm&&q.nm.trim())||'Player',q.rx,q.ry-S*1.7,'#fff','bold 10px sans-serif')}}catch(e){}}
 // everything on the map, from the ground up to the night and the players' names (also drawn around a building you are inside, through its open roof)
 function worldLayers(t){
  drawGround();drawBuildings(t);drawPillarLamps();drawInfo(t);drawPads(t);
@@ -4230,14 +4238,17 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
     all(plant,0);plant[n]=1;const a=pw('quarry');plant[n]=0;plant[m]=1;const b=pw('quarry');if(a||!b)bad='turn '+rot+': far corner '+a+', shared corner '+b;all(plant,1)}
    }
   finally{all(plant,1);placeBlds([...keep,...Object.entries(TEST_LAYOUT.at).map(([n,q])=>[n,q[0],q[1],q[2]])])}return bad||true});
+ t('power','every powered yard has its corner pillars and gate posts are lit, a yard without power has none lit',()=>{ready();const on=n=>{const l=LOTS[LOTK.indexOf(n)];return pillarLamps().filter(([x,y])=>x>l.x0&&x<l.x1&&y>l.y0&&y<l.y1).length},a=on('factory');all(plant,0);const b=on('factory');all(plant,1);const cq=TEST_LAYOUT.at.crusher;placeBlds([['crusher',cq[0],cq[1]-1,cq[2]]]);const L=LOTS[plant.li],C=plantCorners(plant),sq=pillarSquares().filter(q=>q[2]===plant.li&&!C[q[3]+','+q[4]]);const lamp=q=>pillarLamps().some(m=>m[0]===q[0]&&m[1]===q[1]);const mid=sq.every(lamp);let half=true;for(const q of sq){const k=q[3]===L.x0||q[3]===L.x1?C[q[3]+','+L.y0]:C[L.x0+','+q[4]];plant[k]=0;if(lamp(q))half=false;plant[k]=1}placeBlds([['crusher',...cq]]);
+  const want=pillarSquares().filter(q=>LOTK[q[2]]==='factory').length+2;return a===want&&b===0&&sq.length>0&&mid&&half?true:'lit '+a+' of '+want+', without power '+b+', pillars along the walls '+sq.length+' '+mid+' '+half});   /* added 24 Nov */
  t('power','a yard burns the coal of the plant that feeds it, and no other',()=>{ready();const o=[crusherOn,lumberOn,sawOn,quarryOn,ironOn,factoryOn,foundryOn,crusher.feed,crusher.stock,crusher.gst];lumberOn=sawOn=quarryOn=ironOn=factoryOn=foundryOn=false;crusherOn=true;crusher.feed=5;crusher.stock=0;crusher.gst=0;const f=feed('crusher'),a=PLANTS.map(p=>p.stock);chkRun(1);const d=PLANTS.map((p,i)=>a[i]-p.stock);[crusherOn,lumberOn,sawOn,quarryOn,ironOn,factoryOn,foundryOn,crusher.feed,crusher.stock,crusher.gst]=o;const i=PLANTS.indexOf(f);return i>=0&&d[i]>.5&&d.every((x,j)=>j===i||Math.abs(x)<1e-6)?true:'burnt: '+d.map(x=>x.toFixed(2)).join(', ')});
  t('power','switched off or out of coal, a plant feeds nothing; the yards of another plant keep their power',()=>{ready();plant.on=false;const a=pw('factory'),w=pwWhy('factory'),b=pw('sawmill');plant.on=true;plant.stock=0;const c=pw('factory'),w2=pwWhy('factory');plant.stock=20;return!a&&b&&!c&&w.includes('switched off')&&w2.includes('no coal')?true:[a,b,c,w,w2].join(' ')});
  t('power','a second power plant has its own desk window, sign, main switch and unloading grate',()=>{ready();ensureDesk();ensurePlantSign();const p=PLANTS.find(q=>q.id==='plant2');if(!p)return'no second plant';if(!GI.some(i=>i.type==='desk'&&i.rm===p.id))return'no desk';if(!GI.some(i=>i.type==='psign'&&i.yd===p.id))return'no sign';p.stock=12.3;supB=p;openP('pctl');const h=$('gp').innerHTML,ok=h.includes(p.name)&&h.includes('12.3');closeGarage();supB=null;if(!ok)return'the window does not show it';RWK[p.id].set(false);const on=plant.on;RWK[p.id].set(true);if(!on)return'its switch moved the first plant\'s';
   const v=addVeh('dump',{});v.out=true;setActive(v);P.driving=true;P.pass=null;v.a=p.z.w>=p.z.h?0:Math.PI/2;v.v=0;v.x=p.z.x;v.y=p.z.y;{const c=carriers().find(q=>q.ent===v),d=dir(c.a),m=(c.e0+c.e1)/2*S;v.x+=p.z.x-(c.ox+d[0]*m);v.y+=p.z.y-(c.oy+d[1]*m)}v.cargo={type:'coal',amt:5};const a=p.stock,b=plant.stock;SPK.down=true;SPK.t=performance.now()-2000;chkRun(3);SPK.down=false;const ok2=p.stock>a+.5&&plant.stock<=b+1e-6,l=v.cargo.amt;P.driving=false;delete veh[v.id];draw1();return ok2||'coal unloaded there did not go into it ('+a.toFixed(1)+' to '+p.stock.toFixed(1)+' t, left on the truck '+l.toFixed(1)+')'});
- t('power','walk into a second power plant and out again',()=>{const o=offOf('plant2');if(IN)exitMine();P.driving=false;enterOffice(o);const a=IN&&IN.o===o&&cp()===o.b;draw1();const h=plevAt([RWLEV(o.n)[0].x+5,PLEVY+S/2]);if(IN)exitMine();return a&&h&&h.n==='plant2'?true:'not inside it, or its levers are not its own'});
+ t('power','walk into a second power plant and out again',()=>{const o=offOf('plant2');if(IN)exitMine();P.driving=false;enterOffice(o);const a=IN&&IN.o===o&&cp()===o.b;draw1();const h=plevAt([RWLEV(o.n)[0].x+5,PLEVY+S/2]),L=RWLEV('plant2').length;let thr='';P.x=-4000;P.y=PLEVY+40;for(const[k]of PLEV){const t=RWLEV('plant2').find(q=>q.k===k),v0=plevOn('plant2',k),f0=plevOn('power plant',k),e=t&&plevAt([t.x+t.w/2,PLEVY+S/2]);if(!e||e.k!==k){thr=k+' cannot be clicked';break}plevThrow(e);if(plevOn('plant2',k)===v0||plevOn('power plant',k)!==f0)thr=k+' did not switch only this plant';plevThrow(e)}if(IN)exitMine();if(L!==6)return'levers drawn: '+L+' of 6';if(thr)return thr;return a&&h&&h.n==='plant2'?true:'not inside it, or its levers are not its own'});
  t('power','a new power plant from the Yards list: its own site, finished by its own deliveries, in the save, gone when demolished',()=>{let e=yardPick('power plant');if(e)return e;const k=mapYard,p=PLANTS.find(q=>q.id===k);mapYard=null;if(!p||p===plant)return'no new plant';e=moveUnit(k,320,320,0,1);if(e)return'not set down: '+e;if(p.built||!siteOfOff(offOf(k)))return'not a construction site';if(!plant.built||plant.reqs[0].got<1)return'the first plant was reset';draw1();const cg={type:'coal',amt:60};siteDeliver(p,cg,60);if(!p.built||p.on)return'built '+p.built+', on '+p.on;p.stock=7;const d=JSON.parse(JSON.stringify(gameSave()));if(d.s[k+'.stock']!==7||d.fl[k+'.built']!==true||d.fl[k+'.on']!==false)return'not in the save: '+[d.s[k+'.stock'],d.fl[k+'.built'],d.fl[k+'.on']];e=demolishUnit(k);return!e&&isGone(k)&&p.stock===0&&!p.built?true:'not gone '+(e||[p.stock,p.built])});
  t('power','a save puts a second power plant back with its own coal, switches and built state',()=>{const A=netApi(),id='plant77';if(offOf(id))return true;Object.assign(A.pend.a,{[id+'.stock']:3.5,[id+'.lpnw']:0});Object.assign(A.pend.f,{[id+'.built']:true,[id+'.on']:false});placeBlds([[id,340,340,1]]);const p=PLANTS.find(q=>q.id===id);if(!p)return'not made';const g=[p.stock,p.lpnw,p.built,p.on,YU(id).rot].join();demolishUnit(id);return g==='3.5,0,true,false,1'?true:g});
  t('power','the host puts a guest\'s new power plant on the map; the same place twice is refused',()=>{const e1=hostAsk(['P+',null,360,360,0]),n=PLANTS.length,e2=hostAsk(['P+',null,360,360,0]);if(!e1)demolishUnit(PLANTS[n-1].id);return!e1&&e2&&PLANTS.length===n?true:(e1||'ok')+' / '+(e2||'ok')})}
+ t('walking','walking swings the arms alike in all 8 directions',()=>{const bad=[];for(const[x,y]of[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]]){let a=9,b=-9;for(let i=0;i<60;i++){const l=Math.hypot(x,y),q=walkSw('chk'+x+y,i*x/l,i*y/l);a=Math.min(a,q);b=Math.max(b,q)}delete WALKD['chk'+x+y];if(b-a<1.8)bad.push(x+','+y)}return bad.length?'no swing going '+bad.join(' '):true});   /* added 24 Nov: going up-right and down-left there was none */
  // 6. every window and every settings tab
  for(const m of chkPanels())t('windows',m,()=>{supB=supB||quarry;if(m==='sup')supB=quarry;if(m==='yup')yupB=lumber;if(m==='fac'||m==='fnd')facView='ctl';openP(m);const ok=$('gp').innerHTML.length>40;closeGarage();return ok||'empty'});
  {const keep=SETTAB,o=document.createElement('div');for(const[k]of SETTABS)t('settings',k,()=>{SETTAB=k;pageSettings(o,()=>{});return o.innerHTML.length>200||'empty'});SETTAB=keep}
@@ -4335,7 +4346,7 @@ function playersWin(){let o=document.getElementById('plwin');if(o){o.remove();re
   paint()};
  o.addEventListener('keydown',e=>e.stopPropagation());document.body.appendChild(o);paint();o._iv=setInterval(paint,1000)}
 const angLerp=(a,b,k)=>a+(((b-a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)*k;
-function drawPerson(px,py,pa,hue,seated){const r=S*PR,ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:Math.sin((px+py)*.22)*r*.45;   // seated (on an ATV or a forklift): no walking swing and no shadow of his own
+function drawPerson(px,py,pa,hue,seated,id){const r=S*PR,ca=Math.cos(pa),sa=Math.sin(pa),sw=seated?0:walkSw(id||'other',px,py)*r*.45;   // seated (on an ATV or a forklift): no walking swing and no shadow of his own
  if(!seated)for(const[k,c]of[[1.5,'rgba(8,12,20,.2)'],[3.2,'rgba(8,12,20,.16)']]){g.fillStyle=c;g.beginPath();g.ellipse(px+SUN[0]*k,py+SUN[1]*k,r*.68,r,pa,0,7);g.fill()}
  const hp=[];for(const sd of[-1,1]){const f=r*.95+sd*sw,l=sd*r*(seated?.75:.9);hp.push([px+ca*f-sa*l,py+sa*f+ca*l,px-sa*sd*r*.7,py+ca*sd*r*.7])}
  g.lineCap='round';for(const[w,c]of[[r*.44+2,INK],[r*.44,typeof hue==='string'?shd(hue,.8):'hsl('+hue+',60%,34%)']]){g.strokeStyle=c;g.lineWidth=w;g.beginPath();for(const h of hp){g.moveTo(h[2],h[3]);g.lineTo(h[0],h[1])}g.stroke()}g.lineCap='butt';
@@ -4358,7 +4369,7 @@ function drawPeers(t){PLBL.length=0;const r=NET.room;if(!r)return;const seen=new
     const v=h.v;v.x=h.x;v.y=h.y;v.a=h.a;v.st=d.st||0;v.v=d.sp||0;v.cargo=d.cg?{type:d.cg[0],amt:d.cg[1]}:{type:null,amt:0};
     const tq=q.t;if(tq&&TRL[tq.k]){if(h.tk!==tq.k+'|'+tq.col){const o=addTrl(tq.k,tq.col);delete trl[o.id];cnt[tq.k]--;o.out=true;h.tr=o;h.tk=tq.k+'|'+tq.col}h.tr.x=tq.x;h.tr.y=tq.y;h.tr.b=tq.b;h.tr.coupled=false;h.tr.ld=null;cast(shapesOf(h.tr,[],.5));drawTrailer(h.tr)}else{h.tr=null;h.tk=''}
     v._rh=hue;cast(shapesOf(v,[],.5));drawKind(v)}   // _rh: his colour, for the figure on an open seat
-   else drawPerson(h.x,h.y,h.a,hue);
+   else drawPerson(h.x,h.y,h.a,hue,0,p.peer);
    {const nm=(q.nm&&q.nm.trim())||(q.pid&&ROSTER[q.pid]&&ROSTER[q.pid].nm!=='Player'&&ROSTER[q.pid].nm)||'Player '+p.peer.slice(0,2).toUpperCase();if(!q.d&&!q.s)PLBL.push([nm,h.x,h.y-S*1.7,'hsl('+hue+',80%,75%)'])}}   /* the player's name above them, also while they drive */catch(e){}}
  for(const k of[...NET.gh.keys()])if(!seen.has(k))NET.gh.delete(k)}
 
@@ -4564,7 +4575,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.13',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.14',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};

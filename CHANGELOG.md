@@ -4,6 +4,13 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.14 · 24 Nov 2026
+- Added: every yard that gets power lights all its pillars and gate posts, the pillars a neighbour's corner makes along its wall too, whatever its own main switch says. A power plant's pillars along a wall are lit while both corner switches of that wall are on; its corners and gate go by their switches as before
+- Fixed: the power plants after the first had only the main switch; the 4 corner levers and the gate lever are back in every one
+- Fixed: the crumbs around the grate of a further power plant, and the pipe of a further coal mine, were wood-coloured; they are coal
+- Fixed: walking up-right or down-left did not swing the arms. The swing goes by the distance walked now, the same in every direction, for other players too
+- Added to /check: every lever of a second power plant switches that plant only; the pillars lit on powered and unpowered yards; the arm swing in all 8 directions
+
 ## 0.1.13 · 24 Nov 2026
 - Changed: a power plant gives power only to the yards that touch its wall. Where the two walls meet stands a shared pillar: at a corner of the plant it is live while that corner's switch is on, along a wall while both corner switches of that wall are on. One live pillar is enough; power does not go on from yard to yard. The corner switches work the lamp and the power together, the gate switch only its lamps. In older saves a yard that touches no power plant stands still until one is built against it
 - Added: any number of power plants (Yards list), each its own construction site with its own coal, main switch, corner switches, desk, sign and unloading grate, kept in saves and shared in multiplayer. A yard burns the coal of the plant that feeds it; of several, the one with the most coal
