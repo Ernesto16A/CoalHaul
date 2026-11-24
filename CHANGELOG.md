@@ -4,6 +4,21 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.22 · 24 Nov 2026
+- Fixed: walking into the house by the back door moved the player to another spot in the room. You now keep your place, as at the front door
+- Changed: the name on the ground at a garage's gate is just the owner's name (GARAGE when it has no owner), no longer "…'s garage"
+- Fixed: the hose is three clicks: click the hose to pick it up, click the tap to put it on (you hold its end), click the tanker to connect it. A right-click on the tap puts it on too. With the hose on the tap and empty hands, a click on a liquid tank in reach connects it too
+- Changed: a new player starts inside the house of their garage, in the middle of the room, facing the front door (a joining player too)
+- Cleaned: 67 pieces of code nothing used any more were taken out (old on-foot loading, a factory dropdown that did nothing, old drawing and layout helpers, unused values); the game is about 7 KB smaller
+- Changed: the hose goes only on a hatch of a liquid tank (the round lids along its top), not anywhere on the tanker. A bigger tank has several hatches and every one of them takes the hose; the hose stays on the one it was put on, and its reach is measured to that hatch. The hose rack moved to the back of the tank, on the side away from the fill bar, clear of the hatches, the fill bar and the hitch behind it
+- Changed: the hose's free end lies where it is left. Right-click with the end in hand puts it down where you point; a right-click on the connected end takes it off the tank and leaves it there; a click on a lying end takes it again. A tank driven out of reach still snaps the hose off: its end stays where the hatch was
+- Fixed: after a construction site was finished, a speck of cargo (like 0.000000000001 L of water) stayed on the vehicle, still counted as its cargo. The last crumbs now come off, and a speck left by any unloading is cleared
+- Removed: the bed and hitch code of the desk's parts menu (no longer offered there since 0.1.20)
+- Cleaned: the last unused values went too: a counter in the multiplayer connection code that nothing read, and spare values inside the self-checks. A scan now finds nothing unused
+- Added to /check: a yard touching two power plants takes from the one with the most coal and switches when the other has more
+- Added to /check: the hose only on a hatch, every hatch of a several-hatch tank, its end lying where left and after driving off; no cargo left after a site is finished
+- Added to /check: walking in and out by the back door, whichever way the garage is turned
+
 ## 0.1.21 · 24 Nov 2026
 - Changed: the water pad behind the house is gone. The tap is one tile against the back wall of the house, in its right-hand corner, with the hose coiled beside it; park a tank within the hose's reach of it
 - Added: a back door in the middle of the back wall of the house, next to the platforms: walk in and out either way. It has the 2 x 1 entrance tiles inside and outside, like the front door; nothing can be put down on them
