@@ -4,6 +4,13 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.21 · 24 Nov 2026
+- Changed: the water pad behind the house is gone. The tap is one tile against the back wall of the house, in its right-hand corner, with the hose coiled beside it; park a tank within the hose's reach of it
+- Added: a back door in the middle of the back wall of the house, next to the platforms: walk in and out either way. It has the 2 x 1 entrance tiles inside and outside, like the front door; nothing can be put down on them
+- Changed: a garage placed from the Yards list by a player who has no finished garage stands ready at once, for free. With a finished one, a new garage is a construction site as before. So demolishing your only working garage lets you place a ready one again
+- Added: a hose rack on every water tanker (the liquid bed of a pickup or dump truck, and the liquid tank trailers), at the back end of the tank. Right-click it with a hose in hand to hang the hose on it, click it to take the hose back. The hose travels with the tanker and is kept in saves
+- Added to /check: the first garage standing ready, the hose rack
+
 ## 0.1.20 · 24 Nov 2026
 - Fixed: the hose lying coiled by the tap (the one a new game starts with) could not be picked up. A click on it, left or right, takes it into your hands and off the tap; it lights up when the cursor is on it
 - Changed: a fuel tank is no longer mounted by clicking a vehicle with it in hand. It is fitted at the desk in the house, on a stored vehicle, and only from a tank that sits in the house (on its floor or in a crate there): the Fuel tank row lists just the sizes that are there and fit. The tank is used up, costs nothing more, and brings its fuel with it; the old tank goes to the floor of the house
