@@ -4,6 +4,14 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.16 · 24 Nov 2026
+- Changed: cash is each player's own, no longer one shared pot. Whoever delivers or sells is paid, whoever clicks pays; a new player starts with nothing. The host's game and saves remember what each player has and give it back when they return (an older save's shared pot goes to whoever loads it). /players shows everyone's cash
+- Added: pay another player: click a player within your reach, type an amount, Pay. Both are told; a payment the other game does not confirm within 6 seconds comes back. Only in games played with a code
+- Changed: € instead of $
+- Fixed: the cash bar jumped about while cash was running up or down and pushed the clock around. It shows whole euros, has a fixed width and changes at most 5 times a second
+- Changed: the player's name is typed in the colour window (a new game, or joining one as a new player) and nowhere else: gone from Settings, the main menu and /name
+- Fixed: the main menu's 3D background stayed away when the game was opened in a hidden window
+
 ## 0.1.15 · 24 Nov 2026
 - Changed: new construction sites for every building that starts as one. Only the middle chunk is under construction (foundation, materials, a barrier where the walls will stand), with a board on it that lists every material, how much has come in and how much is still to come; it always reads upright. The yard is packed earth with the trucks' tracks from the gate to the unloading place, and becomes the building's asphalt when it is finished
 - Changed: every site has an unloading grate behind the building; what has been delivered lies in its hopper, each material in its colour. Logs and planks are still set down on it with the forklift. The finished power plant keeps its grate, the other buildings get their own pads

@@ -59,7 +59,7 @@ body.inmenu #touch,body.inmenu #tside,body.inmenu #gmbtn,body.inmenu #tbtn{displ
 </style></head><body>
 <canvas id="c"></canvas>
 <div id="hud">
-  <div class="p">Cash <b id="cash">$0</b> <span id="clk" style="margin-left:8px;opacity:.85"></span></div>
+  <div class="p" style="white-space:nowrap">Cash <b id="cash" style="display:inline-block;min-width:7ch;font-variant-numeric:tabular-nums">€0</b> <span id="clk" style="margin-left:8px;opacity:.85;font-variant-numeric:tabular-nums"></span></div>
  <div class="p" id="goal"></div>
  <div class="p" id="hk"></div>
 </div>
@@ -180,7 +180,7 @@ function applyPlant(gate){for(const p of PLANTS){Object.assign(p.z,uRect(p.U,LYP
 F0.fzs=F0.pumps.flatMap(([x,y])=>[{x:x-60,y,w:40,h:40,a:0},{x:x+60,y,w:40,h:40,a:0}]);   // 2x2 tiles, 1 tile from the pump on each side
 let garage=G0.garage,gUnl=G0.gUnl,gPanel=G0.gPanel,gLoad=G0.gLoad,FZS=F0.fzs,fsz=F0.fsz;
 const LANES=[G0.garage.y-35,G0.garage.y+35];   // the garage platform takes two vehicles side by side: the north lane first, then the south one
-// shop storage: anything unloaded on the shop's SELL / UNLOAD pad is kept here (shopB.cap of each kind) until it is sold in the shop's Storage tab. Prices: the per-material prices of the game (coal $10 a ton, logs $20, rock and iron ore $10), sand and gravel $15 a ton, fuel half the pump price
+// shop storage: anything unloaded on the shop's SELL / UNLOAD pad is kept here (shopB.cap of each kind) until it is sold in the shop's Storage tab. Prices: the per-material prices of the game (coal €10 a ton, logs €20, rock and iron ore €10), sand and gravel €15 a ton, fuel half the pump price
 const shopB={name:'Shop',store:{coal:0,logs:0,planks:0,rock:0,iron:0,sand:0,gravel:0,fuel:0,ironbar:0,steelbar:0,glass:0,hitch:0,canister:0,crate:0,pallet:0},cap:{coal:50,logs:50,planks:50,rock:50,iron:50,sand:50,gravel:50,fuel:50,ironbar:50,steelbar:50,glass:50,hitch:50,canister:50,crate:50,pallet:50}},   /* the shop's own storage (store) and its upgraded room for each material (cap): it belongs to the shop, nothing is stored globally */SHMAX=1000,SHQ={},SHINT=new Set(['logs','planks','fuel','ironbar','steelbar','glass','hitch','canister','crate','pallet']),SHP={coal:10,logs:20,planks:60,rock:10,iron:10,sand:15,gravel:15,ironbar:5,steelbar:15,glass:8,hitch:40,canister:13,crate:15,pallet:30},SHN={coal:'Coal',logs:'Logs',planks:'Planks',rock:'Rock',iron:'Iron ore',sand:'Sand',gravel:'Gravel',fuel:'Fuel',ironbar:'Iron bars',steelbar:'Steel bars',glass:'Glass',hitch:'Hitches',canister:'Canisters',crate:'Crates',pallet:'Pallets'},SHU={coal:' t',logs:'',planks:'',rock:' t',iron:' t',sand:' t',gravel:' t',fuel:' L',ironbar:'',steelbar:'',glass:'',hitch:'',canister:'',crate:'',pallet:''};
 const shPrice=k=>k==='fuel'?FUELP*.5:SHP[k],shFmt=(k,v)=>(SHINT.has(k)?Math.floor(v+1e-6):v.toFixed(1))+SHU[k];
 // the most that can be put in the number box of a material (what is stored, whole units for logs, planks and fuel), the amount the box says (the most when untouched), and what that sells for
@@ -762,7 +762,9 @@ function parkTrl(t){dropChain(t)}
 
 let note='',rigSig='';
 const flash=m=>{note=m;clearTimeout(flash.t);flash.t=setTimeout(()=>note='',2800)};
-let cash=900000;const money=c=>Math.abs(c-Math.round(c))<.005?String(Math.round(c)):c.toFixed(2);   // whole dollars, or cents when there are some
+// the amount in the bar: whole euros, and while it runs up or down at most 5 new numbers a second, so it can be read
+let CBT=0;function cashBar(){const n=performance.now(),t='€'+Math.floor(cash+.005),el=$('cash');if(el.textContent===t||n-CBT<200)return;CBT=n;el.textContent=t}
+let cash=900000;const money=c=>Math.abs(c-Math.round(c))<.005?String(Math.round(c)):c.toFixed(2);   // whole euros, or cents when there are some
 // ----- debug "Test" panel -----
 let bedCust=false;   // the bed type can only be changed in the garage while this test switch is on
 $('tcol').onchange=()=>{COLL=$('tcol').checked;$('tmsg').textContent='Collision: '+(COLL?'ON':'OFF')+'.'};
@@ -816,7 +818,7 @@ $('goal').onclick=()=>{toggleGoals();$('goal')._h=null};
 {const UN=[['Mine',MS,'mine',0],['Power plant',PS,'power plant',1],['Garage',GS,'garage',2],['Lumberyard',LS,'lumberyard',3],['Sawmill',SWS,'sawmill',4],['Quarry',QS,'quarry',7],['Iron mine',IRS,'iron mine',8],['Crusher',CRS,'crusher',9],['Factory',FCS,'factory',10],['Foundry',FNS,'foundry',11],['Shop',SS,'shop',5],['Fuel station',FS,'fuel',6]];$('ttu').innerHTML=UN.map((u,i)=>'<option value="'+i+'">'+u[0]+'</option>').join('');$('ttugo').onclick=()=>{const u=UN[+$('ttu').value];turnUnit(u[1],u[2],u[3],u[0])}}
 $('tbuild').onclick=()=>buildSites('all');
 function buildSites(which){const todo=SITES.filter(q=>!q.b.built&&(which==='all'||q.off===which));for(const q of todo){q.b.got=q.b.need;if(q.b.reqs)q.b.reqs.forEach(r=>r.got=r.need);q.b.built=true}$('tmsg').textContent=todo.length?'Built: '+todo.map(q=>q.off).join(' and ')+'.':'Nothing is under construction.';if(todo.length)flash(todo.map(q=>q.off).join(' and ')+(todo.length>1?' are':' is')+' built.')};   // finish every building that is still a site: what delivering the materials would do
-$('tset').onclick=()=>{const v=parseFloat($('tcash').value);if(isNaN(v))return $('tmsg').textContent='Enter a number.';cash=v;$('tmsg').textContent='Cash set to $'+Math.floor(v)+'.'};
+$('tset').onclick=()=>{const v=parseFloat($('tcash').value);if(isNaN(v))return $('tmsg').textContent='Enter a number.';cash=v;$('tmsg').textContent='Cash set to €'+Math.floor(v)+'.'};
 
 // the game starts with one vehicle: a flatbed pickup with the most powerful engine, in the garage lot (nose to the east gate) with the player beside it. Nothing else is owned
 // TEST START: at the quarry, with every site still under construction
@@ -866,7 +868,7 @@ const slotCost=()=>150*SLOTS.n,vCount=()=>Object.keys(veh).length,tCount=()=>Obj
 const bedTxt=(d,b)=>d===TKINDS.crane?'Telescopic crane, boom 5.4 to 18 units · 4 feet · lifts pallets, logs, items and forklift attachments':d.seats?d.seats.length+(d.seats.length>1?' seats':' seat')+(d.trunk?' · boot: '+d.trunk.n+' slots (an item or a crate each)':''):!d.cap?'No bed':b==='logs'?'Log bed'+(d.n==='Pickup'?' · 3 logs':''):b==='ramp'?'Ramp bed · carries '+(d.n==='Pickup'?'a forklift or an ATV':'a small car, a pickup, a forklift or an ATV'):b==='liquid'?'Liquid tank · '+d.cap*20+' L':b==='fuel'?'Fuel tank · '+d.cap*20+' L':b==='items'?'Item bed · 4 slots':b==='flat'?'Flatbed · '+d.flat+(d.flat>1?' places':' place')+' (a pallet, or 4 crates / items each)':'Cargo bed · '+d.cap+' t',tlTxt=d=>d.tl.length?'tows '+d.tl.map(c=>c==='dolly'?'a dolly':c+' trailers').join(', '):'cannot tow';   // what the shop and garage say about a vehicle
 const trInfo=d=>d.cap?(d.cargo==='logs'?'Log bed · '+d.cap+' logs':d.cargo==='fuel'?'Fuel tank · '+d.cap+' L':d.cargo==='liquid'?'Liquid tank · '+d.cap+' L':'Cargo bed · '+d.cap+' t')+' · '+d.cls+' trailer':d.cargo==='flat'?'Flatbed · '+d.places+(d.places>1?' places':' place')+': a pallet, or 4 crates / items each · '+d.cls+' trailer':d.cargo==='items'?'Item bed · 4 slots for items carried by hand · '+d.cls+' trailer':d.cargo==='ramp'?'Flat deck with a fold-down rear ramp (click the ramp) · '+d.cls+' trailer':'Converter dolly: lets a pickup or dump truck tow a semi trailer';
 const stat=e=>e.out?' · <i>out</i>':' · in garage';
-const sellVal=k=>Math.round((TKINDS[k]||TRL[k]).cost*.5),sellOf=e=>sellVal(e.kind)+(e.hitch?Math.round(ITEMSHOP.hitch.cost*.5):0)+(e.tank&&TANKS[e.tank]?Math.round(TANKS[e.tank].c*.5):0),sellNote=e=>e.hitch?' (incl. hitch $'+Math.round(ITEMSHOP.hitch.cost*.5)+')':'';   // a mounted hitch is sold with its vehicle or trailer, for half its price
+const sellVal=k=>Math.round((TKINDS[k]||TRL[k]).cost*.5),sellOf=e=>sellVal(e.kind)+(e.hitch?Math.round(ITEMSHOP.hitch.cost*.5):0)+(e.tank&&TANKS[e.tank]?Math.round(TANKS[e.tank].c*.5):0),sellNote=e=>e.hitch?' (incl. hitch €'+Math.round(ITEMSHOP.hitch.cost*.5)+')':'';   // a mounted hitch is sold with its vehicle or trailer, for half its price
 // loose items and pallets lying on the SELL / UNLOAD pad sell too, for half price; whatever is inside a crate or on a pallet counts (a canister's fuel at half the pump price)
 const IV={ironbar:5,steelbar:15,glass:8},itemVal=it=>it.type==='barx'?0:(it.type==='tank'?Math.round(TANKS[it.size].c*.5)+Math.round((it.fuel||0)*FUELP*.5):IV[it.type]!=null?IV[it.type]:Math.round(ITEMSHOP[it.type].cost*.5))+(it.items?it.items.reduce((a,x)=>a+(x?itemVal(x):0),0):0)+(it.type==='canister'?Math.round((it.fuel||0)*FUELP*.5):0);
 const palVal=p=>(p.planks==='bar'?Math.round(ITEMSHOP.barrier.cost*.5)*(p.bn||1):p.planks?SITEPAY.planks:Math.round(ITEMSHOP.pallet.cost*.5)*(p.st||1))+p.crates.reduce((a,c)=>a+(c?itemVal(c):0),0);
@@ -898,17 +900,17 @@ const PAL=['#c0392b','#2f6db5','#e07b1f','#3fae5a','#d8a21c','#7a52c7','#e8e8ea'
 function cfgView(){const isT=cfg.t=='t',d=isT?TRL[cfg.k]:TKINDS[cfg.k],bt=(a,k,t,on,st)=>`<button data-a='${a}' data-k='${k}'${on?" class='on'":''}${st?" style='"+st+"'":''}>${t}</button>`;
  let h=`<div class='tabs'>${bt('cback','',cfg.fs===7?'‹ Back to the crusher shop':cfg.fs===6?'‹ Back to the iron mine shop':cfg.fs===5?'‹ Back to the coal mine shop':cfg.fs===4?'‹ Back to the quarry shop':cfg.fs===3?'‹ Back to the sawmill shop':cfg.fs===2?'‹ Back to the lumberyard shop':cfg.fs?'‹ Back to the fuel station':'‹ Back to the shop')}</div>`;
  h+=`<div class='r'><img src='${icon(cfg.k,isT,cfg.col,cfg.bed,cfg.bcol,cfg.nose)}' alt=''><span><b>${isT?(cfg.fs?d.n:cfg.g=='dolly'?d.n:VARN[cfg.k]+' '+GNAME[cfg.g].toLowerCase()):d.n}</b><small>${isT?trInfo(d):bedTxt(d,cfg.bed)+' · '+'XS fuel tank, half full · '+tlTxt(d)}</small></span></div>`;
- if(!cfg.fs&&isT&&TGROUPS[cfg.g].length>1)h+=`<div class='r'><span><b>${cfg.g=='dolly'?'Axles':'Size'}</b><small>${cfg.g=='dolly'?'A dolly carries a semi trailer on its turntable, so a dump truck, a forklift or another semi trailer can tow it. The double-axle one is longer and steadier.':'Small trailers go behind any vehicle with a hitch, medium ones behind a dump truck or semi, semi trailers on a semi truck\'s saddle (or a dolly)'}</small></span></div><div class='tabs'>${TGROUPS[cfg.g].map(k=>bt('cvar',k,VARN[k]+' · $'+TRL[k].cost,cfg.k==k)).join('')}</div>`;
- if(!isT&&cfg.k!=='forklift'){const K=kdOf(cfg.k,cfg.eng,cfg.nose);h+=`<div class='r'><span><b>Engine</b><small>${hpOf(cfg.k,cfg.eng)} hp: top speed ${(K.vmax*KMH).toFixed(0)} km/h, pull ${K.acc.toFixed(1)}, uses ${(ECO[cfg.k]*K.burn/TKINDS[cfg.k].burn).toFixed(1)} L/100 km</small></span></div><div class='tabs'>${ENG.map((e,i)=>bt('ceng',i,hpOf(cfg.k,i)+' hp · $'+priceOf(cfg.k,i,cfg.nose,cfg.tank),(cfg.eng||0)==i)).join('')}</div>`}
+ if(!cfg.fs&&isT&&TGROUPS[cfg.g].length>1)h+=`<div class='r'><span><b>${cfg.g=='dolly'?'Axles':'Size'}</b><small>${cfg.g=='dolly'?'A dolly carries a semi trailer on its turntable, so a dump truck, a forklift or another semi trailer can tow it. The double-axle one is longer and steadier.':'Small trailers go behind any vehicle with a hitch, medium ones behind a dump truck or semi, semi trailers on a semi truck\'s saddle (or a dolly)'}</small></span></div><div class='tabs'>${TGROUPS[cfg.g].map(k=>bt('cvar',k,VARN[k]+' · €'+TRL[k].cost,cfg.k==k)).join('')}</div>`;
+ if(!isT&&cfg.k!=='forklift'){const K=kdOf(cfg.k,cfg.eng,cfg.nose);h+=`<div class='r'><span><b>Engine</b><small>${hpOf(cfg.k,cfg.eng)} hp: top speed ${(K.vmax*KMH).toFixed(0)} km/h, pull ${K.acc.toFixed(1)}, uses ${(ECO[cfg.k]*K.burn/TKINDS[cfg.k].burn).toFixed(1)} L/100 km</small></span></div><div class='tabs'>${ENG.map((e,i)=>bt('ceng',i,hpOf(cfg.k,i)+' hp · €'+priceOf(cfg.k,i,cfg.nose,cfg.tank),(cfg.eng||0)==i)).join('')}</div>`}
  if(!isT){const mx=TMAX[cfg.k]||'xl';h+=`<div class='r'><span><b>Fuel tank</b><small>Comes with an XS tank (5 L), half full. It takes a tank up to ${mx.toUpperCase()} (${TANKS[mx].L} L): buy a bigger one in the shop (Items) and click the vehicle with it in hand to swap it (the old tank comes off empty).</small></span></div>`}
- if(!isT&&hasNose(cfg.k))h+=`<div class='r'><span><b>Cab</b><small>Long nose: a bonnet ahead of the cab (${NOSE} units longer)</small></span></div><div class='tabs'>${bt('cnose',0,'Cab-over · $'+priceOf(cfg.k,cfg.eng,0,cfg.tank),!cfg.nose)}${bt('cnose',1,'Long nose · $'+priceOf(cfg.k,cfg.eng,1,cfg.tank),!!cfg.nose)}</div>`;
+ if(!isT&&hasNose(cfg.k))h+=`<div class='r'><span><b>Cab</b><small>Long nose: a bonnet ahead of the cab (${NOSE} units longer)</small></span></div><div class='tabs'>${bt('cnose',0,'Cab-over · €'+priceOf(cfg.k,cfg.eng,0,cfg.tank),!cfg.nose)}${bt('cnose',1,'Long nose · €'+priceOf(cfg.k,cfg.eng,1,cfg.tank),!!cfg.nose)}</div>`;
  if(!isT&&cfg.k=='dump')h+=`<div class='r'><span><b>Bed</b><small>Cargo bed: ${d.cap} t of cargo. Log bed: 6 logs. Flatbed: 2 pallets, or 8 crates / items. Liquid tank: ${d.cap*20} L of water, milk or another liquid. Ramp bed: carries a small car, a pickup, a forklift or an ATV.</small></span></div><div class='tabs'>${bt('cbed','coal','Cargo bed',cfg.bed=='coal')}${bt('cbed','logs','Log bed',cfg.bed=='logs')}${bt('cbed','flat','Flatbed',cfg.bed=='flat')}${bt('cbed','liquid','Liquid tank',cfg.bed=='liquid')}${bt('cbed','ramp','Ramp bed',cfg.bed=='ramp')}</div>`;
  if((!cfg.fs||cfg.fs===3)&&!isT&&cfg.k=='forklift')h+=`<div class='r'><span><b>Forks</b><small>Pallet forks lift pallets. The log claw grips one log at a time (C) and carries it across the front, so a vehicle can be loaded from its side.</small></span></div><div class='tabs'>${bt('cbed','','Pallet forks',!cfg.bed)}${bt('cbed','logs','Log claw',cfg.bed=='logs')}</div>`;
   if(!cfg.fs&&!isT&&cfg.k=='pickup')h+=`<div class='r'><span><b>Bed</b><small>Cargo bed: ${d.cap} t of cargo. Log bed: logs. Flatbed: a pallet, or 4 crates / items. Fuel tank: ${TKINDS.pickup.cap*20} L of fuel to carry. Liquid tank: ${TKINDS.pickup.cap*20} L of water, milk or another liquid. Ramp bed: carries a forklift or an ATV.</small></span></div><div class='tabs'>${bt('cbed','','Cargo bed',!cfg.bed)}${bt('cbed','logs','Log bed',cfg.bed=='logs')}${bt('cbed','flat','Flatbed',cfg.bed=='flat')}${bt('cbed','fuel','Fuel tank',cfg.bed=='fuel')}${bt('cbed','liquid','Liquid tank',cfg.bed=='liquid')}${bt('cbed','ramp','Ramp bed',cfg.bed=='ramp')}</div>`;
  if(!(isT&&cfg.g=='dolly')){const sw=(a,cur)=>`<div class='sw'>${PAL.map(c=>bt(a,c,'',0,'background:'+c+';border:2px solid '+((cur||PAL[0])==c?'#ffd166':'#fff4'))).join('')}</div>`;   /* red first: it is the standard colour */
   h+=`<div class='r'><span><b>${isT||d.seats?'Colour':'Truck colour'}</b></span></div>`+sw('ccol',cfg.col);
   if((!cfg.fs||cfg.fs>=2)&&!isT&&d.cap)h+=`<div class='r'><span><b>Bed colour</b><small>${cfg.bed=='fuel'||cfg.bed=='liquid'?'The tank':cfg.bed=='items'?'The item bed':'The bed'}</small></span></div>`+sw('cbcol',cfg.bcol)}
- return h+`<div class='r'><span><b>Price</b><small>${cfg.fs>=2?'Appears outside, in front of the doors of the building, ready to drive':cfg.fs?'Appears in the VEHICLES area outside, ready to drive':'Appears on the NEW PURCHASES pad, ready to drive'}</small></span><button data-a='buycfg'${cash<(isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank))?' disabled':''}>Buy $${isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank)}</button></div>`}
+ return h+`<div class='r'><span><b>Price</b><small>${cfg.fs>=2?'Appears outside, in front of the doors of the building, ready to drive':cfg.fs?'Appears in the VEHICLES area outside, ready to drive':'Appears on the NEW PURCHASES pad, ready to drive'}</small></span><button data-a='buycfg'${cash<(isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank))?' disabled':''}>Buy €${isT?d.cost:priceOf(cfg.k,cfg.eng,cfg.nose,cfg.tank)}</button></div>`}
 function custView(o){const isT=!(o.kind in TKINDS),d=isT?TRL[o.kind]:KOF(o),bt=(a,k,t,on,st)=>`<button data-a='${a}' data-k='${k}'${on?" class='on'":''}${st?" style='"+st+"'":''}>${t}</button>`,
   sw=(a,cur)=>`<div class='sw'>${PAL.map(c=>bt(a,c,'',0,'background:'+c+';border:2px solid '+((cur||PAL[0])==c?'#ffd166':'#fff4'))).join('')}</div>`;
  let h=`<div class='tabs'>${bt('cback2','','‹ Back to the list')}</div>`;
@@ -925,72 +927,72 @@ function renderGarage(){
  const tabs=(list,cur)=>`<div class="tabs">${list.map(([k,n])=>btn('tab',k,n,false,cur===k?'on':'')).join('')}</div>`;
  const row=(img,name,sub,right,dim)=>`<div class="r${dim?' dim':''}">${img?`<img src="${img}" alt="">`:''}<span><b>${name}</b><small>${sub}</small></span>${right||''}</div>`;
  const title=panelMode=='pctl'?cp().name+' · control desk':panelMode=='mctl'?cm().name+' · control desk':panelMode=='shop'?'Shop':panelMode=='fuel'?'Fuel station':panelMode=='lumber'?'Lumberyard shop':panelMode=='fac'?(facView==='ctl'?'Factory control panel':'Factory upgrades'):panelMode=='fnd'?(facView==='ctl'?'Foundry control panel':'Foundry upgrades'):panelMode=='saw'?'Sawmill shop':panelMode=='quarry'?'Quarry shop':panelMode=='mine'?'Coal mine shop':panelMode=='iron'?'Iron mine shop':panelMode=='crush'?'Crusher shop':panelMode=='crup'?'Crusher upgrades':panelMode=='mup'?'Coal mine upgrades':panelMode=='sup'?supB.name+' upgrades':panelMode=='yup'?(yupB===lumber?'Lumberyard upgrades':'Sawmill upgrades'):panelMode=='gup'?'Garage upgrades':'Garage',pcol=panelMode=='pctl'?BCOL['power plant']:panelMode=='shop'?BCOL.shop:panelMode=='fuel'?BCOL.fuel:panelMode=='lumber'?BCOL.lumberyard:panelMode=='fac'?BCOL.factory:panelMode=='fnd'?BCOL.foundry:panelMode=='saw'?BCOL.sawmill:panelMode=='quarry'?BCOL.quarry:panelMode=='mine'?BCOL.mine:panelMode=='iron'?BCOL['iron mine']:(panelMode=='crush'||panelMode=='crup')?BCOL.crusher:panelMode=='mup'?BCOL.mine:panelMode=='sup'?BCOL[supB.name.toLowerCase()]||BCOL.garage:panelMode=='yup'?(yupB===lumber?BCOL.lumberyard:BCOL.sawmill):BCOL.garage;$('gp').style.borderColor=pcol;
- let h=`<div class="gh"><b style="color:${pcol}">${title}</b><span>Cash <b>$${money(cash)}</b></span>${btn('close','','✕')}</div>`;
+ let h=`<div class="gh"><b style="color:${pcol}">${title}</b><span>Cash <b>€${money(cash)}</b></span>${btn('close','','✕')}</div>`;
   {const sn=panelMode=='yup'?(yupB===lumber?'lumberyard':'sawmill'):panelMode=='sup'&&supB?(supB===iron?'iron mine':supB===quarry?'quarry':null):panelMode=='crup'?'crusher':panelMode=='fac'?'factory':panelMode=='fnd'?'foundry':null;   // the building's state, as on its desk: the main lever on the room's back wall switches it
    if(sn&&RWK[sn]){const st=RWK[sn].st(),c=st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d',tx=st==='ok'?'Running':st==='low'?'On, but no power: '+pwWhy(sn):'Switched off';h+=row(null,'Status',deskLamp(c)+'<span style="color:'+c+'">'+tx+'</span><br><small style="opacity:.6">The main lever on the back wall switches it.</small>','')}}
 
  const SH5=({lumber:LSHELF,saw:SSHELF,quarry:QSHELF,mine:MSHELF,iron:ISHELF,crush:CSHELF})[panelMode];   // the shelf in the room of a site's shop: its Items tab sells a hitch, which lands there
  if(SH5&&!cfg){h+='<div class="r"><small>Items appear on the shelves in this room (by the door). Free slots: '+SH5.slots.filter(x=>!x).length+' / '+SH5.slots.length+'. Every vehicle comes without a hitch: mount one on the back of a truck or trailer to tow.</small></div>';
-  h+=row(itemIcon('hitch'),'Hitch',ITEMSHOP.hitch.info,btn('hbuy','hitch','Buy $'+ITEMSHOP.hitch.cost))}
+  h+=row(itemIcon('hitch'),'Hitch',ITEMSHOP.hitch.info,btn('hbuy','hitch','Buy €'+ITEMSHOP.hitch.cost))}
  else if(panelMode=='fuel'){
   if(cfg)h+=cfgView();else{h+=tabs([['veh','Vehicles'],['itm','Items']],ftab);
   if(ftab=='itm'){h+='<div class="r"><small>Items appear on the shelves in this room (west and east walls). Free slots: '+FSHELF.slots.filter(x=>!x).length+' / 10.</small></div>';
-   h+=row(itemIcon('canister'),'Canister',ITEMSHOP.canister.info,btn('fbuy','canister','Buy $'+ITEMSHOP.canister.cost))}
+   h+=row(itemIcon('canister'),'Canister',ITEMSHOP.canister.info,btn('fbuy','canister','Buy €'+ITEMSHOP.canister.cost))}
   else{h+='<div class="r"><small>Tank vehicles and trailers are sold only here. They appear in the VEHICLES area outside, east of this building.</small></div>';
-   h+=row(icon('pickup',0,myCol(),'fuel'),'Pickup (fuel tank)','Fuel tank · '+TKINDS.pickup.cap*20+' L · from $'+priceOf('pickup',0,0),btn('fcfg','pickup','Configure'));
-   h+=row(icon('pf',1,myCol()),TRL.pf.n,trInfo(TRL.pf)+' · from $'+TRL.pf.cost,btn('fcfg','pf','Configure'))}}
+   h+=row(icon('pickup',0,myCol(),'fuel'),'Pickup (fuel tank)','Fuel tank · '+TKINDS.pickup.cap*20+' L · from €'+priceOf('pickup',0,0),btn('fcfg','pickup','Configure'));
+   h+=row(icon('pf',1,myCol()),TRL.pf.n,trInfo(TRL.pf)+' · from €'+TRL.pf.cost,btn('fcfg','pf','Configure'))}}
  }else if(panelMode=='lumber'){
   if(cfg)h+=cfgView();else{{h+='<div class="r"><small>Log-bed vehicles, trailers and log forklifts are sold here. They appear outside, in front of the doors of this building.</small></div>';
-   h+=row(icon('pickup',0,myCol(),'logs'),'Pickup (log bed)',bedTxt(TKINDS.pickup,'logs')+' · from $'+priceOf('pickup',0,0),btn('lcfg','pickup','Configure'));
-   h+=row(icon('pl',1,myCol()),TRL.pl.n,trInfo(TRL.pl)+' · from $'+TRL.pl.cost,btn('lcfg','pl','Configure'));
-   h+=row(icon('forklift',0,myCol(),'logs'),'Forklift (log claw)','A claw instead of forks: grips one log at a time and loads it onto a vehicle from the side, the sawmill yard or the ground · from $'+TKINDS.forklift.cost,btn('lcfg','forklift','Configure'))}}
+   h+=row(icon('pickup',0,myCol(),'logs'),'Pickup (log bed)',bedTxt(TKINDS.pickup,'logs')+' · from €'+priceOf('pickup',0,0),btn('lcfg','pickup','Configure'));
+   h+=row(icon('pl',1,myCol()),TRL.pl.n,trInfo(TRL.pl)+' · from €'+TRL.pl.cost,btn('lcfg','pl','Configure'));
+   h+=row(icon('forklift',0,myCol(),'logs'),'Forklift (log claw)','A claw instead of forks: grips one log at a time and loads it onto a vehicle from the side, the sawmill yard or the ground · from €'+TKINDS.forklift.cost,btn('lcfg','forklift','Configure'))}}
  }else if(panelMode=='mine'){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Small cargo vehicles for hauling coal are sold here. They appear in the VEHICLES area outside, east of this building.</small></div>';
-   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from $'+priceOf('pickup',0,0),btn('mcfg','pickup','Configure'));
-   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from $'+TRL.pc.cost,btn('mcfg','pc','Configure'))}
+   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from €'+priceOf('pickup',0,0),btn('mcfg','pickup','Configure'));
+   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from €'+TRL.pc.cost,btn('mcfg','pc','Configure'))}
  }else if(panelMode=='yup'){const b=yupB,L=b.ylvl|0,lg=b===lumber,nm=lg?'Log station':'Plank area';
   h+='<div class=\'r\'><small>'+(lg?'The log station is where the lumberyard puts its logs.':'The plank area is where the sawmill puts its plank bundles.')+' It is 14 tiles wide and grows along the back yard.</small></div>';
-  h+=row(null,nm,(YARDH[L]/S)+' x 14 tiles · '+(lg?Math.floor(YARDH[L]/S):Math.floor(YARDH[L]/40))*7+' places · stage '+(L+1)+' of 3'+(L>=2?' (max)':''),L>=2?'':btn('yu','x','Grow to '+YARDH[L+1]/S+' x 14 · $'+YARDC[L+1]));
-  if(!lg)h+=row(null,'Log storage','Holds '+b.cap+' logs · level '+(b.lvl+1)+(b.lvl>=MAXLVL?' (max)':''),b.lvl>=MAXLVL?'':btn('su','x','Upgrade $'+upCost(b)))
+  h+=row(null,nm,(YARDH[L]/S)+' x 14 tiles · '+(lg?Math.floor(YARDH[L]/S):Math.floor(YARDH[L]/40))*7+' places · stage '+(L+1)+' of 3'+(L>=2?' (max)':''),L>=2?'':btn('yu','x','Grow to '+YARDH[L+1]/S+' x 14 · €'+YARDC[L+1]));
+  if(!lg)h+=row(null,'Log storage','Holds '+b.cap+' logs · level '+(b.lvl+1)+(b.lvl>=MAXLVL?' (max)':''),b.lvl>=MAXLVL?'':btn('su','x','Upgrade €'+upCost(b)))
  }else if(panelMode=='pctl'){const plant=cp(),q=powSp(plant),f=Math.max(0,Math.min(1,plant.stock/plant.cap));
   h+=`<div class='r'><span><b>${cgImg('coal',20)}Coal</b><small>${plant.stock.toFixed(1)} / ${plant.cap} t in store</small></span></div><div style="height:9px;border-radius:5px;background:#0f171e;margin:-2px 10px 10px;overflow:hidden"><div style="height:100%;width:${(f*100).toFixed(1)}%;background:#f2b134"></div></div>`;
   {const st=RWK[plant.id].st(),c=st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d';h+=row(null,'Status',deskLamp(c)+'<span style="color:'+c+'">'+(st==='ok'?'Running':st==='low'?'On, but no coal to burn':'Switched off: no coal is burnt, no power is given')+'</span> · '+`<span style="color:${q[1]}">${q[0]}</span>`+'<br><small style="opacity:.6">The main lever on the back wall switches it.</small>','')}
   h+=`<div class='r'><small>Power goes to the yards that touch this plant’s wall. A shared pillar at a corner needs that corner’s switch, one along a wall needs both corner switches of that wall. <b style="color:#3fdc6e">green</b> needs no power now, <b style="color:#ffa31a">orange</b> is using power, <b style="color:#ff4d3d">red</b> has no power, grey is not built.</small></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:0 10px 10px">`+pwSt(plant).map(([n,c,w])=>`<span style="font-size:13px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:6px;vertical-align:-1px"></span>${n}${w?`<br><small style="opacity:.65">${w}</small>`:''}</span>`).join('')+(pwSt(plant).length?'':'<small style="opacity:.65">No yard that needs power touches this plant.</small>')+'</div>';
-  h+=row(null,'Upgrade storage','Holds '+plant.cap+' t · level '+(plant.lvl+1)+(plant.lvl>=MAXLVL?' (max)':''),plant.lvl>=MAXLVL?'':btn('sst','','Upgrade $'+upCost(plant),cash<upCost(plant)))
+  h+=row(null,'Upgrade storage','Holds '+plant.cap+' t · level '+(plant.lvl+1)+(plant.lvl>=MAXLVL?' (max)':''),plant.lvl>=MAXLVL?'':btn('sst','','Upgrade €'+upCost(plant),cash<upCost(plant)))
  }else if(panelMode=='mctl'){const mine=cm(),f=Math.max(0,Math.min(1,mine.stock/mine.cap)),st=rwkMine(mine).st();
   h+=`<div class='r'><span><b>${cgImg('coal',20)}Coal</b><small>${mine.stock.toFixed(1)} / ${mine.cap} t in store · regrows ${mine.rate.toFixed(1)} t per second</small></span></div><div style="height:9px;border-radius:5px;background:#0f171e;margin:-2px 10px 10px;overflow:hidden"><div style="height:100%;width:${(f*100).toFixed(1)}%;background:#f2b134"></div></div>`;
   h+=row(null,'Status',deskLamp(st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d')+`<span style="color:${st==='ok'?'#3fdc6e':st==='low'?'#ffa31a':'#ff4d3d'}">${st==='ok'?'Digging':st==='low'?'On: the store is full':'Switched off: no coal is dug'}</span><br><small style="opacity:.6">The main switch on the back wall switches it.</small>`,'');
-  h+=row(null,'Upgrade storage','Holds '+mine.cap+' t · level '+(mine.lvl+1)+(mine.lvl>=MAXLVL?' (max)':''),mine.lvl>=MAXLVL?'':btn('mst','','Upgrade $'+upCost(mine),cash<upCost(mine)));
-  h+=row(null,'Upgrade spawn rate','Regrows '+mine.rate.toFixed(1)+' t per second · level '+(mine.rlvl+1)+(mine.rlvl>=MAXLVL?' (max)':''),mine.rlvl>=MAXLVL?'':btn('mrt','','Upgrade $'+upCost({lvl:mine.rlvl}),cash<upCost({lvl:mine.rlvl})));
+  h+=row(null,'Upgrade storage','Holds '+mine.cap+' t · level '+(mine.lvl+1)+(mine.lvl>=MAXLVL?' (max)':''),mine.lvl>=MAXLVL?'':btn('mst','','Upgrade €'+upCost(mine),cash<upCost(mine)));
+  h+=row(null,'Upgrade spawn rate','Regrows '+mine.rate.toFixed(1)+' t per second · level '+(mine.rlvl+1)+(mine.rlvl>=MAXLVL?' (max)':''),mine.rlvl>=MAXLVL?'':btn('mrt','','Upgrade €'+upCost({lvl:mine.rlvl}),cash<upCost({lvl:mine.rlvl})));
   h+='<div class="r"><small>This mine is <b>'+tpId(mineOff(mine))+'</b> (type /tp '+tpId(mineOff(mine))+' in the chat to come to its door).</small></div>';h+='<div class="r"><small><b>The coal pipe</b> behind the building</small></div>';h+=row(null,'Show icon on pipe','',swtch('mpi',mine.pi));h+=row(null,'Show text on pipe','',swtch('mpl',mine.pl))
  }else if(panelMode=='sup'){const b=supB;   // a building with one upgrade so far: its storage
   h+='<div class=\'r\'><small>Choose what to upgrade. Each storage level adds '+STEP+' '+b.unit+' of room.</small></div>';
-  h+=row(null,'Upgrade storage','Holds '+b.cap+' '+b.unit+' · level '+(b.lvl+1)+(b.lvl>=MAXLVL?' (max)':''),b.lvl>=MAXLVL?'':btn('sst','','Upgrade $'+upCost(b),cash<upCost(b)))
+  h+=row(null,'Upgrade storage','Holds '+b.cap+' '+b.unit+' · level '+(b.lvl+1)+(b.lvl>=MAXLVL?' (max)':''),b.lvl>=MAXLVL?'':btn('sst','','Upgrade €'+upCost(b),cash<upCost(b)))
  }else if(panelMode=='mup'){const mine=cm();
   h+='<div class=\'r\'><small>Upgrade the coal mine: a bigger store, or faster regrowing. Each storage level adds '+STEP+' t of room; each spawn-rate level adds '+MRSTEP+' t per second.</small></div>';
-  h+=row(null,'Upgrade storage','Holds '+mine.cap+' t · level '+(mine.lvl+1)+(mine.lvl>=MAXLVL?' (max)':''),mine.lvl>=MAXLVL?'':btn('mst','','Upgrade $'+upCost(mine),cash<upCost(mine)));
-  h+=row(null,'Upgrade spawn rate','Regrows '+mine.rate.toFixed(1)+' t per second · level '+(mine.rlvl+1)+(mine.rlvl>=MAXLVL?' (max)':''),mine.rlvl>=MAXLVL?'':btn('mrt','','Upgrade $'+upCost({lvl:mine.rlvl}),cash<upCost({lvl:mine.rlvl})))
+  h+=row(null,'Upgrade storage','Holds '+mine.cap+' t · level '+(mine.lvl+1)+(mine.lvl>=MAXLVL?' (max)':''),mine.lvl>=MAXLVL?'':btn('mst','','Upgrade €'+upCost(mine),cash<upCost(mine)));
+  h+=row(null,'Upgrade spawn rate','Regrows '+mine.rate.toFixed(1)+' t per second · level '+(mine.rlvl+1)+(mine.rlvl>=MAXLVL?' (max)':''),mine.rlvl>=MAXLVL?'':btn('mrt','','Upgrade €'+upCost({lvl:mine.rlvl}),cash<upCost({lvl:mine.rlvl})))
  }else if(panelMode=='crup'){
   h+='<div class=\'r\'><small>Choose what to upgrade. Each level adds '+STEP+' t of room.</small></div>';
-  for(const[k,nm,cp,L]of[['rock','Rock storage',crusher.fcap,crusher.flvl],['sand','Sand & gravel storage (each)',crusher.cap,crusher.lvl]])h+=row(null,nm,'Holds '+cp+' t · level '+(L+1)+(L>=MAXLVL?' (max)':''),L>=MAXLVL?'':btn('cup',k,'Upgrade $'+upCost({lvl:L})))
+  for(const[k,nm,cp,L]of[['rock','Rock storage',crusher.fcap,crusher.flvl],['sand','Sand & gravel storage (each)',crusher.cap,crusher.lvl]])h+=row(null,nm,'Holds '+cp+' t · level '+(L+1)+(L>=MAXLVL?' (max)':''),L>=MAXLVL?'':btn('cup',k,'Upgrade €'+upCost({lvl:L})))
  }else if(panelMode=='crush'){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Small cargo vehicles for hauling sand are sold here. They appear on the sand loading pad outside.</small></div>';
-   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from $'+priceOf('pickup',0,0),btn('ccfg','pickup','Configure'));
-   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from $'+TRL.pc.cost,btn('ccfg','pc','Configure'))}
+   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from €'+priceOf('pickup',0,0),btn('ccfg','pickup','Configure'));
+   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from €'+TRL.pc.cost,btn('ccfg','pc','Configure'))}
  }else if(panelMode=='iron'){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Small cargo vehicles for hauling iron ore are sold here. They appear outside, in front of the doors of this building.</small></div>';
-   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from $'+priceOf('pickup',0,0),btn('icfg','pickup','Configure'));
-   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from $'+TRL.pc.cost,btn('icfg','pc','Configure'))}
+   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from €'+priceOf('pickup',0,0),btn('icfg','pickup','Configure'));
+   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from €'+TRL.pc.cost,btn('icfg','pc','Configure'))}
  }else if(panelMode=='quarry'){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Small cargo vehicles for hauling rock are sold here. They appear on the sand loading pad outside.</small></div>';
-   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from $'+priceOf('pickup',0,0),btn('qcfg','pickup','Configure'));
-   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from $'+TRL.pc.cost,btn('qcfg','pc','Configure'))}
+   h+=row(icon('pickup',0,myCol(),null),'Pickup (cargo bed)',bedTxt(TKINDS.pickup,null)+' · from €'+priceOf('pickup',0,0),btn('qcfg','pickup','Configure'));
+   h+=row(icon('pc',1,myCol()),TRL.pc.n,trInfo(TRL.pc)+' · from €'+TRL.pc.cost,btn('qcfg','pc','Configure'))}
  }else if(panelMode=='fac'){
   const f=factory,L=f.ylvl|0,ctl=facView==='ctl',IS='padding:6px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit';
   h+='<div class="tabs">'+btn('fview','ctl','Control panel',false,ctl?'on':'')+btn('fview','up','Upgrades',false,!ctl?'on':'')+'</div>';
-  const ur=(o,w,key,name,info)=>{const d=UPX[key],lv=o[d.lvl],c=d.base*(lv+1);return row(key==='pall'?itemIcon('pallet'):key==='crat'?itemIcon('crate'):key==='steel'?itemIcon('steelbar'):key==='firon'?itemIcon('ironbar'):'',name,info,lv>=MAXLVL?btn('','','Fully upgraded',true):btn('upx',w+'.'+key,'Upgrade '+c+'$',cash<c))};
+  const ur=(o,w,key,name,info)=>{const d=UPX[key],lv=o[d.lvl],c=d.base*(lv+1);return row(key==='pall'?itemIcon('pallet'):key==='crat'?itemIcon('crate'):key==='steel'?itemIcon('steelbar'):key==='firon'?itemIcon('ironbar'):'',name,info,lv>=MAXLVL?btn('','','Fully upgraded',true):btn('upx',w+'.'+key,'Upgrade '+c+'€',cash<c))};
   if(!ctl){h+='<div class="r"><small>Make the ITEMS pad (where made pallets and crates lie) and the storages bigger.</small></div>';
-   h+=row('','Items pad',(FIL0.h/S)+' x 14 tiles · '+Math.floor(FIL0.h/40)*Math.floor(FIL0.w/40)+' places',L>=2?btn('','','Fully grown',true):btn('fyu','','Grow '+YARDC[L+1]+'$',cash<YARDC[L+1]));
+   h+=row('','Items pad',(FIL0.h/S)+' x 14 tiles · '+Math.floor(FIL0.h/40)*Math.floor(FIL0.w/40)+' places',L>=2?btn('','','Fully grown',true):btn('fyu','','Grow '+YARDC[L+1]+'€',cash<YARDC[L+1]));
    h+=ur(f,'f','planks','Planks storage',Math.floor(f.stock)+' / '+f.cap+' planks · +'+UPX.planks.step+' per upgrade');
    h+=ur(f,'f','steel','Steel bars storage',Math.floor(f.steel)+' / '+f.scap+' bars · +'+UPX.steel.step+' per upgrade');
    h+=ur(f,'f','firon','Iron bars storage',Math.floor(f.iron)+' / '+f.icap+' bars · +'+UPX.firon.step+' per upgrade');
@@ -1002,8 +1004,8 @@ function renderGarage(){
     const np=PALS.filter(q=>!q.planks&&!q.fk&&!q.on&&facCells().some(([x,y])=>Math.hypot(q.x-x,q.y-y)<38)).length,nc=GI.filter(it=>it.type==='crate'&&facCells().some(([x,y])=>Math.abs(it.x-x)<=20&&Math.abs(it.y-y)<=20)).length;
     h+='<div class="r"><small>Set a pallet of planks, steel bars, iron bars (loose, or in crates on pallets), empty pallets and empty crates down on the CARGO IN pad and the factory takes them in; bars are paid, the crates and pallets are reused. Crates it makes land on pallets (it takes pallets from its stock when none on the items pad has room) and any item it makes goes in crates on pallets: it stops and says what is missing. Each pallet or crate burns 1 kg of the power plant\'s coal.</small></div>';
     h+=row('','Planks','Stock '+Math.floor(f.stock)+' / '+f.cap+' · a pallet or a crate takes 1 plank and 1 kg of the plant\'s coal','');
-    h+=row(itemIcon('steelbar'),'Steel bars',Math.floor(f.steel)+' / '+f.scap+' · a hitch takes 1 (set them down on the CARGO IN pad: paid $'+IV.steelbar+' each)','');
-    h+=row(itemIcon('ironbar'),'Iron bars',Math.floor(f.iron)+' / '+f.icap+' · a canister takes 1 (same pad: paid $'+IV.ironbar+' each)','');
+    h+=row(itemIcon('steelbar'),'Steel bars',Math.floor(f.steel)+' / '+f.scap+' · a hitch takes 1 (set them down on the CARGO IN pad: paid €'+IV.steelbar+' each)','');
+    h+=row(itemIcon('ironbar'),'Iron bars',Math.floor(f.iron)+' / '+f.icap+' · a canister takes 1 (same pad: paid €'+IV.ironbar+' each)','');
     h+=row(itemIcon('pallet'),'Empty pallets',f.pall+' / '+f.pcap+' (set them down on the CARGO IN pad)','');
     h+=row(itemIcon('crate'),'Empty crates',f.crat+' / '+f.kcap+' (same pad)','');
     h+=row('','On the items pad',np+' pallets · '+nc+' crates · '+facFree().length+' free places','')}
@@ -1015,9 +1017,9 @@ function renderGarage(){
  }else if(panelMode=='fnd'){
   const f=foundry,L=f.ylvl|0,ctl=facView==='ctl',IS='padding:6px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit';
   h+='<div class="tabs">'+btn('fview','ctl','Control panel',false,ctl?'on':'')+btn('fview','up','Upgrades',false,!ctl?'on':'')+'</div>';
-  const ur=(o,w,key,name,info)=>{const d=UPX[key],lv=o[d.lvl],c=d.base*(lv+1);return row(key==='pall'?itemIcon('pallet'):key==='crat'?itemIcon('crate'):key==='steel'?itemIcon('steelbar'):key==='firon'?itemIcon('ironbar'):'',name,info,lv>=MAXLVL?btn('','','Fully upgraded',true):btn('upx',w+'.'+key,'Upgrade '+c+'$',cash<c))};
+  const ur=(o,w,key,name,info)=>{const d=UPX[key],lv=o[d.lvl],c=d.base*(lv+1);return row(key==='pall'?itemIcon('pallet'):key==='crat'?itemIcon('crate'):key==='steel'?itemIcon('steelbar'):key==='firon'?itemIcon('ironbar'):'',name,info,lv>=MAXLVL?btn('','','Fully upgraded',true):btn('upx',w+'.'+key,'Upgrade '+c+'€',cash<c))};
   if(!ctl){h+='<div class="r"><small>Make the ITEMS pad (where pallets of crates of iron and steel lie) and the storages bigger.</small></div>';
-   h+=row('','Items pad',(FNIL0.h/S)+' x 14 tiles · '+Math.floor(FNIL0.h/40)*Math.floor(FNIL0.w/40)+' places',L>=2?btn('','','Fully grown',true):btn('nyu','','Grow '+YARDC[L+1]+'$',cash<YARDC[L+1]));
+   h+=row('','Items pad',(FNIL0.h/S)+' x 14 tiles · '+Math.floor(FNIL0.h/40)*Math.floor(FNIL0.w/40)+' places',L>=2?btn('','','Fully grown',true):btn('nyu','','Grow '+YARDC[L+1]+'€',cash<YARDC[L+1]));
    h+=ur(f,'n','ore','Iron ore storage',f.ore.toFixed(1)+' / '+f.cap+' t · +'+UPX.ore.step+' t per upgrade');
    h+=ur(f,'n','coal','Coal storage',f.carb.toFixed(2)+' / '+f.ccap+' t · +'+UPX.coal.step+' t per upgrade');
    h+=ur(f,'n','sand','Sand storage',f.sand.toFixed(2)+' / '+f.sacap+' t · +'+UPX.sand.step+' t per upgrade');
@@ -1027,7 +1029,7 @@ function renderGarage(){
    h+=`<div class="tabs">${btn('tab','job','Job',false,facTab!=='sto'?'on':'')}${btn('tab','sto','Storage',false,facTab==='sto'?'on':'')}</div>`;
    if(facTab==='sto'){
     const pp=fnPals(),np=pp.length,nc=pp.reduce((a,q)=>a+q.crates.filter(Boolean).length,0),ni=pp.reduce((a,q)=>a+q.crates.reduce((b,c)=>b+(c?c.items.filter(x=>x&&x.type==='ironbar').length:0),0),0),ns=pp.reduce((a,q)=>a+q.crates.reduce((b,c)=>b+(c?c.items.filter(x=>x&&x.type==='steelbar').length:0),0),0);
-    h+='<div class="r"><small>Unload iron ore, coal and sand on the CARGO IN pad (hold Space). Everything delivered is paid except pallets and crates, which are reusable: ore and coal $10 a ton, sand $15 a ton, iron $5 each. Set empty pallets, empty crates and iron (loose, or in crates on pallets) down on it too: the foundry takes them in and reuses the crates and pallets. Every item burns 1 kg of the power plant\'s coal.</small></div>';
+    h+='<div class="r"><small>Unload iron ore, coal and sand on the CARGO IN pad (hold Space). Everything delivered is paid except pallets and crates, which are reusable: ore and coal €10 a ton, sand €15 a ton, iron €5 each. Set empty pallets, empty crates and iron (loose, or in crates on pallets) down on it too: the foundry takes them in and reuses the crates and pallets. Every item burns 1 kg of the power plant\'s coal.</small></div>';
     h+=row('','Iron ore',f.ore.toFixed(1)+' / '+f.cap+' t · an iron takes 0.1 t','');
     h+=row('','Coal (for steel)',f.carb.toFixed(3)+' / '+f.ccap+' t · a steel takes 1 kg','');
     h+=row('','Sand (for glass)',f.sand.toFixed(3)+' / '+f.sacap+' t · a glass takes 1 kg','');
@@ -1042,9 +1044,9 @@ function renderGarage(){
      +'<div style="flex:1;min-width:0"><div style="padding:6px 0">'+btn('fcancel','','Clear queue',!f.q.length)+'</div><div class="r"><small><b>Add a job</b></small></div><div style="display:flex;flex-direction:column;gap:8px;padding:6px 0">'+['i','s','g'].map(k=>row(itemIcon(FNI[k]),kn(k),k==='s'?'1 iron + 1 kg coal':k==='g'?'1 kg sand':'0.1 t iron ore','<span style="flex:none!important;display:flex;gap:6px;align-items:center"><input type="number" class="fq" min="1" max="999" step="1" value="'+facAmt+'" style="width:50px;min-width:0;'+IS+'">'+btn('nadd',k,'Add')+'</span>')).join('')+'</div></div></div>'}}
  }else if(panelMode=='saw'){
   if(cfg)h+=cfgView();else{h+='<div class=\'r\'><small>Flatbed vehicles, trailers and forklifts are sold here. They appear outside, in front of the doors of this building.</small></div>';
-   h+=row(icon('pickup',0,myCol(),'flat'),'Pickup (flatbed)',bedTxt(TKINDS.pickup,'flat')+' · from $'+priceOf('pickup',0,0),btn('scfg','pickup','Configure'));
-   h+=row(icon('pt',1,myCol()),TRL.pt.n,trInfo(TRL.pt)+' · from $'+TRL.pt.cost,btn('scfg','pt','Configure'));
-   h+=row(icon('forklift',0,myCol()),'Forklift (pallet forks or log claw)','Pallet forks lift pallets; the log claw grips one log at a time and loads a vehicle from the side · from $'+TKINDS.forklift.cost,btn('scfg','forklift','Configure'))}
+   h+=row(icon('pickup',0,myCol(),'flat'),'Pickup (flatbed)',bedTxt(TKINDS.pickup,'flat')+' · from €'+priceOf('pickup',0,0),btn('scfg','pickup','Configure'));
+   h+=row(icon('pt',1,myCol()),TRL.pt.n,trInfo(TRL.pt)+' · from €'+TRL.pt.cost,btn('scfg','pt','Configure'));
+   h+=row(icon('forklift',0,myCol()),'Forklift (pallet forks or log claw)','Pallet forks lift pallets; the log claw grips one log at a time and loads a vehicle from the side · from €'+TKINDS.forklift.cost,btn('scfg','forklift','Configure'))}
  }else if(panelMode=='shop'){
   const sv=Object.values(veh).filter(v=>vInS(v)&&!v.starter),st=Object.values(trl).filter(tInS),si=GI.map((x,i)=>[x,i]).filter(q=>itemInS(q[0])),sp=PALS.map((x,i)=>[x,i]).filter(q=>palInS(q[0])),nSell=sv.length+st.length+si.length+sp.length;
   if(stab==='sto')stab='veh';
@@ -1052,38 +1054,38 @@ function renderGarage(){
   if(cfg){}else if(false){
    h+='<div class="r"><small>Cargo unloaded on the SELL / UNLOAD pad (park on it and hold Space) is kept here. A pallet of planks set down on the pad goes in too, and so do iron bars, steel bars, glass, hitches and canisters (a canister is stored empty: its fuel is lost) and empty crates and pallets. Loose, or in crates on pallets: once emptied, the crates and pallets go in too. Each kind starts at 50 and can be upgraded in steps of 50. Type how much to sell: more than is stored sells everything.</small></div>';
    let tot=0;for(const k in shopB.store){const v=shopB.store[k],q=shQty(k),mx=shMax(k),up=shopB.cap[k]*2;tot+=shVal(k,v);
-    h+=row(ITEMS[k]?itemIcon(ITEMS[k].n&&k):'',SHN[k],shFmt(k,v)+' / '+shopB.cap[k]+SHU[k]+' stored · $'+shPrice(k)+(k==='logs'||ITEMS[k]?' each':k==='fuel'?' per litre':k==='planks'?' per pallet':' per ton'),
-     '<span style="display:flex;gap:6px;align-items:center"><input type="number" class="shq" data-sh="'+k+'" min="0" max="'+mx+'" step="'+(SHINT.has(k)?1:.1)+'" value="'+(SHINT.has(k)?Math.floor(q+1e-6):Math.round(q*10)/10)+'" style="width:62px;padding:6px 4px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit"'+(v<.05?' disabled':'')+'>'+btn('shsell',k,'Sell $'+Math.round(shVal(k,q)),v<.05)+btn('shup',k,shopB.cap[k]>=SHMAX?'Max':'Upgrade '+up+'$',shopB.cap[k]>=SHMAX||cash<up)+'</span>')}
-   h+=row('','Everything','All the stored cargo',btn('shsell','all','Sell all $'+Math.round(tot),tot<=0),0)
+    h+=row(ITEMS[k]?itemIcon(ITEMS[k].n&&k):'',SHN[k],shFmt(k,v)+' / '+shopB.cap[k]+SHU[k]+' stored · €'+shPrice(k)+(k==='logs'||ITEMS[k]?' each':k==='fuel'?' per litre':k==='planks'?' per pallet':' per ton'),
+     '<span style="display:flex;gap:6px;align-items:center"><input type="number" class="shq" data-sh="'+k+'" min="0" max="'+mx+'" step="'+(SHINT.has(k)?1:.1)+'" value="'+(SHINT.has(k)?Math.floor(q+1e-6):Math.round(q*10)/10)+'" style="width:62px;padding:6px 4px;background:#14161a;color:#fff;border:1px solid #4a5560;border-radius:6px;font:inherit"'+(v<.05?' disabled':'')+'>'+btn('shsell',k,'Sell €'+Math.round(shVal(k,q)),v<.05)+btn('shup',k,shopB.cap[k]>=SHMAX?'Max':'Upgrade '+up+'€',shopB.cap[k]>=SHMAX||cash<up)+'</span>')}
+   h+=row('','Everything','All the stored cargo',btn('shsell','all','Sell all €'+Math.round(tot),tot<=0),0)
   }else if(stab=='sell'){
    h+='<div class="r"><small>Sells whatever is fully on the pink SELL pad (the first pad counterclockwise from the gate): vehicles, trailers, pallets and loose items, for half their price (what is in a crate or on a pallet is paid too). A sold truck leaves its trailer behind (and is sold with its hitch and fuel tank). Your starting pickup cannot be sold. Whatever stands on the blue NEW PURCHASES pad cannot be sold. Loose cargo (coal, rock, logs, planks…) is not bought here.</small></div>';
-   h+=sv.map(x=>row(icon(x.kind,0,x.color,x.bed,x.bedColor),x.name,'Sell value $'+sellOf(x)+sellNote(x),btn('sellv',x.id,'Sell $'+sellOf(x)))).join('')+st.map(x=>row(icon(x.kind,1,x.color),x.name,'Sell value $'+sellOf(x)+sellNote(x),btn('sellt',x.id,'Sell $'+sellOf(x)))).join('')+sp.map(q=>row(itemIcon('pallet'),'Pallet ('+q[0].crates.filter(Boolean).length+'/9 crates)','Sell value $'+palVal(q[0]),btn('sellp',q[1],'Sell $'+palVal(q[0])))).join('')+si.map(q=>row(itemIcon(q[0].type),itemName(q[0]),'Sell value $'+itemVal(q[0]),btn('selli',q[1],'Sell $'+itemVal(q[0])))).join('');
+   h+=sv.map(x=>row(icon(x.kind,0,x.color,x.bed,x.bedColor),x.name,'Sell value €'+sellOf(x)+sellNote(x),btn('sellv',x.id,'Sell €'+sellOf(x)))).join('')+st.map(x=>row(icon(x.kind,1,x.color),x.name,'Sell value €'+sellOf(x)+sellNote(x),btn('sellt',x.id,'Sell €'+sellOf(x)))).join('')+sp.map(q=>row(itemIcon('pallet'),'Pallet ('+q[0].crates.filter(Boolean).length+'/9 crates)','Sell value €'+palVal(q[0]),btn('sellp',q[1],'Sell €'+palVal(q[0])))).join('')+si.map(q=>row(itemIcon(q[0].type),itemName(q[0]),'Sell value €'+itemVal(q[0]),btn('selli',q[1],'Sell €'+itemVal(q[0])))).join('');
    if(!nSell)h+='<div class="r"><small>Nothing is fully on the SELL pad. Drive a vehicle or trailer, or set a pallet or an item, inside the pink rectangle.</small></div>';
   }else if(stab=='itm'){
    h+='<div class="r"><small>Items appear in a free slot of the shelf inside the shop (right side, front room). Take them with a click, then mount them on a truck outside.</small></div>';
    const fr=PALLET.slots.filter(x=>!x).length;
-   h+=Object.entries(ITEMSHOP).map(([k,d])=>row(itemIcon(k),d.n,d.info+(d.lot?'':' · shelf slots free: '+fr+'/'+PALLET.slots.length),btn('buyi',k,'Buy $'+d.cost))).join('');
-   {const T0=TANKS[tankSel];h+=row(itemIcon('tank:'+tankSel),'Fuel tank '+tankSel.toUpperCase(),T0.L+' L, sold empty. Hold it and click a vehicle to mount it (the tank already on it comes off into your hand, empty). Biggest each takes: ATV and forklift S, car and pickup M, mini-bus L, dump truck and semi XL · shelf slots free: '+fr+'/10',btn('buyi','tank:'+tankSel,'Buy $'+T0.c));
-    h+='<div class="tabs" style="margin:-4px 0 8px">'+TORD.map(t=>'<button data-a="tsel" data-k="'+t+'"'+(t===tankSel?' class="on"':'')+'>'+t.toUpperCase()+' · '+TANKS[t].L+' L · $'+TANKS[t].c+'</button>').join('')+'</div>'}
-   h+=row(icon('ctr',true,'#2f6db5'),'Shipping container','Lifted with a crane truck\'s cables; sits on 2 places of a flatbed (medium, short semi or semi) or on the ground. Holds nothing yet. Lands on the NEW PURCHASES pad.',btn('cbuy','ctr','Buy $'+TRL.ctr.cost));
-   for(const[k,d]of Object.entries(ATTK))h+=row(attIcon(k),d.n+({forks:' (forklift, crane)',claw:' (forklift, crane)',grab:' (crane)',cables:' (crane)'}[k]||''),d.info+' Lands on the NEW PURCHASES pad. '+(k==='claw'||k==='forks'?'On a forklift: V selects the attachment and C detaches it; drive straight at a new one and press C. ':'')+('On a crane: swing the hook over it and press C in the crane cab.'),btn('abuy',k,'Buy $'+d.cost));
+   h+=Object.entries(ITEMSHOP).map(([k,d])=>row(itemIcon(k),d.n,d.info+(d.lot?'':' · shelf slots free: '+fr+'/'+PALLET.slots.length),btn('buyi',k,'Buy €'+d.cost))).join('');
+   {const T0=TANKS[tankSel];h+=row(itemIcon('tank:'+tankSel),'Fuel tank '+tankSel.toUpperCase(),T0.L+' L, sold empty. Hold it and click a vehicle to mount it (the tank already on it comes off into your hand, empty). Biggest each takes: ATV and forklift S, car and pickup M, mini-bus L, dump truck and semi XL · shelf slots free: '+fr+'/10',btn('buyi','tank:'+tankSel,'Buy €'+T0.c));
+    h+='<div class="tabs" style="margin:-4px 0 8px">'+TORD.map(t=>'<button data-a="tsel" data-k="'+t+'"'+(t===tankSel?' class="on"':'')+'>'+t.toUpperCase()+' · '+TANKS[t].L+' L · €'+TANKS[t].c+'</button>').join('')+'</div>'}
+   h+=row(icon('ctr',true,'#2f6db5'),'Shipping container','Lifted with a crane truck\'s cables; sits on 2 places of a flatbed (medium, short semi or semi) or on the ground. Holds nothing yet. Lands on the NEW PURCHASES pad.',btn('cbuy','ctr','Buy €'+TRL.ctr.cost));
+   for(const[k,d]of Object.entries(ATTK))h+=row(attIcon(k),d.n+({forks:' (forklift, crane)',claw:' (forklift, crane)',grab:' (crane)',cables:' (crane)'}[k]||''),d.info+' Lands on the NEW PURCHASES pad. '+(k==='claw'||k==='forks'?'On a forklift: V selects the attachment and C detaches it; drive straight at a new one and press C. ':'')+('On a crane: swing the hook over it and press C in the crane cab.'),btn('abuy',k,'Buy €'+d.cost));
   }else{
    h+=`<div class="r"><small>New purchases appear on the NEW PURCHASES pad (blue rectangle) on the far side of the shop, ready to drive. They take no garage slot until you park them (parked: ${used()}/${SLOTS.n}).</small></div>`;
    const hd=(t,sub)=>'<div class="r" style="border:0;padding-top:10px"><span><b style="color:'+pcol+'">'+t+'</b><small>'+sub+'</small></span></div>';
    if(stab=='veh'){const VC=[['haul','Haulers','Carry cargo and tow trailers. Beds: cargo, logs, flatbed (and a fuel tank on the pickup).',['pickup','dump','semi']],['load','Loaders','Move logs, pallets and items: the forklift on the ground, the crane truck over walls and onto beds.',['forklift','crane']],['ppl','People','Carry players.',['atv','car','minibus']]];
     h+='<div class="tabs">'+VC.map(c=>btn('vcat',c[0],c[1],false,vcat===c[0]?'on':'')).join('')+'</div>';
     for(const[id,t,sub,ks]of VC.filter(c=>c[0]===vcat)){h+='<div class="r"><small>'+sub+'</small></div>';
-     h+=ks.map(k=>{const d=TKINDS[k];return row(icon(k,0,myCol(),k=='dump'?'coal':null,myCol()),d.n,(k==='forklift'?'pallet forks or a log claw':bedTxt(d,null))+' · '+tlTxt(d)+' · from $'+d.cost,btn('cfgv',k,'Configure'))}).join('')}}
-   else h+=hd('By what they carry','Pick the size when you configure it.')+Object.entries(TGROUPS).map(([g,ks])=>row(icon(ks[ks.length>2?ks.length-1:0],1,g=='dolly'?null:myCol()),GNAME[g],GINFO[g]+' · '+(ks.length>1?ks.map(x=>VARN[x]).join(' / ')+' · ':'')+'from $'+Math.min(...ks.map(x=>TRL[x].cost)),btn('cfgt',ks[0],'Configure'))).join('');
+     h+=ks.map(k=>{const d=TKINDS[k];return row(icon(k,0,myCol(),k=='dump'?'coal':null,myCol()),d.n,(k==='forklift'?'pallet forks or a log claw':bedTxt(d,null))+' · '+tlTxt(d)+' · from €'+d.cost,btn('cfgv',k,'Configure'))}).join('')}}
+   else h+=hd('By what they carry','Pick the size when you configure it.')+Object.entries(TGROUPS).map(([g,ks])=>row(icon(ks[ks.length>2?ks.length-1:0],1,g=='dolly'?null:myCol()),GNAME[g],GINFO[g]+' · '+(ks.length>1?ks.map(x=>VARN[x]).join(' / ')+' · ':'')+'from €'+Math.min(...ks.map(x=>TRL[x].cost)),btn('cfgt',ks[0],'Configure'))).join('');
   }
  }else if(panelMode=='gup'){
   h+=tabs([['garage','Garage'],['storage','Storage'],['vehicle','Vehicle']],utab);
   if(utab=='garage'){
    h+='<div class="r"><small>The garage stores parked vehicles and trailers. Each parked one takes a slot; anything out on the map takes none.</small></div>';
-   h+=row('','Garage slots',used()+' parked of '+SLOTS.n+' slots · each parked vehicle or trailer takes one',SLOTS.n>=MAXSLOTS?'<i>max</i>':btn('slot','','Upgrade $'+slotCost(),cash<slotCost()));
+   h+=row('','Garage slots',used()+' parked of '+SLOTS.n+' slots · each parked vehicle or trailer takes one',SLOTS.n>=MAXSLOTS?'<i>max</i>':btn('slot','','Upgrade €'+slotCost(),cash<slotCost()));
   }else if(utab=='storage'){
    h+='<div class="r"><small>Unload vehicles at the yellow zone to fill the storage, load them from it at the green zone. The grey panel between the zones shows what is stored.</small></div>';
-   h+=[['Coal','coal',' t'],['Logs','logs',''],['Fuel','fuel',' L']].map(([n,k,u])=>row('',n,(k==='coal'?garageB.store[k].toFixed(1):Math.floor(garageB.store[k]))+' / '+garageB.cap[k]+u+' stored · each upgrade adds 50, up to '+STMAX,garageB.cap[k]>=STMAX?'<i>max</i>':btn('sup',k,'Upgrade $'+garageB.cap[k]*2,cash<garageB.cap[k]*2))).join('');
+   h+=[['Coal','coal',' t'],['Logs','logs',''],['Fuel','fuel',' L']].map(([n,k,u])=>row('',n,(k==='coal'?garageB.store[k].toFixed(1):Math.floor(garageB.store[k]))+' / '+garageB.cap[k]+u+' stored · each upgrade adds 50, up to '+STMAX,garageB.cap[k]>=STMAX?'<i>max</i>':btn('sup',k,'Upgrade €'+garageB.cap[k]*2,cash<garageB.cap[k]*2))).join('');
   }else{
    const eo=edit?(veh[edit]||trl[edit]):null;
    if(eo&&!(eo.kind in TKINDS?vIn(eo):tIn(eo)))edit=null;
@@ -1120,7 +1122,7 @@ $('gp').addEventListener('change',e=>{const el=e.target;if(el.classList&&el.clas
  $('gp').addEventListener('pointermove',e=>{if(!D||e.pointerId!==D.id)return;const dy=e.clientY-D.y0;if(!D.moved&&Math.abs(dy)<5)return;D.moved=true;D.el.style.transform='translateY('+dy+'px)';D.el.style.opacity='.75';D.el.style.zIndex=5;D.el.style.cursor='grabbing';const k=slot(e.clientY),rs=rows().filter(r=>r!==D.el);rs.forEach((r,n)=>{r.style.boxShadow=n===k?'0 -3px 0 #ffe27a':n===k-1&&k===rs.length?'0 3px 0 #ffe27a':''});});
  const end=e=>{if(!D||e.pointerId!==D.id)return;const d=D;if(!d.moved){D=null;return}const to=slot(e.clientY);D=null;if(d.i<FQ().length){const t=FQ().splice(d.i,1)[0];FQ().splice(Math.min(to,FQ().length),0,t)}renderGarage()};
  $('gp').addEventListener('pointerup',end);$('gp').addEventListener('pointercancel',e=>{if(D&&e.pointerId===D.id){D=null;renderGarage()}})}
-$('gp').addEventListener('input',e=>{const el=e.target,k=el.dataset&&el.dataset.sh;if(!k||!(k in shopB.store))return;const mx=shMax(k);let v=parseFloat(el.value);if(el.value!==''&&v>mx){v=mx;el.value=mx}if(!(v>=0))v=0;SHQ[k]=v;const b=el.parentNode.querySelector('button[data-a="shsell"]');if(b)b.textContent='Sell $'+Math.round(shVal(k,shQty(k)))});
+$('gp').addEventListener('input',e=>{const el=e.target,k=el.dataset&&el.dataset.sh;if(!k||!(k in shopB.store))return;const mx=shMax(k);let v=parseFloat(el.value);if(el.value!==''&&v>mx){v=mx;el.value=mx}if(!(v>=0))v=0;SHQ[k]=v;const b=el.parentNode.querySelector('button[data-a="shsell"]');if(b)b.textContent='Sell €'+Math.round(shVal(k,shQty(k)))});
 function closeGarage(){panelOpen=false;$('gp').style.display='none'}
 $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const a=b.dataset.a,k=b.dataset.k;
  if(a=='close')return closeGarage();
@@ -1130,20 +1132,20 @@ $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
  else if(a=='fcancel'){FQ().length=0;pmsg='Queue cleared.'}else if(a=='fadd'){const q=b.closest('.r').querySelector('input.fq'),n=Math.max(0,Math.min(99,Math.floor(+(q&&q.value)||0))),k2=k==='c'?'c':k==='h'?'h':k==='k'?'k':'p';facAmt=n||9;if(!n)pmsg='Enter an amount.';else{if(k2==='c'){for(let r=n;r>0;r-=9){factory.q.push({k:'p',n:1});factory.q.push({k:'c',n:Math.min(9,r)})}pmsg='Added '+n+' crates to the queue, with a pallet before every 9.'}else{factory.q.push({k:k2,n});pmsg='Added '+n+(k2==='h'?' hitches':k2==='k'?' canisters':' pallets')+' to the queue.'}}}
  else if(a=='frm'){FQ().splice(+k,1)}else if(a=='fup'&&+k>0){const t=FQ().splice(+k,1)[0];FQ().splice(+k-1,0,t)}else if(a=='fdn'&&+k<FQ().length-1){const t=FQ().splice(+k,1)[0];FQ().splice(+k+1,0,t)}
  else if(a=='nadd'){const q=b.closest('.r').querySelector('input.fq'),n=Math.max(0,Math.min(999,Math.floor(+(q&&q.value)||0))),k2=k==='s'?'s':k==='g'?'g':'i';facAmt=n||9;if(!n)pmsg='Enter an amount.';else{foundry.q.push({k:k2,n});pmsg='Added '+n+(k2==='s'?' steel':k2==='g'?' glass':' iron')+' to the queue.'}}
- else if(a=='ncap'){const b=foundry,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Ore and coal storage upgraded to '+b.cap+' t each.'}}
- else if(a=='nyu'){const b=foundry,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
- else if(a=='upx'){const[w,key]=k.split('.'),o=w==='n'?foundry:factory,d=UPX[key];if(!d)return;const lv=o[d.lvl],c=d.base*(lv+1);if(lv>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;o[d.lvl]=lv+1;o[d.cap]+=d.step;pmsg='Upgraded to '+o[d.cap]+'.'}}
- else if(a=='fcap'){const b=factory,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Planks storage upgraded to '+b.cap+'.'}}else if(a=='fyu'){const b=factory,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}else if(a=='yu'){const b=yupB,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need $'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg=(b===lumber?'Log station':'Plank area')+' grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
- else if(a=='su'){const b=sawmill;if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else{const c=upCost(b);if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Log storage upgraded to '+b.cap+' logs.'}}}
+ else if(a=='ncap'){const b=foundry,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Ore and coal storage upgraded to '+b.cap+' t each.'}}
+ else if(a=='nyu'){const b=foundry,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need €'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
+ else if(a=='upx'){const[w,key]=k.split('.'),o=w==='n'?foundry:factory,d=UPX[key];if(!d)return;const lv=o[d.lvl],c=d.base*(lv+1);if(lv>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;o[d.lvl]=lv+1;o[d.cap]+=d.step;pmsg='Upgraded to '+o[d.cap]+'.'}}
+ else if(a=='fcap'){const b=factory,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Planks storage upgraded to '+b.cap+'.'}}else if(a=='fyu'){const b=factory,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need €'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg='Items pad grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}else if(a=='yu'){const b=yupB,L=b.ylvl|0;if(L>=2)pmsg='Fully grown.';else if(cash<YARDC[L+1])pmsg='Not enough cash: need €'+YARDC[L+1]+'.';else{cash-=YARDC[L+1];b.ylvl=L+1;applyUnits();pmsg=(b===lumber?'Log station':'Plank area')+' grown to '+YARDH[b.ylvl]/S+' x 14 tiles.'}}
+ else if(a=='su'){const b=sawmill;if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else{const c=upCost(b);if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg='Log storage upgraded to '+b.cap+' logs.'}}}
  else if(a=='psic'){cp().sic=Math.max(0,Math.min(Object.keys(CGK).length-1,+b.dataset.k|0));pmsg='The sign now shows '+CGK[Object.keys(CGK)[plant.sic]][0].toLowerCase()+'.'}
  else if(a=='mpi'){const mine=cm();mine.pi=mine.pi?0:1;NET.last=0}else if(a=='mpl'){const mine=cm();mine.pl=mine.pl?0:1;NET.last=0}
  else if(a=='msw'){const mine=cm();mine.sw=mine.sw?0:1;sfx(mine.sw?'lon':'loff');pmsg='Coal mine switched '+(mine.sw?'on.':'off: no coal is dug.')}
  else if(a=='fview'){facView=b.dataset.k==='up'?'up':'ctl'}
  else if(a=='plsw'){const p=cp();p.on=!p.on;sfx(p.on?'lon':'loff');pmsg=p.name+' switched '+(p.on?'on.':'off: no coal is burnt and no power is given.')}
- else if(a=='sst'){const b=supB,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg=b.name+' storage upgraded to '+b.cap+' '+b.unit+'.'}}
- else if(a=='mst'){const mine=cm(),c=upCost(mine);if(mine.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;mine.lvl++;mine.cap+=STEP;pmsg='Coal mine storage upgraded to '+mine.cap+' t.'}}
- else if(a=='mrt'){const mine=cm(),c=upCost({lvl:mine.rlvl});if(mine.rlvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;mine.rlvl++;mine.rate=Math.round((mine.rate+MRSTEP)*100)/100;pmsg='The coal mine now regrows '+mine.rate.toFixed(1)+' t per second.'}}
- else if(a=='cup'){const rock=k==='rock',L=rock?crusher.flvl:crusher.lvl,c=upCost({lvl:L});if(L>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need $'+c+'.';else{cash-=c;if(rock){crusher.flvl++;crusher.fcap+=STEP}else{crusher.lvl++;crusher.cap+=STEP}pmsg=(rock?'Rock':'Sand')+' storage upgraded to '+(rock?crusher.fcap:crusher.cap)+' t.'}}
+ else if(a=='sst'){const b=supB,c=upCost(b);if(b.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;b.lvl++;b.cap+=STEP;pmsg=b.name+' storage upgraded to '+b.cap+' '+b.unit+'.'}}
+ else if(a=='mst'){const mine=cm(),c=upCost(mine);if(mine.lvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;mine.lvl++;mine.cap+=STEP;pmsg='Coal mine storage upgraded to '+mine.cap+' t.'}}
+ else if(a=='mrt'){const mine=cm(),c=upCost({lvl:mine.rlvl});if(mine.rlvl>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;mine.rlvl++;mine.rate=Math.round((mine.rate+MRSTEP)*100)/100;pmsg='The coal mine now regrows '+mine.rate.toFixed(1)+' t per second.'}}
+ else if(a=='cup'){const rock=k==='rock',L=rock?crusher.flvl:crusher.lvl,c=upCost({lvl:L});if(L>=MAXLVL)pmsg='Fully upgraded.';else if(cash<c)pmsg='Not enough cash: need €'+c+'.';else{cash-=c;if(rock){crusher.flvl++;crusher.fcap+=STEP}else{crusher.lvl++;crusher.cap+=STEP}pmsg=(rock?'Rock':'Sand')+' storage upgraded to '+(rock?crusher.fcap:crusher.cap)+' t.'}}
  else if(a=='hbuy'){const SH=({lumber:LSHELF,saw:SSHELF,quarry:QSHELF,mine:MSHELF,iron:ISHELF,crush:CSHELF})[panelMode],d=ITEMSHOP.hitch;if(cash<d.cost)pmsg='Not enough cash.';else if(!SH||!SH.slots.includes(null))pmsg='The shelves are full. Take something off them first.';else{cash-=d.cost;STORY.hitch=1;SH.slots[SH.slots.indexOf(null)]=mkItem('hitch');pmsg='Hitch bought: it is on a shelf in this room.'}}
  else if(a=='fbuy'){const d=ITEMSHOP[k];if(cash<d.cost)pmsg='Not enough cash.';else if(!FSHELF.slots.includes(null))pmsg='The shelves are full. Take something off them first.';else{cash-=d.cost;FSHELF.slots[FSHELF.slots.indexOf(null)]=mkItem(k);pmsg=d.n+' bought: it is on a shelf in this room.'}}
  else if(a=='tsel')tankSel=k;
@@ -1183,12 +1185,12 @@ $('gp').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
  else if(a=='buyv'){const d=TKINDS[k];if(used()>=SLOTS.n)pmsg='The garage is full ('+used()+'/'+SLOTS.n+' slots). Upgrade it at the garage upgrade pad first.';else if(cash>=d.cost){cash-=d.cost;pmsg='Bought: '+addVeh(k,{color:myCol(),bedColor:myCol()}).name+'. It is waiting in your garage.'}}
  else if(a=='buyt'){const d=TRL[k];if(used()>=SLOTS.n)pmsg='The garage is full ('+used()+'/'+SLOTS.n+' slots). Upgrade it at the garage upgrade pad first.';else if(cash>=d.cost){cash-=d.cost;pmsg='Bought: '+addTrl(k,myCol()).name+'. It is waiting in your garage.'}}
  else if(a=='shsell'){let g2=0,what='everything';if(k==='all'){for(const q of Object.keys(shopB.store)){const v=shopB.store[q]||0;if(v<.05)continue;g2+=shVal(q,v);shopB.store[q]=0;SHQ[q]=null}}else{const q=shQty(k);what=SHN[k].toLowerCase();if(q>=.05){g2=shVal(k,q);shopB.store[k]=Math.max(0,shopB.store[k]-q);if(shopB.store[k]<.05)shopB.store[k]=0;SHQ[k]=null}}
-  if(g2<=0)pmsg='Nothing to sell.';else{cash+=g2;pmsg='Sold '+what+' for $'+Math.round(g2)+'.'}}
- else if(a=='shup'){const up=shopB.cap[k]*2;if(shopB.cap[k]>=SHMAX)pmsg=SHN[k]+' storage is at its maximum.';else if(cash<up)pmsg='Not enough cash: need $'+up+'.';else{cash-=up;shopB.cap[k]+=50;pmsg=SHN[k]+' storage upgraded to '+shopB.cap[k]+'.'}}
- else if(a=='sellv'){const v=veh[k];if(v&&v.starter)pmsg='Your starting pickup cannot be sold.';else if(v&&vInS(v)){cash+=sellOf(v);pmsg='Sold: '+v.name+' for $'+sellOf(v)+'.';sellVeh(v)}}
- else if(a=='sellp'){const q=PALS[+k];if(q&&palInS(q)){const v=palVal(q);cash+=v;PALS.splice(+k,1);pmsg='Sold: a pallet for $'+v+'.'}}
- else if(a=='selli'){const q=GI[+k];if(q&&itemInS(q)){const v=itemVal(q);cash+=v;GI.splice(+k,1);pmsg='Sold: '+itemName(q)+' for $'+v+'.'}}
- else if(a=='sellt'){const t=trl[k];if(t&&tInS(t)){cash+=sellOf(t);pmsg='Sold: '+t.name+' for $'+sellOf(t)+'.';sellTrl(t)}}
+  if(g2<=0)pmsg='Nothing to sell.';else{cash+=g2;pmsg='Sold '+what+' for €'+Math.round(g2)+'.'}}
+ else if(a=='shup'){const up=shopB.cap[k]*2;if(shopB.cap[k]>=SHMAX)pmsg=SHN[k]+' storage is at its maximum.';else if(cash<up)pmsg='Not enough cash: need €'+up+'.';else{cash-=up;shopB.cap[k]+=50;pmsg=SHN[k]+' storage upgraded to '+shopB.cap[k]+'.'}}
+ else if(a=='sellv'){const v=veh[k];if(v&&v.starter)pmsg='Your starting pickup cannot be sold.';else if(v&&vInS(v)){cash+=sellOf(v);pmsg='Sold: '+v.name+' for €'+sellOf(v)+'.';sellVeh(v)}}
+ else if(a=='sellp'){const q=PALS[+k];if(q&&palInS(q)){const v=palVal(q);cash+=v;PALS.splice(+k,1);pmsg='Sold: a pallet for €'+v+'.'}}
+ else if(a=='selli'){const q=GI[+k];if(q&&itemInS(q)){const v=itemVal(q);cash+=v;GI.splice(+k,1);pmsg='Sold: '+itemName(q)+' for €'+v+'.'}}
+ else if(a=='sellt'){const t=trl[k];if(t&&tInS(t)){cash+=sellOf(t);pmsg='Sold: '+t.name+' for €'+sellOf(t)+'.';sellTrl(t)}}
  else if(a=='slot'){if(cash>=slotCost()&&SLOTS.n<MAXSLOTS){cash-=slotCost();SLOTS.n++;pmsg='Garage upgraded to '+SLOTS.n+' slots.'}}
  else if(a=='spawnv'){const v=veh[k];let ok=false;for(let ln=0;ln<2&&!ok;ln++){placeVeh(v,ln);ok=!spawnBlocked(vBody(v),v,SPAWNGAP)}if(!ok){v.out=false;pmsg='The spawn spot is occupied. Move or park what is at the west end of the bay.'}else{setActive(v);P.driving=false;pmsg=v.name+' is in the bay. Walk to the cab and click a seat.'}}
  else if(a=='spawnt'){const t=trl[k];let ok=false;for(let ln=0;ln<2&&!ok;ln++){placeTrl(t,ln);ok=!spawnBlocked(tBody(t),t,SPAWNGAP)}if(!ok){t.out=false;pmsg='The spawn spot is occupied. Move or park what is at the east end of the bay.'}else pmsg=t.name+' is in the bay. Get in a truck and back the hitch circle over its tip, then press C.'}
@@ -1661,7 +1663,32 @@ function signWinTick(){if(!SW)return;const d=document.getElementById('signwin');
  if(!GI.includes(it)||it.fk||P.driving||P.pass||Math.hypot(it.x-P.x,it.y-P.y)>RCH()+S*1.5)return signWin(null);
  const dx=it.x-cam.x,dy=it.y-cam.y,rr=VROT(),c=Math.cos(rr),sn=Math.sin(rr),ux=dx*c-dy*sn,uy=dx*sn+dy*c;d.style.left=(VW/2+ux*Z)+'px';d.style.top=(VH/2+uy*Z-S*.8*Z)+'px'}
 addEventListener('keydown',e=>{if(e.key==='Escape'&&SW)signWin(null)});
-function drawCrateWin(){signWinTick();cwCheck();if(!CW)return;const b=cwBox();if(!b)return;const c=CW.c,hv=cwCell();g.save();g.setTransform(dpr,0,0,dpr,0,0);
+// ----- paying another player: a click on a player standing near you opens a small window over them: type an amount, Pay. Esc, the x or walking away closes it. The money leaves at once; the other's game says it has come in, otherwise it is given back -----
+let PW=null;const PAYS={};
+const payReach=()=>RCH();   // the reach circle, as for everything else
+// where a player stands in what I see now (the map, or the room I am in), or null: in another place, or in a vehicle
+function peerPos(p){const q=p&&!p.sameTab&&p.presence;if(!q||!q.pid)return null;if(IN)return q.in&&q.inb===bkey(IN.o)&&typeof q.rx==='number'?[q.rx,q.ry]:null;if(q.in||q.d||q.s||q.v)return null;const h=NET.gh.get(p.peer);return h?[h.x,h.y]:typeof q.x==='number'?[q.x,q.y]:null}
+const peerName=p=>{const q=p.presence||{};return(q.nm&&q.nm.trim())||(ROSTER[q.pid]&&ROSTER[q.pid].nm!=='Player'&&ROSTER[q.pid].nm)||'Player '+p.peer.slice(0,2).toUpperCase()};
+function peerAt(m){const r=NET.room;if(!m||!r||!r.shared||P.driving||P.pass||(heldList&&heldList().length))return null;let b=null,bd=S*.85;try{for(const p of r.peers()){const c=peerPos(p);if(!c)continue;const d=Math.hypot(c[0]-m[0],c[1]-m[1]);if(d<bd){bd=d;b=p}}}catch(e){}return b}
+const peerFar=p=>{const c=peerPos(p);return!c||Math.hypot(c[0]-P.x,c[1]-P.y)>payReach()};
+function payWin(p){const old=document.getElementById('paywin');if(old)old.remove();PW=p?{peer:p.peer,pid:p.presence.pid,nm:peerName(p)}:null;if(!p)return;
+ const d=document.createElement('div');d.id='paywin';d.style.cssText='position:fixed;z-index:40;background:rgba(20,22,28,.94);border:1.5px solid #ffd166;border-radius:10px;padding:9px 11px;font:12px system-ui,sans-serif;color:#eee;transform:translate(-50%,-100%);pointer-events:auto;box-shadow:0 6px 20px #0008;width:196px;box-sizing:border-box';
+ d.innerHTML='<div style="display:flex;align-items:center;margin-bottom:6px"><b style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Pay '+esc(PW.nm)+'</b><button id="pw-x" title="Close" style="width:22px;height:22px;border-radius:6px;border:1px solid #ffffff30;background:#243645;color:#fff;cursor:pointer;padding:0;line-height:1">✕</button></div><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><span style="position:absolute;left:8px;top:7px;opacity:.7">€</span><input id="pw-a" type="number" inputmode="numeric" min="1" step="1" placeholder="amount" style="width:100%;box-sizing:border-box;padding:6px 6px 6px 20px;border-radius:7px;border:1px solid #ffffff40;background:#0f171e;color:#fff;font:13px system-ui,sans-serif"></div><button id="pw-b" style="padding:6px 14px;border-radius:7px;border:1px solid #ffd166;background:#ffd166;color:#1a2630;font:700 13px system-ui,sans-serif;cursor:pointer">Pay</button></div><div id="pw-m" style="margin-top:6px;min-height:15px;opacity:.85">You have €'+Math.floor(cash+.005)+'</div>';
+ d.onpointerdown=e=>e.stopPropagation();d.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape')payWin(null);else if(e.key==='Enter')go()});d.addEventListener('keyup',e=>e.stopPropagation());
+ const go=()=>{const m=d.querySelector('#pw-m'),a=Math.floor(+d.querySelector('#pw-a').value),why=payNow(PW,a);m.style.color=why?'#ff9b8a':'#7fe08a';m.textContent=why||'Paid €'+a+'. You have €'+Math.floor(cash+.005);if(!why)d.querySelector('#pw-a').value=''};
+ d.querySelector('#pw-x').onclick=()=>payWin(null);d.querySelector('#pw-b').onclick=go;document.body.appendChild(d);for(const k in K)K[k]=0;payWinTick();d.querySelector('#pw-a').focus()}
+// pays; returns why not, or nothing
+function payNow(to,a){const r=NET.room;if(!to||!r||!r.shared||!WS.on||!r.connected())return'You are not in a game together.';if(!(a>=1)||!isFinite(a))return'Type a whole amount, 1 or more.';if(a>cash+.005)return'You only have €'+Math.floor(cash+.005)+'.';const p=r.peers().find(p=>!p.sameTab&&p.presence&&p.presence.pid===to.pid);if(!p)return to.nm+' is not here any more.';if(peerFar(p))return to.nm+' is too far away.';
+ const id=PID+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);cash-=a;PAYS[id]={a,nm:to.nm,t:setTimeout(()=>{if(!PAYS[id])return;delete PAYS[id];cash+=a;flash('The €'+a+' for '+to.nm+' did not arrive: you have it back.')},6000)};r.msg({pay:{id,to:to.pid,from:PID,nm:CHAT.name||'Player',a}});sfx('click');return''}
+// a payment for me, or word that mine came in
+const PAYSEEN=new Set();
+function payMsg(d){if(d.pay){const q=d.pay,a=Math.floor(+q.a);if(q.to!==PID||!(a>=1)||a>1e9)return true;if(!PAYSEEN.has(q.id)){PAYSEEN.add(q.id);cash+=a;flash(String(q.nm||'A player').slice(0,20)+' paid you €'+a+'.');sfx('msg')}NET.room.msg({paid:q.id});return true}
+ if(d.paid){const q=PAYS[d.paid];if(q){clearTimeout(q.t);delete PAYS[d.paid];flash('You paid '+q.nm+' €'+q.a+'.')}return true}return false}
+function payWinTick(){if(!PW)return;const d=document.getElementById('paywin');if(!d){PW=null;return}let p=null;try{p=NET.room.peers().find(p=>p.peer===PW.peer)}catch(e){}
+ if(!p||P.driving||P.pass||bigMap||panelOpen||peerFar(p))return payWin(null);const c=peerPos(p),dx=c[0]-cam.x,dy=c[1]-cam.y,rr=VROT(),cs=Math.cos(rr),sn=Math.sin(rr),ux=dx*cs-dy*sn,uy=dx*sn+dy*cs;d.style.left=Math.max(104,Math.min(VW-104,VW/2+ux*Z))+'px';d.style.top=Math.max(112,VH/2+uy*Z-S*2.2*Z)+'px'}
+// the words over a player the cursor is on
+function payHint(x,y){if(PW||MX==null||bigMap||panelOpen)return;const p=peerAt(s2w(MX,MY));if(!p)return;const c=peerPos(p);txt(peerFar(p)?'Too far to pay':'Click: pay',c[0],c[1]+S*1.5,'#ffd166','bold 10px sans-serif')}
+function drawCrateWin(){signWinTick();payWinTick();cwCheck();if(!CW)return;const b=cwBox();if(!b)return;const c=CW.c,hv=cwCell();g.save();g.setTransform(dpr,0,0,dpr,0,0);
  g.strokeStyle='rgba(255,209,102,.7)';g.lineWidth=1.5;g.beginPath();g.moveTo(b.q[0],b.q[1]-8);g.lineTo(b.x+b.W/2,b.y+b.W);g.stroke();   // pointing at its crate
  g.fillStyle='rgba(20,22,28,.92)';g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.roundRect(b.x,b.y,b.W,b.W,6);g.fill();g.stroke();
  for(let k=0;k<9;k++){const x=b.x+CWG+(k%3)*(CWC+CWG),y=b.y+CWG+Math.floor(k/3)*(CWC+CWG);g.fillStyle=k===hv?'rgba(255,209,102,.35)':'#3a3d44';g.fillRect(x,y,CWC,CWC);g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=1;g.strokeRect(x+.5,y+.5,CWC-1,CWC-1);
@@ -1864,12 +1891,12 @@ let PADK='';function padLayout(crane){const ids=['gb','cb','vb','rb','qb','eb'].
  const QE=['qb','eb'],inner=ids.filter(i=>!QE.includes(i)),outer=ids.filter(i=>QE.includes(i)),put=(list,R,a0,a1)=>list.forEach((id,i)=>{const t=list.length>1?a0+(a1-a0)*i/(list.length-1):(a0+a1)/2,b=$(id);b.style.transform='translate('+(Math.cos(t)*R).toFixed(1)+'px,'+(Math.sin(t)*R).toFixed(1)+'px)'});
  if(VH<500){const at=[[-86,10],[-150,10],[-214,10],[-118,-52],[-182,-52],[-246,-52]],row=[...inner.filter(i=>i!=='rb'),...inner.filter(i=>i==='rb'),...outer.slice().reverse()];row.forEach((id,i)=>{$(id).style.transform='translate('+at[i][0]+'px,'+at[i][1]+'px)'});return}   /* a short screen (a phone on its side): two rows to the left of the action button, clear of the minimap */
  put(inner,96,Math.PI,Math.PI*1.5);put(outer,158,Math.PI*1.18,Math.PI*1.38)}
-function tapTarget(){if(panelOpen||CW)return true;const h=hoverSeat(),nf=t=>t&&!t.far;
+function tapTarget(){if(panelOpen||CW||PW||peerAt(s2w(MX,MY)))return true;const h=hoverSeat(),nf=t=>t&&!t.far;
  if(nf(crLeverT())||nf(leverTarget())||nf(plevAt(mouseWorld())))return true;
  if(P.pass||P.driving){const v=P.pass||T;return!!(h&&h.v===v)}
  if(nf(fuelHover())||(!IN&&nf(rampTarget()))||pourTarget()||tankTarget())return true;
  if(h)return true;return nf(itemTarget())}
-function clickAct(){   // a left click: everything done with the mouse in the world
+function clickAct(){if(PW){payWin(null);return}{const pp=!panelOpen&&peerAt(s2w(MX,MY));if(pp){if(peerFar(pp))return flash(peerName(pp)+' is too far away. Step closer to pay.');return payWin(pp)}}   // a left click: everything done with the mouse in the world
  if(panelOpen)return;
  const h=hoverSeat(),m=mouseWorld();
  {const cl=crLeverT();if(cl){if(cl.far)return flash('Too far away. Step closer to the lever.');crusher.gsel=crusher.gsel?0:1;return flash('The crusher\'s loading pad now loads '+(crusher.gsel?'gravel.':'sand.'))}}
@@ -1944,7 +1971,7 @@ function step(dt){
    else{mm='Loading '+ty+' from storage…';const q=Math.min(lr*dt,cf-cg.amt,garageB.store[ty]);cg.type=ty;cg.amt+=q;garageB.store[ty]-=q}
   }else if(plantAt(c)){const pl=plantAt(c);
    if(!slow)mm='Slow down to unload.';else if(!pl.built){mm=siteDeliver(pl,cg,ur*dt);if(pl.built)sweepLeft(cg,pl)
-   }else if(cg.type!=='coal'&&cg.amt>0)mm='The power plant only takes coal.';else if(cg.amt<=0)mm='Power plant: bring coal ($10 per ton).';else if(pl.stock>=pl.cap)mm='Plant storage is full. Wait for it to burn coal, or upgrade it.';
+   }else if(cg.type!=='coal'&&cg.amt>0)mm='The power plant only takes coal.';else if(cg.amt<=0)mm='Power plant: bring coal (€10 per ton).';else if(pl.stock>=pl.cap)mm='Plant storage is full. Wait for it to burn coal, or upgrade it.';
    else{mm='Unloading at the power plant…';const q=Math.min(ur*dt,cg.amt,pl.cap-pl.stock);cg.amt-=q;pl.stock+=q;cash+=q*10}
   }else if(inZs(c,lzU())){
    if(!slow)mm=lumber.built?'Slow down to load logs.':'Slow down to unload.';
@@ -1970,7 +1997,7 @@ function step(dt){
   if(inZs(c,czU())){
    if(!slow)mm='Slow down to unload.';
    else if(!crusher.built){mm=siteDeliver(crusher,cg,ur*dt)}
-   else if(cg.type!=='rock'&&cg.amt>0)mm='The crusher only takes rock.';else if(cg.amt<=0)mm='Crusher: bring rock ($'+CRUSHPAY+' a ton).';
+   else if(cg.type!=='rock'&&cg.amt>0)mm='The crusher only takes rock.';else if(cg.amt<=0)mm='Crusher: bring rock (€'+CRUSHPAY+' a ton).';
    else if(crusher.feed>=crusher.fcap-1e-6)mm=!crusherOn?'The crusher is switched off and its rock store is full.':!pw('crusher')?'Rock store is full: '+pwWhy('crusher')+'.':'Rock store is full. Wait for it to crush.';
    else{mm='Unloading rock into the crusher…';const q=Math.min(ur*dt,cg.amt,crusher.fcap-crusher.feed);cg.amt-=q;crusher.feed+=q;cash+=q*CRUSHPAY}
   }
@@ -1982,8 +2009,8 @@ function step(dt){
   }
   if(inZs(c,swU())){
    if(!slow)mm='Slow down to unload.';else if(!sawmill.built){mm=siteDeliver(sawmill,cg,ur*dt);if(sawmill.built)sweepLeft(cg)}
-   else if(cg.type!=='logs'||cg.amt<=0)mm=cg.type==='coal'&&cg.amt>0?'The sawmill only takes logs.':'Sawmill: bring logs ($'+SITEPAY.logs+' each).';
-   else mm='Logs are not unloaded from a vehicle: lift them off with the log forklift and set them down in the sawmill yard ($'+SITEPAY.logs+' each).';
+   else if(cg.type!=='logs'||cg.amt<=0)mm=cg.type==='coal'&&cg.amt>0?'The sawmill only takes logs.':'Sawmill: bring logs (€'+SITEPAY.logs+' each).';
+   else mm='Logs are not unloaded from a vehicle: lift them off with the log forklift and set them down in the sawmill yard (€'+SITEPAY.logs+' each).';
   }
   if(inZs(c,fcU())){
    if(!slow)mm='Slow down to unload.';else if(!factory.built){mm=siteDeliver(factory,cg,ur*dt);if(factory.built)sweepLeft(cg)}
@@ -1991,14 +2018,14 @@ function step(dt){
   }
   if(inZs(c,fnU())){
    if(!slow)mm='Slow down to unload.';else if(!foundry.built){mm=siteDeliver(foundry,cg,ur*dt);if(foundry.built)sweepLeft(cg)}
-   else if(cg.amt<=0)mm='Foundry: bring iron ore, coal and sand ($'+SITEPAY.iron+' a ton, sand $'+SITEPAY.sand+'). Set pallets, crates and iron in crates down on this pad by hand or with a forklift.';
+   else if(cg.amt<=0)mm='Foundry: bring iron ore, coal and sand (€'+SITEPAY.iron+' a ton, sand €'+SITEPAY.sand+'). Set pallets, crates and iron in crates down on this pad by hand or with a forklift.';
    else if(cg.type==='iron'||cg.type==='coal'||cg.type==='sand'){const k=cg.type==='iron'?'ore':cg.type==='sand'?'sand':'carb',kc=foundry[k==='ore'?'cap':k==='sand'?'sacap':'ccap'],nm=cg.type==='iron'?'iron ore':cg.type;if(foundry[k]>=kc-1e-6)mm='The foundry\'s '+nm+' store is full.';
     else{mm='Unloading '+nm+' into the foundry…';const q=Math.min(ur*dt,cg.amt,kc-foundry[k]);cg.amt-=q;foundry[k]+=q;cash+=q*(SITEPAY[cg.type]||0)}}
    else mm='The foundry only takes iron ore, coal and sand.';
   }
   if(takes('fuel')&&FZS.some(z=>satHit(zoneBox(z),{ox:c.ox,oy:c.oy,a:c.a,x0:c.e0,x1:c.e1,h:1}))){const cf=c.cargo==='fuel'?c.cap:c.cap*(c.fm||1);
    if(!slow)mm='Slow down to load fuel.';else if(cg.type&&cg.type!=='fuel'&&cg.amt>0)mm='Empty the other cargo first (G).';else if(cg.amt>=cf-1e-6)mm='Fuel cargo full.';else if(cash<=0)mm='No cash for fuel.';
-   else{mm='Loading fuel… $'+FUELP.toFixed(1)+' per litre.';const q=Math.min(act?cf*.3*dt:0,cf-cg.amt,cash/FUELP);cg.type='fuel';cg.amt+=q;cash-=q*FUELP}}
+   else{mm='Loading fuel… €'+FUELP.toFixed(1)+' per litre.';const q=Math.min(act?cf*.3*dt:0,cf-cg.amt,cash/FUELP);cg.type='fuel';cg.amt+=q;cash-=q*FUELP}}
   if(!act&&mm)mm=c.hang?(hangSelEnt()===c.ent?'Hold Space to load or unload the '+c.ent.name+' (C sets it down).':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.'):!c.ent?'A parked trailer does not load by itself: hitch it, select it with V and hold Space.':c.ent===selEnt()?'Hold Space to load or unload the '+(c.ent===T?'truck bed':c.ent.name)+'.':'Press V to select the '+c.ent.name+', then hold Space to load or unload it.';
   if(cg.amt<=.001){cg.amt=0;cg.type=null;if(amt0>.001)cash=Math.round(cash*1e4)/1e4}   // a cargo just emptied: clear float dust from the payment
   if(c.hang)hangMsg=mm||'';
@@ -2009,7 +2036,7 @@ function step(dt){
  if(P.driving&&T.out){const d=dir(T.a),mc=(KD.b0+KD.b1)/2*S,cx=T.x+d[0]*mc,cy=T.y+d[1]*mc;
   if(FZS.some(z=>satHit(zoneBox(z),vBody(T)))){inFz=true;
    if(!T.tank)m=m||'No fuel tank to fill: mount one first (the shop sells them).';else if(Math.abs(T.v)>=1.2)m=m||'Slow down to refuel.';else if(T.fuel>=KD.fuel-.05)m=m||'The tank is full.';else if(cash<=0)m=m||'No cash for fuel. Deliver coal first.';
-   else{const q=Math.min(KD.fuel*.2*dt,KD.fuel-T.fuel,cash/FUELP);T.fuel+=q;cash-=q*FUELP;m=m||'Refuelling… $'+FUELP.toFixed(1)+' per litre.'}}}
+   else{const q=Math.min(KD.fuel*.2*dt,KD.fuel-T.fuel,cash/FUELP);T.fuel+=q;cash-=q*FUELP;m=m||'Refuelling… €'+FUELP.toFixed(1)+' per litre.'}}}
  if(MX==null)for(const c of fuelCarriers()){const e=c.e,rt=rootOf(e);e.nz=c.cg.type==='fuel'&&c.cg.amt>0&&!(rt&&rt===T&&P.driving)&&!(rt&&rt.id[0]==='v'&&Math.abs(rt.v)>1.2)}   // a parked fuel pickup or trailer puts its refuel zone out by itself
  for(const c of fuelCarriers()){const e=c.e;if(!e.nz)continue;const root=rootOf(e),sp=root&&root.id[0]==='v'?Math.abs(root.v):0;
   if(sp>1.2){e.nz=false;continue}
@@ -2056,7 +2083,7 @@ function step(dt){
  let coal=0,logs=0,fl=0,cap=0,cf=0,rk=0,ir=0,gv=0,gr=0;let lq=0,lqt='';rc.forEach(c=>{if(c.cargo==='fuel'){cf+=c.cap;fl+=c.cg.amt}else if(c.cargo==='liquid'){cf+=c.cap;if(c.cg.type){lq+=c.cg.amt;lqt=c.cg.type}}else{cap+=c.cap;if(c.cg.type==='fuel')fl+=c.cg.amt;else if(c.cg.type==='logs')logs+=c.cg.amt;else if(c.cg.type==='rock')rk+=c.cg.amt;else if(c.cg.type==='iron')ir+=c.cg.amt;else if(c.cg.type==='sand')gv+=c.cg.amt;else if(c.cg.type==='gravel')gr+=c.cg.amt;else coal+=c.cg.amt}});
  {const ic=(k,t)=>cgImg(k,16)+t;const H=rc.length?([coal>0?ic('coal',coal.toFixed(1)+' t'):'',logs>0?ic('logs',Math.floor(logs)+''):'',rk>0?ic('rock',rk.toFixed(1)+' t'):'',ir>0?ic('iron',ir.toFixed(1)+' t'):'',gv>0?ic('sand',gv.toFixed(1)+' t'):'',gr>0?ic('gravel',gr.toFixed(1)+' t'):'',fl>0?ic('fuel',Math.floor(fl)+' L'):'',lq>0?(CGK[lqt]?ic(lqt,Math.floor(lq)+' L'):Math.floor(lq)+' L '+lqt):''].filter(Boolean).join(' + ')||'0')+' / '+(cap||cf+' L'):null;if(H!==null){if($('cl')._h!==H){$('cl')._h=H;$('cl').innerHTML=H}}else{$('cl')._h=null;$('cl').textContent=P.driving&&T.out&&KD.trunk?'boot '+T.slots.filter(Boolean).length+'/'+T.slots.length+(T.boot?', open':', closed'):'no cargo space'}}
  $('load').style.width=cap?((coal+rk+ir+logs+(fl&&!cf?fl/20:0))/cap*100)+'%':cf?((fl+lq)/cf*100)+'%':'0';$('load').style.background=logs>coal?'#a8743a':'#f2b134';
- $('cash').textContent='$'+money(cash);
+ cashBar();
  if(!STORY.fuel&&(anyPlant()||PLANTS.some(p=>p.reqs[0].got>=5-1e-6))&&P.driving&&T.out&&T.fuel>=KD.fuel*.95)STORY.fuel=1;
  goalTick();{const h=goalHTML();if(h!==$('goal')._h){$('goal').innerHTML=h;$('goal')._h=h;document.documentElement.style.setProperty('--gh',$('goal').offsetHeight+'px');GH=$('goal').offsetHeight}}
  const cvH=P.pass&&P.pass.kind==='crane'&&P.seatSd===CSEAT?P.pass:null,cvD=cvH?KOF(cvH):KD,cvT=cvH||T;   // in the crane cab the panel shows the crane truck: its fuel gauge and what hangs on the hook
@@ -2720,7 +2747,7 @@ function drawBuildings(t){const hw=CHW,hh=CHH,seen=(x,y,m)=>Math.abs(x-cam.x)<hw
  // fuel station, between the loop and the trunk
  uWrap(FS,()=>{for(let[px,py]of F0.pumps)if(seen(...uRot(FS,px,py),80)){cast([[0,0,0,px-20,py-20,40,40,7,3]]);g.save();g.translate(px,py);g.rotate(Math.PI/2);const x=-20,y=-20;px=0;py=0;   // turned 90 degrees: its faces and hoses point west and east   // a pump (2x2 tiles): a red head, the price on its display, a hose to each side
   g.beginPath();g.roundRect(x,y,40,40,3);inked('#e3e5ea',1.3);g.fillStyle='#e0442e';g.beginPath();g.roundRect(x+1,y+15.5,38,9);g.fill();
-  for(const k of[0,1]){const yy=k?y+27:y+3;g.fillStyle='#1c2126';g.fillRect(x+5,yy,30,10);txt('$'+FUELP.toFixed(2)+'/L',px,yy+7.5,'#57e389','bold 6.5px monospace')}
+  for(const k of[0,1]){const yy=k?y+27:y+3;g.fillStyle='#1c2126';g.fillRect(x+5,yy,30,10);txt('€'+FUELP.toFixed(2)+'/L',px,yy+7.5,'#57e389','bold 6.5px monospace')}
   g.strokeStyle='#22252a';g.lineWidth=1.8;g.beginPath();g.moveTo(x+37,y+22);g.quadraticCurveTo(x+41,y+42,x+30,y+41);g.moveTo(x+3,y+18);g.quadraticCurveTo(x-1,y-2,x+10,y-1);g.stroke();
   g.fillStyle='#22252a';g.fillRect(x+25,y+39,6,4);g.fillRect(x+9,y-3,6,4);bevel(0,x,y,40,40,2);g.restore()}})
  // the boards stand by the offices: their faces show the coal in store (mine: what it has mined; plant: what it burns). Lumberyard and sawmill: a construction site until what they need has arrived, then the log store
@@ -2728,7 +2755,7 @@ function drawBuildings(t){const hw=CHW,hh=CHH,seen=(x,y,m)=>Math.abs(x-cam.x)<hw
  const face2=(bx,by,rows,l3,c3)=>{const bd=BOARDS.find(q=>q[0]===bx&&q[1]===by)||[],bw=bd[3]||192,bh=bd[4]||96;if(!seen(...(bd[5]?uRot(bd[5],bx+bw/2,by+bh/2):[bx+bw/2,by+bh/2]),130))return;boardFace2(bx,by,bw,bh,rows,l3,c3,boardFlip(bd[5]))};
  const T2draw=n=>{if(!SHOWBOARDS)return;for(const i of[0,1]){const[x,y]=T2b(n,i);if(seen(x+70,y+70,130))drawBd(T2spec(n,i),x,y,140)}};   // the two boards of a built building
  T2draw('mine');
- uWrap(FS,()=>face(1940,2260,'FUEL $'+FUELP.toFixed(2)+' / L',1,'#e8583a','diesel · always in stock','#cfd3d8'));
+ uWrap(FS,()=>face(1940,2260,'FUEL €'+FUELP.toFixed(2)+' / L',1,'#e8583a','diesel · always in stock','#cfd3d8'));
  if(plant.built)T2draw('power plant');   // (a power plant site has no board: what it still needs is on the banner and its unloading pad)
  for(const n of['lumberyard','sawmill','factory','foundry','quarry','crusher','iron mine'])if(BLD[n].built){T2draw(n);if(n==='crusher')drawCrLever()}   // a site has no board: what it still needs is on its banner and its unloading pad
  // smoke drifts off the stacks on the power plant's roof while it burns coal: along the roof and off the end of the building, clear of its doors and of the boards behind it, whichever way the building is turned
@@ -2945,7 +2972,7 @@ function logOp(){const say=m=>(flash(m),true),f=forkPt(T),h=LG.find(l=>l.fk===T)
  if(h){if(Math.abs(T.v)>.8)return say('Stop the forklift first.');
   for(const b of logBeds()){const q=bedPlace(b,f);if(q<0)continue;const np=b.cap/3;if(b.cg.amt>0&&b.cg.type!=='logs')return say('That bed carries something else.');const pl=fixPlaces(b.cg,np);if(pl[q]>=3)return say('Slot '+(q+1)+' is full (3 logs): set the log down over another slot.');b.cg.type='logs';b.cg.amt=Math.floor(b.cg.amt+1e-6)+1;pl[q]++;LG.splice(LG.indexOf(h),1);return say('Log loaded in slot '+(q+1)+' of '+np+' on the '+entName(b.e)+' ('+Math.floor(b.cg.amt)+' / '+b.cap+').')}
   if(Math.abs(f[0]-swz.x)<swz.w/2&&Math.abs(f[1]-swz.y)<swz.h/2){if(!sawmill.built){const r=reqOf(sawmill,'logs');if(r.got>=r.need-1e-6)return say('The sawmill site has all the logs it needs.');r.got+=1;cash+=SITEPAY.logs;LG.splice(LG.indexOf(h),1);reqSync(sawmill);return say(sawmill.built?'Sawmill built! It now saws logs into planks.':'Log delivered to the sawmill site (logs '+reqFmt(r)+').')}
-   if(sawmill.stock+1>sawmill.cap)return say('Sawmill storage is full.');sawmill.stock+=1;cash+=SITEPAY.logs;LG.splice(LG.indexOf(h),1);return say('Log delivered to the sawmill ($'+SITEPAY.logs+').')}
+   if(sawmill.stock+1>sawmill.cap)return say('Sawmill storage is full.');sawmill.stock+=1;cash+=SITEPAY.logs;LG.splice(LG.indexOf(h),1);return say('Log delivered to the sawmill (€'+SITEPAY.logs+').')}
   if(lumber.built&&Math.abs(f[0]-lz.x)<lz.w/2&&Math.abs(f[1]-lz.y)<lz.h/2){if(lumber.stock+1>lumber.cap)return say('The log station is full.');const c=freeCell(f[0],f[1]);if(!c)return say('No free place in the log station.');h.fk=null;h.st=true;h.x=c[0];h.y=c[1];h.a=LS.rot*Math.PI/2;lumber.stock+=1;return say('Log set down in the log station.')}
   {const q=logSpotG(f,liftA(T)+Math.PI/2);if(q.why)return say(q.why==='road'?'Not inside a building or wall.':'No room here: the log needs 2 free squares.');h.fk=null;h.st=false;h.x=q.x;h.y=q.y;h.a=q.a;return say('Log set down.')}}
  for(const bd of logBeds()){const q=bedPlace(bd,f);if(q<0)continue;const pl=fixPlaces(bd.cg,bd.cap/3);if(pl[q]<=0)return say('No logs in slot '+(q+1)+' of that bed.');if(Math.abs(T.v)>.8)return say('Stop the forklift first.');pl[q]--;bd.cg.amt=Math.max(0,Math.floor(bd.cg.amt+1e-6)-1);if(bd.cg.amt<.001){bd.cg.amt=0;bd.cg.type=null}LG.push({x:f[0],y:f[1],a:liftA(T)+Math.PI/2,st:false,fk:T});return say('Log lifted from slot '+(q+1)+'.')}
@@ -3604,7 +3631,7 @@ let goalCur=null;
 function goalTick(){let cur=null;for(const q of GOALS){if(STORY.d[q.id])continue;let ok=false;try{ok=!!q.done()}catch(e){}if(ok){STORY.d[q.id]=1;if(cur===null&&goalTick.ready)flash('Goal done: '+q.t+'.');continue}if(!cur)cur=q}goalCur=cur;goalTick.ready=true;return cur}   // ready: no messages for what was already done when the game started or was loaded
 function storyStep(){const q=goalCur||goalTick();if(!q)return{txt:'<b>Every goal is done.</b> Upgrade the storages, buy bigger rigs and keep the factory and foundry busy.'};
  const c=typeof q.cost==='function'?q.cost():0;
- if(c&&cash<c)return{txt:q.t,prog:'$'+Math.floor(cash)+' / $'+c,hint:'Earn it first: deliver coal to the power plant or sell cargo at the shop.',coal:Infinity,dest:mainPlant().li,q};
+ if(c&&cash<c)return{txt:q.t,prog:'€'+Math.floor(cash)+' / €'+c,hint:'Earn it first: deliver coal to the power plant or sell cargo at the shop.',coal:Infinity,dest:mainPlant().li,q};
  const cl=q.site&&reqOf(q.site,'coal'),cn=q.cap?q.cap-cl.got:cl?cl.need-cl.got:0;
  return{txt:q.t,prog:q.prog?q.prog():'',hint:q.hint,coal:cn>1e-6?cn:undefined,dest:q.dest,q}}
 // the goal box: chapter and step number, the goal and how far along it is, and how to do it. A click (or J) opens the list of all goals
@@ -3688,12 +3715,12 @@ function worldLayers(t){
  for(const lifted of[1,0])for(const v of Object.values(veh))if(v.out&&v.kind==='crane'&&!!v.fk==lifted){drawToolTop(v);drawCraneTop(v)}   /* a crane that hangs on another crane's cables first: it is under that crane's boom */if(P.pass&&craneRun(P.pass)&&P.pass.ftOn&&P.pass.ft>=1){const q=hookPt(P.pass);g.save();g.setLineDash([5,4]);g.strokeStyle='#ffd166';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],1.2*S,0,7);g.stroke();g.restore()}   /* the hook's reach, like the hitch place */if(P.pass&&P.pass.kind==='crane')drawPlayer0();   /* the crane's boom and tool over what it lifts */drawLogSlot();   // a pallet on the forks is lifted: it goes over trailers and beds too
  if(!SEEO)drawReach();drawSpaceHL();
  for(const it of GI){if(it.fk)continue;if(isBar(it)||it.type==='cone'||it.type==='chair'){drawObst(it);continue}g.fillStyle='rgba(8,12,20,.3)';g.beginPath();g.arc(it.x+1.5,it.y+2,S*.38,0,7);g.fill();itemSprite(it,it.x,it.y,it.type==='canister'?S*.46:S*.38)}
- drawSeats();if(inCr)drawPlayer();drawTop();drawMinePipe();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
+ drawSeats();payHint();if(inCr)drawPlayer();drawTop();drawMinePipe();drawNight();for(const l of PLBL)txt(l[0],l[1],l[2],l[3],'bold 10px sans-serif');}
 function draw(t){viewHalf();
  if(bigMap){if(mapTab==='map'&&mapS>=.3){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x;cam.y=mapCam.y;Z=mapS;draw(t)}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}MBTN=[];MAPR={x:0,y:0,w:VW,h:VH};mapBar(48);mapZoomBtns(58);return}drawMapScreen();return}   // the Map tab: zoomed in, the live game from a camera moved with W A S D (or dragged); zoomed out, the drawn map
  g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle=IN?'#000':'#2a3a2a';g.fillRect(0,0,VW,VH);
  g.save();if(VROT()){g.translate(VW/2,VH/2);g.scale(Z,Z);g.rotate(VROT());g.translate(-cam.x,-cam.y)}else{const q=dpr*Z;g.setTransform(q,0,0,q,Math.round(VW/2*dpr-cam.x*q),Math.round(VH/2*dpr-cam.y*q))}   // the camera moves in whole device pixels: the picture stays crisp, and the ground chunks are copied straight across
- if(IN){if(seeThru(IN.o))drawSeeThru(t);drawInterior(t);drawPads(t);drawReach();drawPeersIn();drawPlayer();if(IN.o.inw){const r=offRect0(IN.o),gm=interiorGeo(IN.o);drawTestGrid(r.x0-gm.X0,r.y0-gm.Y0)}else drawTestGrid();g.restore();drawCrateWin();return}
+ if(IN){if(seeThru(IN.o))drawSeeThru(t);drawInterior(t);drawPads(t);drawReach();drawPeersIn();payHint();drawPlayer();if(IN.o.inw){const r=offRect0(IN.o),gm=interiorGeo(IN.o);drawTestGrid(r.x0-gm.X0,r.y0-gm.Y0)}else drawTestGrid();g.restore();drawCrateWin();return}
  worldLayers(t);drawTestGrid();
  g.restore();
  if(!LIVEMAP&&(VH>420||TOUCHUI)){const mw=TOUCHUI?Math.min(130,VW*.24):Math.min(200,VW*.34),s=mw/(TOUCHUI?2200:2800),mh=mw*.78,mx=VW-mw-(TOUCHUI?12:10),my=TOUCHUI?GH+62:VH-mh-10;MM={x:mx,y:my,w:mw,h:mh};if(TOUCHUI){const hb=Math.round(my+mh);if(hb!==HUDB){HUDB=hb;document.documentElement.style.setProperty('--hudb',hb+'px')}}drawMap(mx,my,mw,mh,s,mw>=170,false);if(SET.coords)drawCoords(mx,my,mw,mh)}
@@ -3730,7 +3757,7 @@ function drawMap(mx,my,mw,mh,s,big,full){
   LOTS.forEach((l,i)=>{const b=PLANTS.find(p=>p.li===i)||(i===3?lumber:i===4?sawmill:i===7?quarry:i===8?iron:i===9?crusher:i===10?factory:i===11?foundry:null),done=!b||b.built;g.fillStyle=l.col+(done?'88':'33');g.fillRect(l.x0*s,l.y0*s,(l.x1-l.x0)*s,(l.y1-l.y0)*s);g.strokeStyle=l.col;g.lineWidth=1;if(!done)g.setLineDash([2,2]);g.strokeRect(l.x0*s+.5,l.y0*s+.5,(l.x1-l.x0)*s-1,(l.y1-l.y0)*s-1);g.setLineDash([])});
   // buildings: a dot in each building's colour, a letter on the bigger map
   const mk=(x,y,c,t,nm)=>{g.fillStyle=c;g.strokeStyle='#0b120c';g.lineWidth=1.2;g.beginPath();g.arc(x*s,y*s,full?10:big?5:3.2,0,7);g.fill();g.stroke();if(big&&t){g.fillStyle='#0b120c';g.font=full?'bold 11px sans-serif':'bold 7px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(t,x*s,y*s+.5)}if(full&&nm){g.fillStyle='#fff';g.strokeStyle='#000';g.lineWidth=3;g.font='bold 12px sans-serif';g.textBaseline='alphabetic';g.strokeText(nm,x*s,y*s+25);g.fillText(nm,x*s,y*s+25)}};
-  for(const o of OFFICES){const r=offRect(o);mk((r.x0+r.x1)/2,(r.y0+r.y1)/2,BCOL[o.n],{mine:'M','power plant':'P',lumberyard:'L',sawmill:'S',quarry:'Q','iron mine':'I',crusher:'C',factory:'W',foundry:'Y',shop:'$',garage:'G',fuel:'F'}[o.n],o.id?o.b.name:{mine:'Coal mine','power plant':'Power plant',lumberyard:'Lumberyard',sawmill:'Sawmill',quarry:'Quarry','iron mine':'Iron mine',crusher:'Crusher',factory:'Factory',foundry:'Foundry',shop:'Shop',garage:'Garage',fuel:'Fuel station'}[o.n])}
+  for(const o of OFFICES){const r=offRect(o);mk((r.x0+r.x1)/2,(r.y0+r.y1)/2,BCOL[o.n],{mine:'M','power plant':'P',lumberyard:'L',sawmill:'S',quarry:'Q','iron mine':'I',crusher:'C',factory:'W',foundry:'Y',shop:'€',garage:'G',fuel:'F'}[o.n],o.id?o.b.name:{mine:'Coal mine','power plant':'Power plant',lumberyard:'Lumberyard',sawmill:'Sawmill',quarry:'Quarry','iron mine':'Iron mine',crusher:'Crusher',factory:'Factory',foundry:'Foundry',shop:'Shop',garage:'Garage',fuel:'Fuel station'}[o.n])}
   
   // the player's view
   if(!IN){g.strokeStyle='#ffffffaa';g.lineWidth=1;g.save();g.translate(cam.x*s,cam.y*s);g.rotate(-VROT());g.strokeRect(-VW/Z/2*s,-VH/Z/2*s,VW/Z*s,VH/Z*s);g.restore()}
@@ -3754,7 +3781,7 @@ function mapClick(x,y,btn){for(const b of MBTN)if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<
 function mapBar(HB){g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle='#171e26';g.fillRect(0,0,VW,HB);g.textBaseline='middle';
  [['tab_map','Map'],['tab_build','Build']].forEach(([k,n],i)=>{const b={k,x:12+i*92,y:8,w:84,h:32},on=mapTab===k.slice(4);MBTN.push(b);g.fillStyle=on?'#3b6ea5':'#1f2832';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,8);g.fill();g.strokeStyle=on?'#8fc1ff':'#33414f';g.lineWidth=1.5;g.stroke();g.fillStyle='#fff';g.textAlign='center';g.font='bold 14px sans-serif';g.fillText(n,b.x+b.w/2,b.y+b.h/2+1)});
  if(VW>520){g.textAlign='left';g.font='13px sans-serif';g.fillStyle='#9fb0bf';g.fillText(mapTab==='map'?(TOUCHUI?'Drag to move · + / − to zoom · O back to you':'W A S D or drag to move · wheel to zoom · O back to you'):'Pick a tool below',204,HB/2+1)}
- g.textAlign='right';g.fillStyle='#ffd166';g.font='bold 16px sans-serif';g.fillText('$'+money(cash),VW-130,HB/2);
+ g.textAlign='right';g.fillStyle='#ffd166';g.font='bold 16px sans-serif';g.fillText('€'+money(cash),VW-130,HB/2);
  const cb={k:'close',x:VW-112,y:8,w:100,h:32};MBTN.push(cb);g.fillStyle='#2b3642';g.beginPath();g.roundRect(cb.x,cb.y,cb.w,cb.h,8);g.fill();g.fillStyle='#fff';g.textAlign='center';g.font='bold 13px sans-serif';g.fillText('Back  (M)',cb.x+cb.w/2,cb.y+cb.h/2+1)}
 function mapZoomBtns(y0){[['zin','+'],['zout','-'],['here','o']].forEach(([k,n],i)=>{const b={k,x:VW-52,y:y0+10+i*46,w:40,h:38};MBTN.push(b);g.fillStyle='#000a';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,8);g.fill();g.fillStyle='#fff';g.textAlign='center';g.textBaseline='middle';g.font='bold 18px sans-serif';g.fillText(n,b.x+b.w/2,b.y+b.h/2+1)})}
 function drawSelBox(X,Y){const rp=RPIECES.find(r=>r.k===mapRoad),b={k:'rp_show',x:X,y:Y,w:220,h:64};MBTN.push(b);g.fillStyle='#141a21';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,9);g.fill();g.strokeStyle='#8fc1ff';g.lineWidth=2;g.stroke();   // the list hidden: a small square shows what is picked (click it to show the list again)
@@ -4079,7 +4106,7 @@ function testWorld(){const L=TEST_LAYOUT,ns=Object.keys(L.at),acts=[];if(IN){IN=
  applyUnits();ensureDesk();ensurePlantSign();if(typeof GCH!=='undefined')GCH.clear();START=startAt();TESTW=true;
  const o=offOf('garage');[P.x,P.y,P.a]=doorOut(o);cam.x=P.x;cam.y=P.y}
 const TESTS={
- full:['the old map: every building built and switched on along one street, the coal mine full, $100,000; you at the garage',()=>{}],
+ full:['the old map: every building built and switched on along one street, the coal mine full, €100,000; you at the garage',()=>{}],
  haul:['the full map, and you in a dump truck with its bed under the coal mine\'s pipe (hold Space to load), a pickup with a small bulk trailer next to it',()=>{
   const v=addVeh('dump',{});v.out=true;v.a=0;v.fuel=KOF(v).fuel;setActive(v);P.driving=true;P.pass=null;const pb=minePipe(mine).b,c=carriers().find(q=>q.ent===v);v.x=pb[0]-(c.e0+c.e1)/2*S;v.y=pb[1];
   const pk=addVeh('pickup',{bed:'coal'}),l=addTrl('pc'),d=TRL.pc;pk.out=l.out=true;pk.hitch=true;l.coupled=true;l.host=pk;pk.tr=l;pk.a=l.b=0;l.x=v.x-2*S;l.y=v.y-4.5*S;l.hx=l.x+d.bar*S;l.hy=l.y;pk.x=l.hx-hitchX(pk)*S;pk.y=l.hy;
@@ -4133,7 +4160,7 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
   const put=z=>{v.a=z.w>=z.h?0:Math.PI/2;v.v=0;v.x=z.x;v.y=z.y;const c=carriers().find(q=>q.ent===v);if(c){const d=dir(c.a),m=(c.e0+c.e1)/2*S;v.x+=z.x-(c.ox+d[0]*m);v.y+=z.y-(c.oy+d[1]*m)}};/* a zone is given by its middle: the truck's bed is set on it */put(load);SPK.down=true;SPK.t=performance.now()-2000;chkRun(4);const got=v.cargo&&v.cargo.amt||0;
   if(got<=0){SPK.down=false;P.driving=false;delete veh[v.id];return'nothing was loaded at the coal mine'}
   const p0=cash;put(dump);SPK.t=performance.now()-2000;chkRun(6);SPK.down=false;const left=v.cargo&&v.cargo.amt||0;P.driving=false;delete veh[v.id];
-  return left<got&&cash>p0?true:'nothing was unloaded at the power plant (load '+got.toFixed(1)+' t, left '+left.toFixed(1)+' t, paid $'+Math.round(cash-p0)+')'});
+  return left<got&&cash>p0?true:'nothing was unloaded at the power plant (load '+got.toFixed(1)+' t, left '+left.toFixed(1)+' t, paid €'+Math.round(cash-p0)+')'});
  // 5a. loading: every vehicle that carries coal fills to exactly its capacity, from a full mine and from an empty one producing while it waits (all the coal the mine makes goes into the truck, to the last bit)
  for(const k in TKINDS){let v=null,c=null;if(!dry){for(const o of[{},{bed:'coal'}]){v=addVeh(k,o);v.out=true;v.x=X0;v.y=Y0;v.a=A0;setActive(v);P.driving=true;P.pass=null;c=carriers().find(q=>q.ent===v);P.driving=false;if(c&&(c.cargo==='coal'||c.cargo==='any'))break;delete veh[v.id];v=null;c=null}if(!v)continue}   // (the cargo spaces are those of the vehicle being driven)
   const nm=TKINDS[k].n,put=()=>{const z=load;v.a=z.w>=z.h?0:Math.PI/2;v.v=0;v.x=z.x;v.y=z.y;const q=carriers().find(q=>q.ent===v),d=dir(q.a),m=(q.e0+q.e1)/2*S;v.x+=z.x-(q.ox+d[0]*m);v.y+=z.y-(q.oy+d[1]*m)},
@@ -4272,7 +4299,6 @@ const CMDS={
  checklist:['','what /check checks, and what it does not check yet',()=>{if(MENU)return chatLine('Start or load a game first.',1);chkListWin()}],
  check:['','check the whole game: every building, vehicle, trailer, item, window and the saves (alone: your game is put back as it was afterwards)',()=>{if(CHK.on)return chatLine('The check is already running.',1);if(MENU)return chatLine('Start or load a game first.',1);chatLine(othersHere()?'Checking (others are here, so only what changes nothing)…':'Checking everything… your game is put back as it was afterwards.',1);setTimeout(async()=>{const R=await runChecks({});if(!R.full||R.restore===false)chkReport(R)},50)}],
  help:['','list the commands',()=>{const L=t=>Object.entries(CMDS).filter(([k,v])=>t===v[1].startsWith('test: ')).map(([k,v])=>'/'+k+(v[0]?' '+v[0]:'')+' – '+v[1].replace('test: ',''));chatLine('Commands: '+esc(L(false).join(' · ')),1);chatLine('Test: '+esc(L(true).join(' · ')),1)}],
- name:['<name>','set the name the others see',a=>{const n=a.trim().slice(0,20);if(!n)return chatLine('Your name is '+(CHAT.name||'not set')+'. Use /name Joe.',1);CHAT.name=n;try{localStorage.setItem('coalhaul.name',n)}catch(e){}NET.last=0;chatLine('You are now '+esc(n)+'.',1)}],
  players:['','everyone who has been on this map: kick, ban, remove (host)',()=>playersWin()],
  kick:['<name>','host: remove a player',a=>{const r=NET.room,n=a.trim().toLowerCase();if(!r||!r.kick||NET.mode!=='host')return chatLine('Only the host of a game started here (GitHub version) can remove players.',1);const ps=r.peers().filter(p=>!p.sameTab&&p.presence),m=ps.filter(p=>(p.presence.nm||'player').toLowerCase().startsWith(n));
   if(!n||!m.length)return chatLine('Remove whom? '+(ps.length?ps.map(p=>esc(p.presence.nm||'Player')).join(', '):'Nobody else is here.'),1);if(m.length>1)return chatLine('More than one player is called that: '+m.map(p=>esc(p.presence.nm||'Player')).join(', '),1);r.kick(m[0].peer);chatLine(esc(m[0].presence.nm||'Player')+' was removed.',1)}],
@@ -4285,7 +4311,7 @@ const CMDS={
  day:['','test: jump to morning',()=>{$('tday').click();chatLine('Morning.',1)}],
  dusk:['','test: jump to dusk',()=>{$('tdusk').click();chatLine('Dusk.',1)}],
  night:['','test: jump to night',()=>{$('tnight').click();chatLine('Night.',1)}],
- cash:['<amount>','test: set your cash',a=>{$('tcash').value=a;$('tset').click();tout()}],
+ cash:['<amount>','test: set your own cash',a=>{$('tcash').value=a;$('tset').click();tout()}],
  build:['<building>|all','test: finish a construction site, or all of them',a=>{const q=a.trim().toLowerCase();if(!q)return chatLine('Build what? all, '+SITES.map(x=>x.off).join(', '),1);const st=q==='all'?null:SITES.find(x=>x.off.includes(q));if(q!=='all'&&!st)return chatLine('No construction site called '+esc(q)+'. Sites: '+SITES.map(x=>x.off).join(', '),1);if(st&&st.b.built)return chatLine('The '+st.off+' is already built.',1);buildSites(st?st.off:'all');tout()}],
  tp:['<building>','test: go to a building (mine1, mine2, powerplant, garage…)',a=>{const e=tpTo(a);if(e)return chatLine(esc(e),1);const o=OFFICES.find(x=>!bGone(bkey(x))&&tpId(x)===a.trim().toLowerCase().replace(/\s+/g,''))||null;chatLine('You are at the door of '+(o?tpId(o):'it')+'.',1)}],
  test:['<name>','test: put a whole test world in place of the map (worlds: '+Object.keys(TESTS).join(', ')+'). Autosave is then off: reload the page to get your game back',a=>{const k=a.trim().toLowerCase(),w=TESTS[k];if(!w)return chatLine('Test worlds: '+Object.keys(TESTS).map(n=>'<b>'+n+'</b> ('+TESTS[n][0]+')').join('; ')+'. Use /test full.',1);if(MENU)return chatLine('Start or load a game first.',1);if(NET.room&&WS.on&&NET.room.peers().some(p=>!p.sameTab))return chatLine('/test only works when you play alone: it rebuilds the whole map.',1);
@@ -4297,8 +4323,10 @@ const CMDS={
 const tout=()=>{const t=$('tmsg').textContent;if(t)chatLine(esc(t),1);$('tmsg').textContent=''};
 const tog=(id,a)=>{const c=$(id),w=a.trim().toLowerCase();c.checked=w==='on'?true:w==='off'?false:!c.checked;c.dispatchEvent(new Event('change'));tout()};
 function chatCmd(t){const m=t.slice(1).match(/^(\S+)\s*(.*)$/);const c=m&&CMDS[m[1].toLowerCase()];if(!c)return chatLine('Unknown command '+esc(t.split(' ')[0])+'. Type /help.',1);try{c[2](m[2]||'')}catch(e){chatLine('That did not work: '+esc(e.message),1)}}
-function netSend(t){chatPoll();const r=NET.room;if(r&&t-RSTT>1000){RSTT=t;rosterTick(r)}if(!r||t-NET.last<66)return;NET.last=t;
- const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,nm:CHAT.name,ch:CHAT.out.length?CHAT.out:null,col:MYCOL||null,v:null,t:null,d:drv?T.id:null,hn:hornMine()?1:0,s:P.pass?1:0,pv:P.pass?P.pass.id:null,sd:P.pass?P.seatSd:null,pid:PID};
+// cash is each player's own: it is never added up or sent as a change. Everyone notes in the roster what each player has, so the host's save keeps it and a player who comes back gets theirs (a new player starts with nothing, as in a new game)
+function noteCash(r){if(ROSTER[PID])ROSTER[PID].cash=cash;try{if(r&&r.shared&&r.peers)for(const p of r.peers()){const q=p.presence;if(p.sameTab||!q||!q.pid||typeof q.csh!=='number')continue;const e=ROSTER[q.pid];if(e)e.cash=q.csh}}catch(e){}}
+function netSend(t){chatPoll();const r=NET.room;noteCash(r);if(r&&t-RSTT>1000){RSTT=t;rosterTick(r)}if(!r||t-NET.last<66)return;NET.last=t;
+ const drv=P.driving&&T.out,o=drv?T:P,pr={x:Math.round(o.x),y:Math.round(o.y),a:+o.a.toFixed(2),in:IN?1:0,hue:NET.hue,nm:CHAT.name,ch:CHAT.out.length?CHAT.out:null,col:MYCOL||null,v:null,t:null,d:drv?T.id:null,hn:hornMine()?1:0,s:P.pass?1:0,pv:P.pass?P.pass.id:null,sd:P.pass?P.seatSd:null,pid:PID,csh:r.shared&&WS.joined?Math.round(cash*100)/100:null};   // csh: this player's own cash, once they are in the game
  if(IN&&seeThru(IN.o)){const w=r2w(IN.o,P.x,P.y);pr.x=Math.round(w[0]);pr.y=Math.round(w[1]);pr.inb=bkey(IN.o);pr.rx=Math.round(P.x);pr.ry=Math.round(P.y);pr.ra=+P.a.toFixed(2)}
  if(drv&&!r.shared){pr.v={k:T.kind,bed:T.bed||null,col:T.color||null,bc:T.bedColor||null,eng:T.eng||0,nose:T.nose?1:0,st:+(T.st||0).toFixed(2),sp:+(T.v||0).toFixed(2),cg:T.cargo&&T.cargo.type?[T.cargo.type,+T.cargo.amt.toFixed(1)]:null};
   const tr=T.tr;if(tr)pr.t={k:tr.kind,col:tr.color||null,x:Math.round(tr.x),y:Math.round(tr.y),b:+tr.b.toFixed(2)}}
@@ -4306,7 +4334,7 @@ function netSend(t){chatPoll();const r=NET.room;if(r&&t-RSTT>1000){RSTT=t;roster
 // the host notes everyone on the map in the roster: name, colour, where they are, when last seen
 function rosterTick(r){const host=!r||!r.shared||netProd(),now=Date.now();if(!host)return;
  const me=ROSTER[PID]||(ROSTER[PID]={first:now});me.nm=CHAT.name||me.nm||'Host';me.col=MYCOL||me.col;me.last=now;me.host=1;
- try{if(r&&r.peers)for(const p of r.peers()){if(p.sameTab||!p.presence||!p.presence.pid)continue;const q=p.presence,e=ROSTER[q.pid]||(ROSTER[q.pid]={first:now});if(e.removed)delete e.removed;e.nm=q.nm||e.nm||'Player';e.col=q.col||e.col;e.last=now;e.pos=[q.x,q.y];delete e.host}}catch(e){}}
+ try{if(r&&r.peers)for(const p of r.peers()){if(p.sameTab||!p.presence||!p.presence.pid)continue;const q=p.presence,e=ROSTER[q.pid]||(ROSTER[q.pid]={first:now});if(e.removed)delete e.removed;e.nm=q.nm||e.nm||'Player';e.col=q.col||e.col;e.last=now;e.pos=[q.x,q.y];delete e.host}}catch(e){}noteCash(r)}
 // a player who has been on this map before comes back without a new pickup: on foot where they last were, in their colour
 function welcomeBack(e){if(e.col&&!MYCOL){MYCOL=e.col;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(x){}}if(!CHAT.name&&e.nm&&e.nm!=='Player')CHAT.name=e.nm;
  P.driving=false;P.pass=null;IN=null;if(e.pos){P.x=e.pos[0];P.y=e.pos[1]}cam.x=P.x;cam.y=P.y;flash('Welcome back'+(e.nm&&e.nm!=='Player'?', '+e.nm:'')+'. Your vehicles are where you left them.')}
@@ -4320,9 +4348,9 @@ function playersWin(){let o=document.getElementById('plwin');if(o){o.remove();re
   const rows=Object.entries(ROSTER).sort((a,b)=>(b[1].host?1:0)-(a[1].host?1:0)||(peerOf(b[0])?1:0)-(peerOf(a[0])?1:0)||(b[1].last||0)-(a[1].last||0)).map(([pid,e])=>{const me=pid===PID,on=me||!!peerOf(pid);
    const st=e.ban?'<span style="color:#ff7b66">banned</span>':on?'<span style="color:#7fe08a">● on the map</span>':'last here '+agoTxt(e.last||e.first||Date.now());
    const btn=!host||me?'':(on&&canKick?B('kick',pid,'Kick'):'')+B(e.ban?'unban':'ban',pid,e.ban?'Unban':'Ban',e.ban?'':'#5a2a2a')+(on?'':B('rm',pid,'Remove'));
-   return'<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:#243645;margin-bottom:6px"><span style="width:14px;height:14px;border-radius:50%;flex:none;background:'+(e.col||'#888')+'"></span><div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.nm||'Player')+(me?' (you)':'')+(e.host?' · host':'')+'</b><small style="opacity:.75">'+st+' · first came '+(e.first?new Date(e.first).toLocaleDateString():'?')+'</small></div><div style="display:flex;gap:5px;flex:none">'+btn+'</div></div>'}).join('')||'<div style="opacity:.7">Nobody yet.</div>';
+   return'<div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:#243645;margin-bottom:6px"><span style="width:14px;height:14px;border-radius:50%;flex:none;background:'+(e.col||'#888')+'"></span><div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.nm||'Player')+(me?' (you)':'')+(e.host?' · host':'')+'</b><small style="opacity:.75">'+(typeof(me?cash:e.cash)==='number'?'€'+Math.floor(me?cash:e.cash)+' · ':'')+st+' · first came '+(e.first?new Date(e.first).toLocaleDateString():'?')+'</small></div><div style="display:flex;gap:5px;flex:none">'+btn+'</div></div>'}).join('')||'<div style="opacity:.7">Nobody yet.</div>';
   o.querySelector('#plrows').innerHTML=rows};
- o.innerHTML='<div style="background:#1a2630;color:#eee;border-radius:14px;padding:16px 18px;width:min(460px,92vw);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 40px #0008"><div style="display:flex;align-items:center;margin-bottom:4px"><b style="font-size:18px;flex:1">Players</b><button id="plx" style="padding:5px 11px;border-radius:7px;border:1px solid #ffffff30;background:#243645;color:#fff;cursor:pointer">Close</button></div><div style="font-size:12px;opacity:.7;margin-bottom:10px">Everyone who has been on this map. '+(host?'A player on the list who comes back keeps their things and gets no new pickup. Remove takes them off the list: next time they start as a new player.':'Only the host can kick, ban or remove players.')+'</div><div id="plrows" style="overflow:auto"></div></div>';
+ o.innerHTML='<div style="background:#1a2630;color:#eee;border-radius:14px;padding:16px 18px;width:min(460px,92vw);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 10px 40px #0008"><div style="display:flex;align-items:center;margin-bottom:4px"><b style="font-size:18px;flex:1">Players</b><button id="plx" style="padding:5px 11px;border-radius:7px;border:1px solid #ffffff30;background:#243645;color:#fff;cursor:pointer">Close</button></div><div style="font-size:12px;opacity:.7;margin-bottom:10px">Everyone who has been on this map. '+(host?'A player on the list who comes back keeps their things and their cash and gets no new pickup. Remove takes them off the list: next time they start as a new player.':'Only the host can kick, ban or remove players.')+'</div><div id="plrows" style="overflow:auto"></div></div>';
  o.onclick=e=>{if(e.target===o)o.remove();const b=e.target.closest('button');if(!b)return;if(b.id==='plx'){o.remove();return}const a=b.dataset.a,pid=b.dataset.p,en=ROSTER[pid];if(!en)return;sfx('click');
   if(a==='kick'){const pr=peerOf(pid);if(pr){NET.room.kick(pr.peer);chatLine(esc(en.nm||'Player')+' was removed from the game.',1)}}
   else if(a==='ban'){en.ban=1;const pr=peerOf(pid);if(pr&&canKick)NET.room.kick(pr.peer,'The host has banned you from this game.');chatLine(esc(en.nm||'Player')+' is banned'+(canKick?'':' (in this preview nobody can be kept out: that works in the GitHub version)')+'.',1)}
@@ -4383,10 +4411,10 @@ function netApplyAct(a,live){if(PENDY&&a[0]==='m'&&a[1]===PENDY.k){mapSay(PENDY.
 function netWatchTurns(){for(const[n,U]of NETX.units)if(U.rot!==NETX.rot[n]){NETX.rot[n]=U.rot;const a=['u',n,U.rot];NETX.acts.push(a);if(NETX.send)NETX.send(a)}}
 const netProd=()=>{const r=NET.room;return!(r&&r.shared)||r.isHost()};
 const netBusy=v=>{const r=NET.room;if(!r||!r.shared)return false;for(const p of r.peers())if(!p.sameTab&&p.presence&&p.presence.d===v.id)return true;return false};
-const WS={on:false,joined:false,last:{},ver:{},cb:0,iv:0};
+const WS={on:false,joined:false,last:{},ver:{},iv:0};
 NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room.shared)return;   // offline: only the tools to write and read the whole world (saves), nothing is connected
- if(!offline){if(host&&!WS.joined){WS.joined=true;WS.cb=cash}
- WS.on=host||WS.joined;WS.cb=WS.joined?WS.cb:cash}
+ if(!offline){if(host&&!WS.joined){WS.joined=true}
+ WS.on=host||WS.joined}
  const rd=x=>Math.round(x*10)/10,cg=e=>[e.cargo.type,+e.cargo.amt.toFixed(2)];
  const vrec=v=>({k:'v',id:v.id,kind:v.kind,bed:v.bed,color:v.color,bedColor:v.bedColor,hitch:v.hitch,forks:v.forks,eng:v.eng,nose:v.nose,tank:v.tank,name:v.name,out:v.out,starter:v.starter?1:0,x:rd(v.x),y:rd(v.y),a:+v.a.toFixed(3),v:+v.v.toFixed(2),st:+v.st.toFixed(2),fuel:+v.fuel.toFixed(1),cg:cg(v),tr:v.tr?v.tr.id:null,on:v.on&&v.on.t?{t:v.on.t.id,lx:rd(v.on.lx),ly:rd(v.on.ly),da:+v.on.da.toFixed(3),f:v.on.f,tier:v.on.tier||0}:null,bo:v.boot?1:0,ct:v.ctool||null,cs:v.cslot||null,hg:v.fk?v.fk.id:null,cr:v.cr?{r:+v.cr.rot.toFixed(3),e:+v.cr.ext.toFixed(3),h:+v.cr.hr.toFixed(3)}:null,ft:v.ft?+v.ft.toFixed(2):0,fo:v.ftOn?1:0,lt:v.lights?1:0,hl:v.hl?1:0,sl:v.slots,pl:v.pals?v.pals.map(palId):null});   // on: the ramp trailer this vehicle rides on; bo: its boot lid is open
  const trec=t=>({k:'t',id:t.id,kind:t.kind,cf:t.onF?{e:t.onF.e.id,p:t.onF.p,da:t.onF.da||0}:null,hg:t.fk?t.fk.id:null,color:t.color,hitch:t.hitch,name:t.name,out:t.out,x:rd(t.x),y:rd(t.y),b:+t.b.toFixed(3),hx:rd(t.hx),hy:rd(t.hy),kx:rd(t.kx),ky:rd(t.ky),coupled:t.coupled,on:t.on,nz:t.nz,ramp:t.ramp,rp:+t.rp.toFixed(2),cg:cg(t),host:t.host?t.host.id:null,tr:t.tr?t.tr.id:null,gl:t.glue||null,ld:t.ld&&t.ld.t?{t:t.ld.t.id,lx:rd(t.ld.lx),ly:rd(t.ld.ly),da:+t.ld.da.toFixed(3),f:t.ld.f,tier:t.ld.tier||0,tx:rd(t.ld.tx||0),go:t.ld.go||0}:null,sl:t.slots,pl:t.pals?t.pals.map(palId):null});
@@ -4446,12 +4474,12 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  function take(list,from){const ap=[];for(const r of list||[]){const mv=WS.ver[r.id]||0;if(r.ver<mv||(r.ver===mv&&from<(room.myId()||'')))continue;const cur=entOf(r.id);if(cur&&!cur._s&&heldByMe(cur)){if(r.k==='v'||r.k==='t')mergeHeld(cur,r);continue}WS.ver[r.id]=r.ver;let e=null;try{e=(r.k==='v'||r.k==='t')?apply(r):applyX(r)}catch(x){console.warn('skipped',r.id,x)}if(e)ap.push([r,e])}link(ap);for(const[r,e]of ap)if(!e._g)WS.last[r.id]=JSON.stringify(mk[r.k](e));else WS.last[r.id]=JSON.stringify(r,(k,v)=>k==='ver'?undefined:v)}
  function drop(list){for(const[id,v]of list||[]){if((WS.ver[id]||0)>v)continue;const e=entOf(id);if(!e||e===T&&P.driving)continue;WS.ver[id]=v;if(id[0]==='v'||id[0]==='t'){if(e.tr){e.tr.coupled=false;e.tr.host=null}delete veh[id];delete trl[id]}else{const A=id[0]==='p'?PALS:id[0]==='l'?LG:id[0]==='a'?ATT:GI,i=A.indexOf(e);if(i>=0)A.splice(i,1)}delete WS.last[id]}}
  if(!offline)room.onMsg=(from,d)=>{if(!d)return;
-  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;ATT.length=0;WS.last={};WS.ver={};take(d.e,from);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);placeBlds(d.bld);if(typeof d.clk==='number'){CLK=d.clk;DAYN=d.dn||1}WS.joined=true;WS.on=true;const was=d.roster&&d.roster[PID];ROSTER=d.roster||{};if(was)welcomeBack(was);else pickPickup()}else take(d.e,from);return}
+  if(d.snap){if(!WS.joined){P.driving=false;P.pass=null;for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;ATT.length=0;WS.last={};WS.ver={};take(d.e,from);cash=((d.roster||{})[PID]||{}).cash||0;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);placeBlds(d.bld);if(typeof d.clk==='number'){CLK=d.clk;DAYN=d.dn||1}WS.joined=true;WS.on=true;const was=d.roster&&d.roster[PID];ROSTER=d.roster||{};if(was)welcomeBack(was);else pickPickup()}else take(d.e,from);return}
   if(!WS.on)return;
   if(d.ask){if(room.isHost()){const e=hostAsk(d.ask);if(e)room.sendTo(from,{say:e})}return}   // a guest's map step on a building: the host decides
   if(d.say){flash(d.say);if(PENDY||mapWantMine){mapSay(d.say);PENDY=null;mapWantMine=false}return}
-  if(d.c){cash+=d.c;WS.cb+=d.c}
   if(typeof d.clk==='number'&&!room.isHost()){CLK=d.clk;DAYN=d.dn||DAYN}   // the host's clock is the game's
+  if(payMsg(d))return;
   if(d.k){for(const k in d.k)if(CT[k]){CT[k].set(CT[k].get()+d.k[k]);BASE[k]=CT[k].get()}resync()}
   if(d.f)for(const k in d.f)if(FLG[k]){FLG[k].set(d.f[k]);FB[k]=FLG[k].get()}
   if(d.a)for(const a of d.a)netApplyAct(a,1);
@@ -4459,7 +4487,7 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  const snap=()=>{const all=[];for(const[k,e]of everything()){const r=mk[k](e);r.ver=WS.ver[r.id]||1;if(!WS.ver[r.id])WS.ver[r.id]=1;all.push(r)}const[sa,sf]=absAll();rosterTick(NET.room);return{e:all,cash,s:sa,fl:sf,acts:NETX.acts,bld:NETX.units.map(([k,U])=>[k,U.c0,U.r0,U.rot]),clk:CLK,dn:DAYN,roster:ROSTER}};
  // a saved game is put back on a map nobody has touched yet: the same steps as joining, with the player put where the save says
  const restore=d=>{P.driving=false;P.pass=null;ROSTER=d.roster||{};for(const k in veh)delete veh[k];for(const k in trl)delete trl[k];PALS.length=0;GI.length=0;LG.length=0;ATT.length=0;WS.last={};WS.ver={};
-  take(d.e,'save');for(const r of d.e)if(r.k==='v'||r.k==='t')linkRide(r);cash=d.cash;WS.cb=cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);placeBlds(d.bld);if(typeof d.clk==='number'){CLK=d.clk;DAYN=d.dn||1}
+  take(d.e,'save');for(const r of d.e)if(r.k==='v'||r.k==='t')linkRide(r);cash=d.cash;sets(d.s,d.fl);for(const a of d.acts||[])netApplyAct(a);placeBlds(d.bld);if(typeof d.clk==='number'){CLK=d.clk;DAYN=d.dn||1}
   const m=d.me;if(m&&m.col)MYCOL=m.col;if(m){const v=m.drv&&veh[m.drv],o=m.in&&offOf(m.in);if(o){[P.x,P.y,P.a]=doorOut(o)}else{P.x=m.x;P.y=m.y;P.a=m.a}if(v){setActive(v);P.driving=true}else P.driving=false;cam.x=P.x;cam.y=P.y}};
  const reg=(n,b)=>{const had=new Set(Object.keys(CT)),hadF=new Set(Object.keys(FLG));ctReg(n,b);for(const k in FLG)if(!hadF.has(k)){if(k in PENDF){FLG[k].set(PENDF[k]);delete PENDF[k]}FB[k]=FLG[k].get()}for(const k in CT)if(!had.has(k)){if(k in PEND){CT[k].set(PEND[k]);delete PEND[k]}BASE[k]=CT[k].get()}};   // a building added during the game: its counters are saved and shared from now on
  NET.api={snap,restore,reg,pend:{a:PEND,f:PENDF}};
@@ -4469,11 +4497,10 @@ NET.world=function(host,rm){const offline=!!rm,room=rm||NET.room;if(!room||!room
  clearInterval(WS.iv);WS.iv=setInterval(()=>{if(!WS.on||!room.connected())return;netWatchTurns();const e=[],x=[];
   const live=new Set();for(const[k,o]of everything()){const q=k==='s'?o._n:(o.id||o._n||ensure(o,k));live.add(q);if(o._g)continue;const r=mk[k](o),j=JSON.stringify(r);if(WS.last[q]!==j){WS.last[q]=j;r.ver=WS.ver[q]=(WS.ver[q]||0)+1;e.push(r)}}
   for(const id in WS.last)if(!live.has(id)){delete WS.last[id];x.push([id,WS.ver[id]=(WS.ver[id]||0)+1])}
-  const c=Math.round((cash-WS.cb)*1e4)/1e4;if(c)WS.cb=cash;
   const kk={},ff={};let nk=0;for(const k in CT){const v=CT[k].get(),d=Math.round((v-BASE[k])*1e4)/1e4;if(d){kk[k]=d;BASE[k]+=d;nk++}}
   for(const k in FLG){const v=FLG[k].get();if(v!==FB[k]){ff[k]=v;FB[k]=v;nk++}}
   const ck=room.isHost()&&performance.now()-(WS.ct||0)>5000;if(ck)WS.ct=performance.now();
-  if(e.length||x.length||c||nk||ck)room.msg(Object.assign({e,x,c,k:kk,f:ff},ck?{clk:CLK,dn:DAYN}:{}))},66);
+  if(e.length||x.length||nk||ck)room.msg(Object.assign({e,x,k:kk,f:ff},ck?{clk:CLK,dn:DAYN}:{}))},66);
 };
 // what other players move eases across the screen instead of jumping
 function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const e of[...Object.values(veh),...Object.values(trl),...PALS,...LG]){const g=e._g;if(!g)continue;if(P.driving&&T===e){e._g=null;continue}
@@ -4484,10 +4511,11 @@ function wSmooth(dt){const k=1-Math.exp(-dt*14);for(const e of[...Object.values(
 const ovBox=(t,sub,body)=>'<div style="background:#1a2630;border:1px solid #ffffff30;border-radius:12px;padding:20px 24px;color:#eee;max-width:380px"><div style="font-size:18px;font-weight:700;margin-bottom:4px">'+t+'</div><div style="font-size:13px;opacity:.8;margin-bottom:12px">'+sub+'</div>'+body+'</div>';
 function overlay(html){const o=document.createElement('div');o.id='pickov';o.style.cssText='position:fixed;inset:0;background:#0b120ccc;z-index:60;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif';o.innerHTML=html;document.body.appendChild(o);return o}
 function chooseColour(joining,then){let pre=null;try{pre=localStorage.getItem('coalhaul.col')}catch(e){}if(!PAL.includes(pre))pre=PAL[0];
- const o=overlay(ovBox(joining?'Joining the game: your colour':'Choose your colour','Your pickup, and every vehicle and trailer you buy later, comes in this colour, cab and bed. In the shop you can still pick another one for a single vehicle.',
-  '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+PAL.map(c=>'<button data-c="'+c+'" title="'+c+'" style="height:52px;border-radius:10px;cursor:pointer;background:'+c+';border:2px solid #ffffff30;font-size:22px;font-weight:700;line-height:1;color:'+(c===PAL[6]?'#1a2630':'#fff')+'"></button>').join('')+'</div><button id="colok" style="display:block;width:100%;margin-top:16px;padding:12px;border-radius:8px;border:1px solid #ffd166;background:#ffd166;color:#1a2630;font:700 15px system-ui,sans-serif;cursor:pointer">Confirm</button>'));
+ const o=overlay(ovBox(joining?'Joining the game: your name and colour':'Your name and colour','Your pickup, and every vehicle and trailer you buy later, comes in this colour, cab and bed. In the shop you can still pick another one for a single vehicle.',
+  '<label for="colname" style="display:block;font-size:12px;opacity:.75;margin-bottom:3px">Your name</label><input id="colname" maxlength="20" autocomplete="off" spellcheck="false" placeholder="Player" value="'+esc(CHAT.name)+'" style="display:block;width:100%;box-sizing:border-box;margin-bottom:14px;padding:9px 11px;border-radius:8px;border:1px solid #ffffff40;background:#0f171e;color:#fff;font:15px system-ui,sans-serif"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+PAL.map(c=>'<button data-c="'+c+'" title="'+c+'" style="height:52px;border-radius:10px;cursor:pointer;background:'+c+';border:2px solid #ffffff30;font-size:22px;font-weight:700;line-height:1;color:'+(c===PAL[6]?'#1a2630':'#fff')+'"></button>').join('')+'</div><button id="colok" style="display:block;width:100%;margin-top:16px;padding:12px;border-radius:8px;border:1px solid #ffd166;background:#ffd166;color:#1a2630;font:700 15px system-ui,sans-serif;cursor:pointer">Confirm</button>'));
  const sw=[...o.querySelectorAll('button[data-c]')],pick=c=>{pre=c;for(const b of sw){const on=b.dataset.c===c;b.textContent=on?'✓':'';b.style.outline=on?'3px solid #fff':'none';b.style.outlineOffset='2px';b.setAttribute('aria-pressed',on)}};pick(pre);   // a click only selects (ring and tick); Confirm takes it. The colour picked last time is selected to begin with
- sw.forEach(b=>b.onclick=()=>pick(b.dataset.c));o.querySelector('#colok').onclick=()=>{MYCOL=pre;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(e){}o.remove();then&&then()}}
+ sw.forEach(b=>b.onclick=()=>pick(b.dataset.c));const nm=o.querySelector('#colname'),ok=o.querySelector('#colok');nm.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')ok.click()});nm.addEventListener('keyup',e=>e.stopPropagation());   // the only place the name is typed in: here, for a new game and when joining one
+ ok.onclick=()=>{CHAT.name=nm.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}NET.last=0;MYCOL=pre;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(e){}o.remove();then&&then()}}
 // a new game: the starting pickup takes the colour picked
 function startColour(then){chooseColour(false,()=>{for(const v of Object.values(veh))if(v.starter){v.color=MYCOL;v.bedColor=MYCOL}then&&then()})}
 function pickPickup(){const ov=document.getElementById('pickov');if(ov){if(ov.dataset.join)return;ov.remove();MYCOL=null}   // joined while the start window was still open: that choice starts over, as a joining player's
@@ -4558,9 +4586,9 @@ const canAuto=()=>!MENU&&NET.mode!=='join'&&!CHK.on&&!TESTW;   // TESTW: a /test
 let LASTAUTO=performance.now();SVREADY.then(()=>{try{svDel(SAVEK+'prev')}catch(e){}});   // the old second autosave ('before the last autosave') is not kept any more
 setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*60000&&sNow()>30000&&!bigMap&&canAuto()){LASTAUTO=performance.now();saveTo(SAVEK+'auto')}},5000);   // every SET.auto minutes (0: never), chosen in Settings → General   // not in the first seconds: a page opened by mistake must not replace a good autosave
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
-const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · $'+Math.floor(d.cash):'empty';
+const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · €'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.15',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.16',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
@@ -4601,7 +4629,7 @@ function pageLoad(o,back){const L=saveKeys(),au=readSave(SAVEK+'auto');
  const fi=P.q('#m-f');P.q('#m-file').onclick=()=>fi.click();fi.onchange=()=>{const f=fi.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{if(!loadFrom(String(rd.result)))P.say('That is not a Coal Haul save.')};rd.readAsText(f)};
  P.q('#m-back').onclick=back}
 // the save page (Esc menu): a new save with a name, or over an old one; rename and delete; export
-function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · $'+Math.floor(cash);
+function pageSave(o,back){const L=saveKeys(),def=SAVENM||'Day '+DAYN+' · €'+Math.floor(cash);
  const est=(()=>{try{const d=gameSave();d.pic=shot();return JSON.stringify(d).length}catch(e){return 0}})(),P=menuPage(o,H2('Save game')+storeBar()+(NET.mode==='join'?'<div style="font-size:12px;background:#243645;border-radius:8px;padding:7px 9px;margin-bottom:8px;opacity:.85">This is somebody else\'s game. A save keeps a copy of it in your browser, to play on your own later.</div>':'')+
   '<div style="display:flex;gap:8px"><input id="m-nm" maxlength="32" value="'+esc(def)+'" style="'+UI.inp+';flex:1;min-width:0"><button id="m-new" style="'+UI.btn+';background:#2f5a3c">Save</button></div><div style="font-size:12px;opacity:.6;margin-top:3px">A new save takes about '+fmtB(est)+'.</div>'+
   (L.length?SEC('Or over a save')+L.map(([k,d])=>'<div data-row="'+k+'" style="display:flex;gap:8px;align-items:center;margin:7px 0">'+thumb(d)+sline(d,'',k)+'<button data-over="'+k+'" style="'+UI.btn+';padding:7px 9px" title="Save over it">Save over</button><button data-ren="'+k+'" style="'+UI.btn+';padding:7px 9px" title="Rename">✎</button><button data-del="'+k+'" style="'+UI.btn+';padding:7px 9px" title="Delete">🗑</button></div>').join(''):'')+
@@ -4634,7 +4662,7 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
  const sel=(id,opts,v)=>'<select id="'+id+'" style="'+UI.inp+';padding:6px 8px;font-size:14px">'+opts.map(([k,t])=>'<option value="'+k+'"'+(k==v?' selected':'')+'>'+t+'</option>').join('')+'</select>';
  const T=SETTAB,tabs='<div style="display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px">'+SETTABS.map(([k,t])=>'<button data-tab="'+k+'" style="'+UI.btn+';flex:1;min-width:70px;padding:7px 8px;font-size:13px'+(k===T?';background:#c9832b;color:#111;font-weight:700':'')+'">'+t+'</button>').join('')+'</div>';   // the categories, as tabs along the top
  const P=menuPage(o,H2('Settings')+tabs+(
-  T==='general'?'<label style="font-size:12px;opacity:.75">Your name</label><input id="st-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 4px">'+SEC('Saving')+R('Autosave',sel('st-auto',[[0,'off'],[1,'every minute'],[2,'every 2 minutes'],[5,'every 5 minutes'],[10,'every 10 minutes']],+SET.auto||0))+'<div style="font-size:12px;opacity:.6">One autosave, written over each time; your own saves are never touched.</div>'+SEC('Camera')+R('When driving, start in',sel('st-cam',[['north','north up'],['follow','turning with the vehicle']],SET.cam))+'<div style="font-size:12px;opacity:.6">The crane cab always starts in its own view. TAB switches.</div>':
+  T==='general'?SEC('Saving')+R('Autosave',sel('st-auto',[[0,'off'],[1,'every minute'],[2,'every 2 minutes'],[5,'every 5 minutes'],[10,'every 10 minutes']],+SET.auto||0))+'<div style="font-size:12px;opacity:.6">One autosave, written over each time; your own saves are never touched.</div>'+SEC('Camera')+R('When driving, start in',sel('st-cam',[['north','north up'],['follow','turning with the vehicle']],SET.cam))+'<div style="font-size:12px;opacity:.6">The crane cab always starts in its own view. TAB switches.</div>':
   T==='sound'?SEC('Sound')+R('<b>Volume</b>',rng('st-vol',0,1,.05,SET.vol))+R('Mute all','<input id="st-mute" type="checkbox"'+(SET.mute?' checked':'')+' style="width:20px;height:20px">')+SGRP.map(([k,n,d])=>R(n+'<br><small style="opacity:.55">'+d+'</small>','<input data-ch="'+k+'" type="range" min="0" max="1" step=".05" value="'+grpVol(k)+'" style="width:150px">')).join(''):
   T==='display'?SEC('Display')+R('Night darkness',rng('st-night',0,1,.05,SET.night))+R('Lighter graphics (slow phones)','<input id="st-low" type="checkbox"'+(SET.low?' checked':'')+' style="width:20px;height:20px">')+R('Coordinates on the minimap<br><small style="opacity:.55">where you are: x y, tile, square</small>','<input id="st-crd" type="checkbox"'+(SET.coords?' checked':'')+' style="width:20px;height:20px">'):
   T==='controls'?SEC('Touch')+R('Tap time (ms)<br><small style="opacity:.6">longer: easier taps, slower stick</small>',rng('st-tap',150,600,10,SET.tap)+'<small id="st-tapv" style="width:34px">'+SET.tap+'</small>')+R('Stick size',rng('st-stick',100,200,5,SET.stick))+SEC('Controls')+controlsHTML():
@@ -4642,8 +4670,6 @@ function pageSettings(o,back){const R=(lab,ctl)=>'<div style="display:flex;align
   '<div style="display:flex;gap:8px;margin-top:14px">'+MB('m-back','Back','flex:1')+'</div>');
  o.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{SETTAB=b.dataset.tab;pageSettings(o,back)});
  const q0=P.q,DUM={},q=x=>q0(x)||DUM,num=(id,k,f)=>{q('#'+id).oninput=e=>{SET[k]=+e.target.value;if(f)f();setSave()}};
- q('#st-name').oninput=e=>{CHAT.name=e.target.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(x){}NET.last=0;const m=document.getElementById('mm-name');if(m)m.value=CHAT.name};
- q('#st-name').onkeydown=e=>e.stopPropagation();
  num('st-vol','vol');q('#st-mute').onchange=e=>{SET.mute=e.target.checked;setSave()};o.querySelectorAll('[data-ch]').forEach(i=>i.oninput=()=>{SET.sv=Object.assign({},SET.sv,{['g:'+i.dataset.ch]:+i.value});setSave();const k=i.dataset.ch;if(k==='game')sfx('coin');else if(k==='veh')sfx('switch')});num('st-night','night');num('st-stick','stick');num('st-tap','tap',()=>{q('#st-tapv').textContent=SET.tap});
  q('#st-cam').onchange=e=>{SET.cam=e.target.value;setSave()};if(q('#st-auto'))q('#st-auto').onchange=e=>{SET.auto=+e.target.value;LASTAUTO=performance.now();setSave()};q('#st-low').onchange=e=>{SET.low=e.target.checked;setSave()};q('#st-crd').onchange=e=>{SET.coords=e.target.checked;setSave()};
  o.querySelectorAll('[data-key]').forEach(b=>b.onclick=()=>{b.textContent='press a key…';b.style.background='#5a4a1e';
@@ -4659,7 +4685,7 @@ function controlsHTML(){const row=(k,t)=>'<tr><td style="padding:3px 10px 3px 0;
 // ---------- how to play ----------
 function pageHowto(o,back){const p=t=>'<p style="margin:6px 0;font-size:14px;line-height:1.45;opacity:.92">'+t+'</p>';
  const P=menuPage(o,H2('How to play')+
-  p('You start with <b>$0</b>, a small pickup and a town of building sites. Haul cargo, earn money, and build the town up one site at a time.')+
+  p('You start with <b>€0</b>, a small pickup and a town of building sites. Haul cargo, earn money, and build the town up one site at a time.')+
   SEC('The first hauls')+p('Drive to the <b>coal mine</b>, park with the cargo bed under the <b>coal pipe</b> behind the building and hold <b>action</b> to load. Unload on the <b>power plant</b> site\'s pad the same way. The other production buildings need power: build them <b>touching the power plant\'s wall</b>. Where the walls meet stands a shared pillar: at a corner of the plant it is live while that corner\'s switch (inside, on the back wall) is on, along a wall while both corner switches of that wall are on. You can build several power plants.')+
   SEC('Earning and building')+p('Sites pay for what you deliver. Other goods sell at the <b>shop</b>. Buy bigger trucks, trailers, a forklift and a crane truck there; new purchases appear on the NEW PURCHASES pad. Fuel up at the <b>fuel station</b>.')+
   p('Each building site lists what it needs: coal, rock, logs, planks, gravel… Built, it makes the next material: the lumberyard logs, the sawmill planks, the quarry rock, the crusher sand and gravel, the iron mine ore, the factory pallets, crates and hitches, the foundry iron, steel and glass.')+
@@ -4697,7 +4723,7 @@ function saveMenu(page){let o=document.getElementById('gmenu');if(o&&!page){o.re
 function menuArt(){if(document.getElementById('mmart'))return;const c=document.createElement('canvas');c.id='mmart';c.style.cssText='position:fixed;inset:0;width:100vw;height:100vh;z-index:59;pointer-events:none';document.body.appendChild(c);
  const x=c.getContext('2d');let W=0,H=0,DP=1;const fit=()=>{DP=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;c.width=W*DP;c.height=H*DP};fit();addEventListener('resize',fit);
  const T0=performance.now();
- const frame=now=>{if(!MENU||!document.body.contains(c)){c.remove();removeEventListener('resize',fit);return}if(SET.low&&c._done){requestAnimationFrame(frame);return}c._done=1;artDraw(x,W,H,DP,(now-T0)/1000);requestAnimationFrame(frame)};requestAnimationFrame(frame)}
+ const frame=now=>{if(!MENU||!document.body.contains(c)){c.remove();removeEventListener('resize',fit);return}if(SET.low&&c._done){requestAnimationFrame(frame);return}if(W>1&&H>1){c._done=1;artDraw(x,W,H,DP,(now-T0)/1000)}/* a window with no size yet (opened hidden): wait for it */requestAnimationFrame(frame)};requestAnimationFrame(frame)}
 function artDraw(x,W,H,DP,t){x.setTransform(DP,0,0,DP,0,0);
  const k=Math.min(W/70,H/56),ox=W*.5,oy=H*.5-20*k;   // one unit = k px: the 40 x 40 ground fits the screen, wide or tall, and its middle is the screen's middle
  const P=(a,b,z=0)=>[ox+(a-b)*k*.866,oy+(a+b)*k*.5-z*k+6*k];
@@ -4778,11 +4804,10 @@ function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');
    netStart('join',c,(ok,m)=>{if(ok){o.remove();MENU=false;document.body.classList.remove('inmenu');chatLine('You joined the game '+c+'.',1)}else{NET.mode=null;NET.code=null;mainMenu('join',m,c)}})};
   P.q('#mm-go').onclick=go;ci.onkeydown=e=>{if(e.key==='Enter')go()};if(pre&&!msg)go();return}
  const P=menuPage(o,'<div style="font-size:30px;font-weight:800;letter-spacing:1px;margin-bottom:2px">COAL HAUL</div><div style="opacity:.7;font-size:13px;margin-bottom:14px">Haul, build, grow. Alone or with friends.</div>'+
-  '<label style="font-size:12px;opacity:.75">Your name</label><input id="mm-name" maxlength="20" value="'+esc(CHAT.name)+'" placeholder="Player" style="'+UI.inp+';display:block;width:100%;margin:3px 0 8px">'+
-  (auto?BIG('mm-cont','Continue',(auto.name?esc(auto.name)+' · ':'')+'the autosave · '+fmtT(auto)):'')+BIG('mm-new','New game','A fresh map, $0, your pickup at the garage')+BIG('mm-load','Load game','Your saves or a file')+
+  (auto?BIG('mm-cont','Continue',(auto.name?esc(auto.name)+' · ':'')+'the autosave · '+fmtT(auto)):'')+BIG('mm-new','New game','A fresh map, €0, your pickup at the garage')+BIG('mm-load','Load game','Your saves or a file')+
   BIG('mm-join','Join game',IN_CLAUDE?'Works in the GitHub version: here everyone is on one map already':'Play in a friend\'s game with its code',IN_CLAUDE)+
   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px">'+MB('mm-set','Settings')+MB('mm-how','How to play')+'</div><div style="text-align:center;font-size:11px;opacity:.45;margin-top:10px">'+VERSION+'</div>');
- if(msg)P.say(msg);const q=P.q,name=()=>{CHAT.name=q('#mm-name').value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}};q('#mm-name').oninput=name;
+ if(msg)P.say(msg);const q=P.q;
  if(q('#mm-cont'))q('#mm-cont').onclick=()=>{const r=svGet(SAVEK+'auto');if(r&&!loadFrom(r))P.say('The autosave could not be loaded.')};
  q('#mm-new').onclick=()=>{o.remove();startColour(()=>{MENU=false;document.body.classList.remove('inmenu');netStart('host')})};
  q('#mm-load').onclick=()=>mainMenu('load');q('#mm-join').onclick=()=>mainMenu('join');q('#mm-set').onclick=()=>mainMenu('set');q('#mm-how').onclick=()=>mainMenu('how')}
@@ -4984,7 +5009,7 @@ setApply();
 let lastDraw=0;
 function loop(n){if(MENU||PAUSED){last=n;sndTick(0);draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);sndTick(dt);lightsWatch();lightBtns();/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as $80 must buy an $80 hitch
+ syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);sndTick(dt);lightsWatch();lightBtns();/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as €80 must buy an €80 hitch
  requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now
