@@ -4,6 +4,13 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.15 · 24 Nov 2026
+- Changed: new construction sites for every building that starts as one. Only the middle chunk is under construction (foundation, materials, a barrier where the walls will stand), with a board on it that lists every material, how much has come in and how much is still to come; it always reads upright. The yard is packed earth with the trucks' tracks from the gate to the unloading place, and becomes the building's asphalt when it is finished
+- Changed: every site has an unloading grate behind the building; what has been delivered lies in its hopper, each material in its colour. Logs and planks are still set down on it with the forklift. The finished power plant keeps its grate, the other buildings get their own pads
+- Removed: the four building stages, the mud with its puddles, the banner, cones, tower crane and coal pile of the old sites
+- Changed: the foundry needs 25 t of sand (was 20)
+- Added to /check: on every site a truck delivers on the grate, and the site and the finished yard are drawn
+
 ## 0.1.14 · 24 Nov 2026
 - Added: every yard that gets power lights all its pillars and gate posts, the pillars a neighbour's corner makes along its wall too, whatever its own main switch says. A power plant's pillars along a wall are lit while both corner switches of that wall are on; its corners and gate go by their switches as before
 - Fixed: the power plants after the first had only the main switch; the 4 corner levers and the gate lever are back in every one
