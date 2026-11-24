@@ -4,6 +4,12 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.20 · 24 Nov 2026
+- Fixed: the hose lying coiled by the tap (the one a new game starts with) could not be picked up. A click on it, left or right, takes it into your hands and off the tap; it lights up when the cursor is on it
+- Changed: a fuel tank is no longer mounted by clicking a vehicle with it in hand. It is fitted at the desk in the house, on a stored vehicle, and only from a tank that sits in the house (on its floor or in a crate there): the Fuel tank row lists just the sizes that are there and fit. The tank is used up, costs nothing more, and brings its fuel with it; the old tank goes to the floor of the house
+- Changed: the desk in the house no longer changes beds or hitches. The hitch stays an item, mounted on the back of a vehicle by hand
+- Added to /check: fitting a tank from the house (none there, on the floor, in a crate)
+
 ## 0.1.19 · 24 Nov 2026
 - Changed: on foot everything is done with the mouse. Left click uses or opens what is under the cursor (a desk, a sign, a crate's window, the tap, a seat) or picks up an item; with something in hand it uses it (pour a canister, mount a fuel tank, connect the hose). Right click puts what you hold where you point (the ground, a slot, a crate, a shelf, a pallet, a hitch on a vehicle, the hose on the tap) or, empty-handed, takes what you point at into your hands. Middle click turns a barrier, a sign or a desk, in your hands or on the ground (R still works)
 - Changed: you carry one thing at a time; the end of the hose counts
