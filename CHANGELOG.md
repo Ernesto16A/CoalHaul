@@ -4,6 +4,17 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.17 · 24 Nov 2026
+- Changed: the garage is a 4 x 3 chunk yard with the house in the middle. Vehicles and trailers are stored and brought out on platforms (2 at first, up to 8); what is stored is private, and each takes one of your own slots
+- Changed: parts, beds and colours are changed on stored vehicles, at the desk in the house. The garage's goods storage is gone: what an older save had in it is paid out
+- Added: a water tap behind the house, with hoses of different lengths to connect a tanker or a tank on a bed, and a water bill (the tap is shut at €100 unpaid)
+- Changed: the coal mine, the shop and the fuel station start as construction sites too; they need only water (200, 600 and 400 L)
+- Changed: a new game starts with a pickup with a hitch, a small water tanker and the shortest hose
+- Added: every player has their own garage, at a random free place near the middle of the map and turned at random. Nobody else gets through its gate; the owner can let players in at the desk (Garage tab). A player who comes back to an older map without one is given one
+- Added: more garages from the Yards list, as construction sites (300 L of water, 20 t of gravel, 10 planks). Only the owner or the host can demolish a garage
+- Fixed: a joining player could be taken for a returning one and start without a pickup
+- Added to /check: the garage, the tap, the water sites and the garages of several players
+
 ## 0.1.16 · 24 Nov 2026
 - Changed: cash is each player's own, no longer one shared pot. Whoever delivers or sells is paid, whoever clicks pays; a new player starts with nothing. The host's game and saves remember what each player has and give it back when they return (an older save's shared pot goes to whoever loads it). /players shows everyone's cash
 - Added: pay another player: click a player within your reach, type an amount, Pay. Both are told; a payment the other game does not confirm within 6 seconds comes back. Only in games played with a code

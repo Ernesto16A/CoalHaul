@@ -54,9 +54,9 @@ async def main():
         await pg.click('button[data-c]')
         await pg.click('#colok')   # the colour window: select, then Confirm
         await pg.wait_for_timeout(1500)
-        # a new game starts on an empty map: only the garage, at chunk 0,0, and no roads (decided 19 Nov)
+        # a new game starts on an empty map: only the player's garage, somewhere near the middle, and no roads (decided 19 Nov)
         st = await pg.evaluate("()=>({b:NETX.units.filter(([k])=>!isGone(k)).map(([k,U])=>k+' '+U.c0+','+U.r0),roads:RC.size+WT.size+WD.size})")
-        start_ok = st['b'] == ['garage 0,0'] and st['roads'] == 0
+        start_ok = len(st['b']) == 1 and st['b'][0].startswith('garage ') and st['roads'] == 0
         res = await pg.evaluate("async()=>{const R=await runChecks({restore:false});const L=chkLines(R);return {ver:R.ver,sum:L.sum,fails:L.fails,ok:L.ok,groups:R.groups}}")
         print('Coal Haul v%s check' % res['ver'])
         for g, v in res['groups'].items():
