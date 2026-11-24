@@ -4,6 +4,10 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.18 · 24 Nov 2026
+- Changed: a player starts with the pickup with a cargo bed and the small water tanker both stored in their garage, on foot next to the platforms. A joining player no longer picks a bed
+- Added: a first goal, "Bring out your pickup"
+
 ## 0.1.17 · 24 Nov 2026
 - Changed: the garage is a 4 x 3 chunk yard with the house in the middle. Vehicles and trailers are stored and brought out on platforms (2 at first, up to 8); what is stored is private, and each takes one of your own slots
 - Changed: parts, beds and colours are changed on stored vehicles, at the desk in the house. The garage's goods storage is gone: what an older save had in it is paid out

@@ -3683,8 +3683,9 @@ function hasItem(t){const inC=c=>c&&(c.type===t||(c.items&&c.items.some(x=>x&&x.
 const siteG=(id,ch,b,name,lot,hint)=>({id,ch,t:'Build the '+name,hint,done:()=>b.built,prog:()=>reqTxt(b),dest:lot,site:b});
 const buyG=(id,ch,t,hint,cost,lot,done)=>({id,ch,t,hint,done,cost,dest:lot});
 const GOALS=[
+ {id:'out1',ch:1,t:'Bring out your pickup',hint:'It is stored in your garage, with your small water tanker. On foot: click the post of a platform, then bring it out.',done:()=>Object.values(veh).some(v=>v.out&&mineE(v))||anyPlant(),get dest(){return myG1().li}},
  {id:'bmine',ch:1,t:'Place a coal mine',hint:'Open the map (M), Build tab: Yards → Coal mine, then click where it goes (R turns it). Lay a road to its gate with the Roads tool.',done:()=>MINES.some(m=>!isGone(m.id))||anyPlant()},
- {id:'water1',ch:1,t:'Fill your water tanker',hint:'It stands behind the house, the hose is on the tap. On foot: click the tap, then the tanker, and wait until it is full. Then back your pickup\'s hitch up to its tip and press C.',done:()=>anyPlant()||MINES.some(m=>!isGone(m.id)&&(m.built||m.reqs[0].got>0))||[...Object.values(veh),...Object.values(trl)].some(o=>o.cargo&&o.cargo.type==='water'&&o.cargo.amt>=100),get dest(){return myG1().li}},
+ {id:'water1',ch:1,t:'Fill your water tanker',hint:'Bring the tanker out on a platform, back your pickup\'s hitch up to its tip and press C, and park it behind the house. The hose is on the tap there: on foot, click the tap, then the tanker, and wait until it is full.',done:()=>anyPlant()||MINES.some(m=>!isGone(m.id)&&(m.built||m.reqs[0].got>0))||[...Object.values(veh),...Object.values(trl)].some(o=>o.cargo&&o.cargo.type==='water'&&o.cargo.amt>=100),get dest(){return myG1().li}},
  {id:'mine1',ch:1,t:'Bring water to the coal mine',hint:'Park with the tanker on the grate of the site (V picks the tanker) and hold Space. It takes 200 L: two trips.',done:()=>anyPlant()||MINES.some(m=>!isGone(m.id)&&m.built),prog:()=>{const m=MINES.find(m=>!isGone(m.id)&&!m.built);return m?reqTxt(m):''},get dest(){const m=MINES.find(m=>!isGone(m.id)&&!m.built)||mine;return m.li}},
  {id:'coal1',ch:1,t:'Get coal from a coal mine',hint:'A coal mine starts switched off and empty: walk in and click the main switch on its back wall, and it digs 0.1 t a second. Then park so your truck\'s bed is under its coal pipe and hold Space.',done:()=>anyPlant()||PLANTS.some(p=>p.got>0||(p.reqs||[]).some(r=>r.got>0))||[...Object.values(veh),...Object.values(trl)].some(o=>o.cargo&&o.cargo.type==='coal'&&o.cargo.amt>0)},
  {id:'coal5',ch:1,t:'Deliver 5 t of coal to the power plant site',hint:'No power plant yet? Build one from the Yards list (it starts as a site). Drive to the coal mine, park with your truck\'s bed under the coal pipe behind the building and hold Space. Then unload on the power plant site\'s pad the same way.',done:()=>anyPlant()||PLANTS.some(p=>reqOf(p,'coal').got>=5-1e-6),prog:()=>reqOf(mainPlant(),'coal').got.toFixed(1)+' / 5 t',get dest(){return mainPlant().li},get site(){return mainPlant()},cap:5},
@@ -4637,21 +4638,19 @@ function chooseColour(joining,then){let pre=null;try{pre=localStorage.getItem('c
  const sw=[...o.querySelectorAll('button[data-c]')],pick=c=>{pre=c;for(const b of sw){const on=b.dataset.c===c;b.textContent=on?'✓':'';b.style.outline=on?'3px solid #fff':'none';b.style.outlineOffset='2px';b.setAttribute('aria-pressed',on)}};pick(pre);   // a click only selects (ring and tick); Confirm takes it. The colour picked last time is selected to begin with
  sw.forEach(b=>b.onclick=()=>pick(b.dataset.c));const nm=o.querySelector('#colname'),ok=o.querySelector('#colok');nm.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')ok.click()});nm.addEventListener('keyup',e=>e.stopPropagation());   // the only place the name is typed in: here, for a new game and when joining one
  ok.onclick=()=>{CHAT.name=nm.value.trim().slice(0,20);try{localStorage.setItem('coalhaul.name',CHAT.name)}catch(e){}NET.last=0;MYCOL=pre;try{localStorage.setItem('coalhaul.col',MYCOL)}catch(e){}o.remove();then&&then()}}
-// what a new game starts with besides the pickup (with a hitch): a small water tanker on the stand behind the house, and the shortest hose on the tap
-function startKit(){const gk=myG();if(!gk)return;useG(gk);const t=addTrl('pq',MYCOL);t.own=PID;t.out=true;const q=uRot(GT,GOX+480,GOY+286);t.b=GT.rot*Math.PI/2;t.x=q[0];t.y=q[1];t.hx=t.x+Math.cos(t.b)*TRL.pq.bar*S;t.hy=t.y+Math.sin(t.b)*TRL.pq.bar*S;garageB.hose='hoses';garageB.hosee=null}
+// what a player starts with: a pickup with a cargo bed and a hitch and a small water tanker, both stored in their garage, and the shortest hose on its tap. The player stands at the first platform's post
+function startKit(v){const gk=myG();if(!gk)return;useG(gk);v.hitch=true;const t=addTrl('pq',MYCOL);t.own=PID;t.out=false;parkVeh(v);garageB.hose='hoses';garageB.hosee=null;
+ P.driving=false;P.pass=null;[P.x,P.y]=uRot(GT,GOX+150,GOY+155);P.a=(GT.rot-1)*Math.PI/2;cam.x=P.x;cam.y=P.y}
 // a new game: the starting pickup takes the colour picked
-function startColour(then){chooseColour(false,()=>{G1.own=PID;for(const v of Object.values(veh))if(v.starter){v.color=MYCOL;v.bedColor=MYCOL;v.own=PID;v.hitch=true}startKit();then&&then()})}
+function startColour(then){chooseColour(false,()=>{G1.own=PID;for(const v of Object.values(veh))if(v.starter){v.color=MYCOL;v.bedColor=MYCOL;v.own=PID;startKit(v);break}then&&then()})}
 function pickPickup(){const ov=document.getElementById('pickov');if(ov){if(ov.dataset.join)return;ov.remove();MYCOL=null}   // joined while the start window was still open: that choice starts over, as a joining player's
- const variants=()=>{const opts=[['coal','Cargo bed','5 t of cargo (coal, rock)'],['logs','Log bed','3 logs'],['fuel','Fuel tank','a tank on the bed'],['flat','Flatbed','one pallet or 4 crates']];
-  const o=overlay(ovBox('Joining the game','Choose the pickup you start with. It appears at your own garage, free, in your colour. It is yours: everyone can drive it, only you can store it.',opts.map(q=>'<button data-b="'+q[0]+'" style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:6px 0;padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer"><img src="'+icon('pickup',0,MYCOL,q[0]==='coal'?null:q[0],MYCOL)+'" style="width:84px;height:36px;object-fit:contain"><span><b>'+q[1]+'</b><br><small style="opacity:.75">'+q[2]+'</small></span></button>').join('')));o.dataset.join=1;
-  o.querySelectorAll('button').forEach(b=>b.onclick=()=>{o.remove();spawnPick(b.dataset.b)})};
- if(MYCOL)return variants();   // already chosen at the start: straight to the pickup
- chooseColour(true,variants);const o=document.getElementById('pickov');if(o)o.dataset.join=1}
-function spawnPick(bed){needGarage(()=>spawnPick1(bed))}
-function spawnPick1(bed){START=startAt();const own=myG();const v=addVeh('pickup',{bed,eng:0,tank:'xs',color:myCol(),bedColor:myCol()});v.starter=true;v.out=true;v.a=START.a;v.v=0;v.st=0;v.tr=null;v.fuel=KOF(v).fuel*.5;
+ if(MYCOL)return spawnPick();   // already chosen at the start
+ chooseColour(true,spawnPick);const o=document.getElementById('pickov');if(o)o.dataset.join=1}
+function spawnPick(){needGarage(spawnPick1)}
+function spawnPick1(){START=startAt();const own=myG();const v=addVeh('pickup',{bed:'coal',eng:0,tank:'xs',color:myCol(),bedColor:myCol()});v.starter=true;v.out=true;v.a=START.a;v.v=0;v.st=0;v.tr=null;v.fuel=KOF(v).fuel*.5;
  let ok=false;for(let r=0;r<9&&!ok;r++)for(let c=0;c<9&&!ok;c++){v.x=START.x+(r%2?1:-1)*Math.ceil(r/2)*6*S*Math.cos(START.a+Math.PI/2)+(c-4)*0;v.y=START.y+(r%2?1:-1)*Math.ceil(r/2)*6*S*Math.sin(START.a+Math.PI/2);if(!spawnBlocked(vBody(v),v,SPAWNGAP))ok=true}
  if(!ok){v.x=START.x;v.y=START.y}
- setActive(v);const kd=KOF(v),ca=[Math.cos(v.a),Math.sin(v.a)],o=(kd.b1-1.2)*S;P.driving=false;P.pass=null;P.x=v.x+ca[0]*o-ca[1]*2.1*S;P.y=v.y+ca[1]*o+ca[0]*2.1*S;P.a=v.a;cam.x=P.x;cam.y=P.y;if(own){v.hitch=true;startKit()}flash(own?'You joined the game. This is your garage.':'You joined the game. There was no place for your own garage.')}
+ setActive(v);const kd=KOF(v),ca=[Math.cos(v.a),Math.sin(v.a)],o=(kd.b1-1.2)*S;P.driving=false;P.pass=null;P.x=v.x+ca[0]*o-ca[1]*2.1*S;P.y=v.y+ca[1]*o+ca[0]*2.1*S;P.a=v.a;cam.x=P.x;cam.y=P.y;if(own)startKit(v);flash(own?'You joined the game. This is your garage, your pickup and tanker are stored in it.':'You joined the game. There was no place for your own garage.')}
 
 // ---------- saving ----------
 // A save is the same description of the world that a joining player gets (vehicles, pallets, items, shelves, cash, stock, construction, and the list of what was done to the map), plus where you stand. It is kept in this browser (autosave every minute, 3 slots) and can be exported as a file. Loading is done by restarting the page and putting the save on the fresh map. In a game with other players only the host can load, and only when nobody else is connected.
@@ -4716,7 +4715,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · €'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.17',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.18',VERSION='v'+VER+' · 24 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
@@ -4932,7 +4931,7 @@ function mainMenu(view,msg,pre){MENU=true;document.body.classList.add('inmenu');
    netStart('join',c,(ok,m)=>{if(ok){o.remove();MENU=false;document.body.classList.remove('inmenu');chatLine('You joined the game '+c+'.',1)}else{NET.mode=null;NET.code=null;mainMenu('join',m,c)}})};
   P.q('#mm-go').onclick=go;ci.onkeydown=e=>{if(e.key==='Enter')go()};if(pre&&!msg)go();return}
  const P=menuPage(o,'<div style="font-size:30px;font-weight:800;letter-spacing:1px;margin-bottom:2px">COAL HAUL</div><div style="opacity:.7;font-size:13px;margin-bottom:14px">Haul, build, grow. Alone or with friends.</div>'+
-  (auto?BIG('mm-cont','Continue',(auto.name?esc(auto.name)+' · ':'')+'the autosave · '+fmtT(auto)):'')+BIG('mm-new','New game','A fresh map, €0, your pickup at the garage')+BIG('mm-load','Load game','Your saves or a file')+
+  (auto?BIG('mm-cont','Continue',(auto.name?esc(auto.name)+' · ':'')+'the autosave · '+fmtT(auto)):'')+BIG('mm-new','New game','A fresh map, €0, your pickup in the garage')+BIG('mm-load','Load game','Your saves or a file')+
   BIG('mm-join','Join game',IN_CLAUDE?'Works in the GitHub version: here everyone is on one map already':'Play in a friend\'s game with its code',IN_CLAUDE)+
   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px">'+MB('mm-set','Settings')+MB('mm-how','How to play')+'</div><div style="text-align:center;font-size:11px;opacity:.45;margin-top:10px">'+VERSION+'</div>');
  if(msg)P.say(msg);const q=P.q;
