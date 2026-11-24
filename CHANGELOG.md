@@ -4,6 +4,14 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.19 · 24 Nov 2026
+- Changed: on foot everything is done with the mouse. Left click uses or opens what is under the cursor (a desk, a sign, a crate's window, the tap, a seat) or picks up an item; with something in hand it uses it (pour a canister, mount a fuel tank, connect the hose). Right click puts what you hold where you point (the ground, a slot, a crate, a shelf, a pallet, a hitch on a vehicle, the hose on the tap) or, empty-handed, takes what you point at into your hands. Middle click turns a barrier, a sign or a desk, in your hands or on the ground (R still works)
+- Changed: you carry one thing at a time; the end of the hose counts
+- Changed: Space works only in vehicles. Shop and upgrade pads open when you walk onto them (Esc closes; walk off and back on to open again)
+- Changed: the hose: right-click the tap to put it on, click the tap to take its end, click a tank to connect; right-click lets go of the end, right-click the tap again takes the hose off
+- Changed: on touch, the big button is the hand (✋) on foot, the action button (␣) in a vehicle; R turns a barrier, sign or desk near you
+- Added to /check: the hands (one thing at a time, left and right click, crates, turning)
+
 ## 0.1.18 · 24 Nov 2026
 - Changed: a player starts with the pickup with a cargo bed and the small water tanker both stored in their garage, on foot next to the platforms. A joining player no longer picks a bed
 - Added: a first goal, "Bring out your pickup"
