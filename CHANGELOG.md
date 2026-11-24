@@ -4,6 +4,14 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.23 · 24 Nov 2026
+- Changed: the shop is walked into like the power plant, the garage and the coal mine: its room is drawn where it stands, with no jump, and you walk in and out through its door (entrance tiles inside and out). Its two shelves and the counter stay; walking onto the counter opens the shop
+- Removed: the upgrade pad inside the shop, and the shop's storage (its tab was already hidden). An older save is paid for whatever was still in it
+- Changed: the desks and chairs are gone from every building (the 9 production buildings and the garage house). In their place a CONTROL pad lies in the middle of each room: walk onto it and the building's window opens, as the shop's counter does; walk off and it closes. The water bill, the platforms and the vehicles' parts are now at the control pad in the house. An older save's desks and chairs are taken away
+- Changed: a new player starts in the house just in front of its control pad, so its window does not open at once
+- Added to /check: every building's control pad opens its window, and no desk or chair is left
+- Added to /check: walking into the shop and out, the counter opening the shop, no upgrade pad; an old save's shop storage paid out
+
 ## 0.1.22 · 24 Nov 2026
 - Fixed: walking into the house by the back door moved the player to another spot in the room. You now keep your place, as at the front door
 - Changed: the name on the ground at a garage's gate is just the owner's name (GARAGE when it has no owner), no longer "…'s garage"
