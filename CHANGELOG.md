@@ -4,6 +4,10 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.28 · 25 Nov 2026
+- Fix: getting out of a vehicle (or switching its lights) could stop the game step, so the player could no longer move: a vehicle's health was kept in the same field as the crane's hook lamp, and the lamp's on/off overwrote it. Health has a field of its own now, and it is really in the save (it was not), and so is dirt (it was not either).
+- A frame error is now shown in a red banner at the top (the version, the error and where it happened, to copy into a report; a click closes it), and the game keeps drawing even when the error is in the game step (the player could not move but nothing said why).
+
 ## 0.1.27 · 25 Nov 2026
 - Freezes: a mistake in one frame no longer stops the game: the game goes on and says once 'Something went wrong (…)', to be reported. The loops that keep an angle within one turn and the ones along a trailer chain can no longer run forever (an infinite angle or a chain looping on itself used to hang the tab). Looked for after a freeze reported on getting out of the pickup on a rebuilt garage's yard (not reproduced).
 - The big map's Build tab, zoomed in, shows the live map under the tools (like the Map tab does), so you see the real ground, roads and yards where you build. A yard picked to be put down shows as a ghost under the mouse: its lot (green where it fits, red where it does not) with its gates, and its buildings' outlines where they would stand, turned with it (R). Zoomed out, the drawn map as before. Check added.
