@@ -55,8 +55,9 @@ async def main():
         await pg.click('#colok')   # the colour window: select, then Confirm
         await pg.wait_for_timeout(1500)
         # a new game starts on an empty map: only the player's garage, somewhere near the middle, and no roads (decided 19 Nov)
-        st = await pg.evaluate("()=>({b:NETX.units.filter(([k])=>!isGone(k)).map(([k,U])=>k+' '+U.c0+','+U.r0),roads:RC.size+WT.size+WD.size})")
-        start_ok = len(st['b']) == 1 and st['b'][0].startswith('garage ') and st['roads'] == 0
+        st = await pg.evaluate("()=>({b:NETX.units.filter(([k])=>!isGone(k)).map(([k,U])=>k+' '+U.c0+','+U.r0),roads:RC.size+WT.size+WD.size,kit:GI.filter(i=>i.rm===garageB.id).map(i=>i.type).sort().join(','),tap:garageB.hose||'',inh:!!IN&&IN.o.n==='garage'})")
+        # and the player in the house, with 2 short hoses and a water pump on its floor, and no hose on the tap (decided 25 Nov)
+        start_ok = len(st['b']) == 1 and st['b'][0].startswith('garage ') and st['roads'] == 0 and st['kit'] == 'hoses,hoses,pump' and not st['tap'] and st['inh']
         res = await pg.evaluate("async()=>{const R=await runChecks({restore:false});const L=chkLines(R);return {ver:R.ver,sum:L.sum,fails:L.fails,ok:L.ok,groups:R.groups}}")
         print('Coal Haul v%s check' % res['ver'])
         for g, v in res['groups'].items():
@@ -66,7 +67,7 @@ async def main():
             print('  ✗ ' + f)
         for e in errs:
             print('  ✗ page error: ' + e)
-        print('  %s start     new game: %s, %d road tiles' % ('✓' if start_ok else '✗', ', '.join(st['b']) or 'nothing', st['roads']))
+        print('  %s start     new game: %s, %d road tiles; in the house: %s; on the tap: %s' % ('✓' if start_ok else '✗', ', '.join(st['b']) or 'nothing', st['roads'], st['kit'] or 'nothing', st['tap'] or 'nothing'))
         ok = res['ok'] and not errs and start_ok
         if '--keep-save' in sys.argv:
             # a save of this version, every building built: later versions must still load it
