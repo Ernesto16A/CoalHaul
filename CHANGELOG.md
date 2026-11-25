@@ -4,6 +4,14 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.24 · 25 Nov 2026
+- Tank containers for liquids, in the same 3 sizes: small (2x2, 150 L, €3,500), standard (2x4, 400 L, €6,000), large (2x8, 800 L, €10,500). A liquid tank in a container frame: moved with the crane's cables like the others, filled with the hose on any of its hatches, has a hose rack, and on a flatbed of the rig it is emptied with Space (V picks the flatbed it sits on). In the shop with the containers. Checks: on every flatbed, filled at the tap, emptied on a water site's grate.
+- Two more shipping containers: small (2x2, one flatbed place: pickup, small flatbed trailer and up; 5 t, €3,000) and large (2x8, four places: the semi flatbed; 20 t, €9,000). The old one (2x4, two places, 10 t, €5,000) stays. All three in the shop, with an updated description (it said they hold nothing). Checks: every container on every flatbed with room for it.
+- Saving under a name that a save already has now saves over that save instead of making a second one with the same name (names match whatever the case; with several, the newest one). Check added.
+- New start kit: a pickup with a water tank bed (100 L) and a hitch, and a small bulk trailer, both stored in the garage (was a cargo-bed pickup and a small water tanker). The first goals now fill the pickup's own tank at the tap.
+- Fixed: inside the shop, the items you bought could not be taken off its shelves. Since the shop became a walk-in room (0.1.23) the game no longer looked at its shelves under the cursor. A click takes an item off a shelf again, a right-click puts what you hold on a free shelf place (or into a crate on it)
+- Added to /check: an item bought waits on the shop's shelf, a click takes it and a right-click puts it back
+
 ## 0.1.23 · 24 Nov 2026
 - Changed: the shop is walked into like the power plant, the garage and the coal mine: its room is drawn where it stands, with no jump, and you walk in and out through its door (entrance tiles inside and out). Its two shelves and the counter stay; walking onto the counter opens the shop
 - Removed: the upgrade pad inside the shop, and the shop's storage (its tab was already hidden). An older save is paid for whatever was still in it
