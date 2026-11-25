@@ -621,12 +621,12 @@ let T=addVeh('pickup'),R=NOTR,KD=TKINDS.pickup;
 const setActive=v=>{T=v;KD=KOF(v);R=v.tr||NOTR};
 const P={x:0,y:0,a:0,driving:true,pass:null,seatSd:1,hands:[null,null]};
 const dir=a=>[Math.cos(a),Math.sin(a)];
-const ang=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a};
+const ang=a=>{if(!isFinite(a))return 0;return((a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI};   // (an angle gone infinite must not hang the game in a loop)
 const hitchX=v=>v.kind==='semi'?KOF(v).b0-.3:KOF(v).hx;   // the removable hitch
 const hitchPt=v=>({x:v.x+Math.cos(v.a)*KOF(v).hx*S,y:v.y+Math.sin(v.a)*KOF(v).hx*S});
 const rearPt=v=>({x:v.x+Math.cos(v.a)*hitchX(v)*S,y:v.y+Math.sin(v.a)*hitchX(v)*S});
 const tipPt=t=>({x:t.x+Math.cos(t.b)*TRL[t.kind].bar*S,y:t.y+Math.sin(t.b)*TRL[t.kind].bar*S});
-const chainOf=v=>{const o=[];let t=v.tr;while(t){o.push(t);t=t.tr}return o},chain=()=>chainOf(T);
+const chainOf=v=>{const o=[];let t=v.tr;while(t&&o.length<12&&!o.includes(t)){o.push(t);t=t.tr}return o},chain=()=>chainOf(T);
 const hostPt=h=>{if(!('b' in h))return h.kind==='semi'&&h.tr&&TRL[h.tr.kind].cls!=='semi'?rearPt(h):hitchPt(h);   /* a semi truck tows semi trailers on its saddle, the rest on its hitch */const d=TRL[h.kind],f=d.fifth!==undefined?d.fifth:d.co-d.hw-.2;return{x:h.x+Math.cos(h.b)*f*S,y:h.y+Math.sin(h.b)*f*S}};
 const shortSemi=k=>TRL[k].cls==='semi'&&TRL[k].hw<=2,smallOk=k=>TRL[k].cls==='small'||shortSemi(k)||k==='dl';
 const hitchOk=k=>!TRL[k].ramp&&TRL[k].cls!=='dolly'&&TRL[k].cls!=='box';   // every trailer can take a hitch except the ramp trailer and the dolly (it only carries a semi trailer on its fifth wheel)
@@ -666,8 +666,8 @@ function badPose(tx,ty,ta,pz){
   if(!t.coupled){if(rigHit(KD,TRL[t.kind],tx,ty,ta,t.x,t.y,t.b,true))return true;if(Rb.some((b,i)=>!(TRL[ch[i].kind].fifth!==undefined&&TRL[t.kind].king)&&boxHit(b,tBody(t))))return true}
   else{const tb=tBody(t);if(boxHit(Tb,tb)||Rb.some(b=>boxHit(b,tb)))return true}}
  return false}
-function follow(dt,H=T){let host=H,t=H.tr;
- while(t){const tg=hostPt(host),dx=tg.x-t.hx,dy=tg.y-t.hy,d=Math.hypot(dx,dy),B=TRL[t.kind].bar*S;
+function follow(dt,H=T){let host=H,t=H.tr,nn=0;
+ while(t&&nn++<12){const tg=hostPt(host),dx=tg.x-t.hx,dy=tg.y-t.hy,d=Math.hypot(dx,dy),B=TRL[t.kind].bar*S;
   if(d>.001){const q=Math.min(d,12*SPX*VM*dt);t.hx+=dx/d*q;t.hy+=dy/d*q}
   let ux=t.hx-t.x,uy=t.hy-t.y;const l=Math.hypot(ux,uy)||1;ux/=l;uy/=l;t.x=t.hx-ux*B;t.y=t.hy-uy*B;t.b=Math.atan2(uy,ux);host=t;t=t.tr}}
 // ----- vehicles riding on a ramp trailer: v.on={t,lx,ly,da,f} (position along the deck in px, sideways offset, heading offset, f=1 nose first / -1 tail first) -----
@@ -708,7 +708,7 @@ function deckDrive(dt,thr){const v=T,o=v.on,t=o.t,d=TRL[t.kind],e=ext(v,o.f);
  if(t.rp<RAMPDOWN&&o.lx<lo){o.lx=lo;v.v=0}
  placeLoaded(v);if(o.lx+e[1]*S<(d.co-d.hw)*S-8){v.on=null}}   /* released only once its end is clear of the deck: no steering while any part is on the ramp */
 // trailers hitched behind a rider stick to the ramp trailer: they line up with the truck and stay straight behind (or ahead of) it
-function stickChain(v,q){let host=v,t=v.tr;while(t){const hp=hostPt(host),ha=host===v?v.a:host.b,B=TRL[t.kind].bar*S;
+function stickChain(v,q){let host=v,t=v.tr,nn=0;while(t&&nn++<12){const hp=hostPt(host),ha=host===v?v.a:host.b,B=TRL[t.kind].bar*S;
   t.b+=ang(ha-t.b)*q;t.hx=hp.x;t.hy=hp.y;t.x=hp.x-Math.cos(t.b)*B;t.y=hp.y-Math.sin(t.b)*B;host=t;t=t.tr}}
 function syncLoaded(dt){for(const v of Object.values(veh)){const o=v.on;if(!o)continue;
  if(!v.out||!o.t.out||!trl[o.t.id]){v.on=null;continue}
@@ -794,7 +794,7 @@ const endsOf=(ox,oy,a,e0,e1)=>{const d=dir(a);return[[ox+d[0]*e1*S,oy+d[1]*e1*S]
 const vEnds=v=>{const k=KOF(v);return endsOf(v.x,v.y,v.a,k.b0,k.b1)};
 const tEnds=t=>{const d=TRL[t.kind];return endsOf(t.x,t.y,t.b,d.co-d.hw,d.co+d.hw)};
 const inZcU=(U,c,z)=>{const p=uInv(U,c.ox,c.oy);return inZc({...c,ox:p[0],oy:p[1],a:c.a-U.rot*Math.PI/2},z)};   // a carrier in a unit's zone, checked in the unit's layout   // a carrier in a garage zone, checked in the layout
-function dropChain(t){while(t){unloadAll(t);const n=t.tr;t.nz=false;t.out=false;t.coupled=false;t.host=null;t.tr=null;t=n}}
+function dropChain(t){let nn=0;while(t&&nn++<12){unloadAll(t);const n=t.tr;t.nz=false;t.out=false;t.coupled=false;t.host=null;t.tr=null;t=n}}
 function parkVeh(v){{const d=gdeck(v);if(d)unloadAll(d)}v.on=null;if(v.tr){dropChain(v.tr);v.tr=null}v.out=false;v.nz=false;v.v=0;if(v===T){R=NOTR;P.driving=false}}
 function parkTrl(t){dropChain(t)}
 
@@ -3947,11 +3947,17 @@ function mapZoomBtns(y0){[['zin','+'],['zout','-'],['here','o']].forEach(([k,n],
 function drawSelBox(X,Y){const rp=RPIECES.find(r=>r.k===mapRoad),b={k:'rp_show',x:X,y:Y,w:220,h:64};MBTN.push(b);g.fillStyle='#141a21';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,9);g.fill();g.strokeStyle='#8fc1ff';g.lineWidth=2;g.stroke();   // the list hidden: a small square shows what is picked (click it to show the list again)
   const ix=b.x+32,iy=b.y+32;if(rp.big||rp.bigT||rp.bigX)bigIcon(rp.k,ix,iy,rp.big?mapCurve:rp.bigT?mapBT:0);else{const m=PIECES[mapPiece],arms=BDIR.filter(d=>m&d.b);g.fillStyle='#2c4a29';g.fillRect(ix-20,iy-20,40,40);g.fillStyle='#8b9097';g.fillRect(ix-9,iy-9,18,18);for(const d of arms)g.fillRect(d.dc?(d.dc>0?ix:ix-20):ix-9,d.dr?(d.dr>0?iy:iy-20):iy-9,d.dc?20:18,d.dr?20:18)}
   g.fillStyle='#9fb0bf';g.textAlign='left';g.textBaseline='middle';g.font='12px sans-serif';g.fillText('Selected',b.x+62,b.y+18);g.fillStyle='#fff';g.font='bold 13px sans-serif';g.fillText(rp.n,b.x+62,b.y+35);g.fillStyle='#9fb0bf';g.font='11px sans-serif';g.fillText('R turns · right-click drops it',b.x+62,b.y+51)}
+// the ghost of a yard before it is put down (Build tab, live view): its buildings' outlines where they would stand, turned with it
+function ghostBlds(n,c0,r0,rot,col,sc,mx,my,mw,mh){const U=YU(n),T={...U,c0,r0,rot},P2=(x,y)=>[mx+mw/2+(x-mapCam.x)*sc,my+mh/2+(y-mapCam.y)*sc];
+ for(const o of OFFICES){const st=o.site;let q=null;if(st===U)q=rot;else if(st&&Object.getPrototypeOf(st)===U)q=(rot+((st.rot-U.rot+4)%4))%4;if(q==null)continue;const r=offRect0(o),C=[[r.x0,r.y0],[r.x1,r.y0],[r.x1,r.y1],[r.x0,r.y1]].map(([x,y])=>P2(...uRot(T,x,y,q)));
+  g.beginPath();C.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();g.fillStyle='rgba(235,240,245,.45)';g.fill();g.strokeStyle=col;g.lineWidth=2;g.setLineDash([6,4]);g.stroke();g.setLineDash([])}}
 function drawMapScreen(){
- g.setTransform(dpr,0,0,dpr,0,0);g.fillStyle='#0e1318';g.fillRect(0,0,VW,VH);
+ g.setTransform(dpr,0,0,dpr,0,0);
  const bt=mapTab==='build',narrow=VW<640,TW=0,TB=bt?56:0,HB=48,FB=bt?(narrow?64:44):0,ax=12,ay=HB+10,aw=VW-ax-12,ah=VH-ay-FB-TB-4,mw=aw,mh=ah,mx=ax,my=ay;MAPR={x:mx,y:my,w:mw,h:mh};
  if(mapFit){mapFit=false;mapS=Math.max(.04,Math.min(.8,Math.min(aw/WW,ah/WH)));[mapCam.x,mapCam.y]=mapMe()}
- const sc=mapS;MBTN=[];
+ const sc=mapS,live=bt&&sc>=.3;MBTN=[];   // the Build tab zoomed in: the live game under the tools, like the Map tab (decided 25 Nov)
+ if(live){const cx=cam.x,cy=cam.y,z0=Z,in0=IN;bigMap=false;LIVEMAP=1;IN=null;try{cam.x=mapCam.x-(mx+mw/2-VW/2)/sc;cam.y=mapCam.y-(my+mh/2-VH/2)/sc;Z=sc;draw(performance.now())}finally{cam.x=cx;cam.y=cy;Z=z0;IN=in0;bigMap=true;LIVEMAP=0}g.setTransform(dpr,0,0,dpr,0,0);MBTN=[]}
+ else{g.fillStyle='#0e1318';g.fillRect(0,0,VW,VH)}
  mapBar(HB);
  // the build tools: a row along the bottom, above the line that explains the picked one
  if(bt){g.fillStyle='#141a21';g.fillRect(0,VH-FB-TB,VW,TB)}
@@ -3961,7 +3967,7 @@ function drawMapScreen(){
  if(false)[['zin','+ Zoom in'],['zout','- Zoom out'],['here','Centre on me']].forEach(([k,n],i)=>{const b=narrow?null:{k,x:10,y:HB+14+MTOOLS.length*54+18+i*42,w:TW-14,h:34};if(!b)return;MBTN.push(b);g.fillStyle='#1a2129';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,8);g.fill();g.strokeStyle='#2c3946';g.lineWidth=1;g.stroke();g.fillStyle='#cfd8e1';g.textAlign='center';g.font='bold 12px sans-serif';g.fillText(n,b.x+b.w/2,b.y+b.h/2+1)});
  if(false){[['zin','+'],['zout','-'],['here','o']].forEach(([k,n],i)=>{const b={k,x:VW-52,y:ay+10+i*46,w:40,h:38};MBTN.push(b);g.fillStyle='#000a';g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,8);g.fill();g.fillStyle='#fff';g.textAlign='center';g.font='bold 18px sans-serif';g.fillText(n,b.x+b.w/2,b.y+b.h/2+1)})}
  // the map itself: it scrolls and zooms, the world never ends
- drawMap(mx,my,mw,mh,sc,true,true);mapZoomBtns(ay);
+ if(!live)drawMap(mx,my,mw,mh,sc,true,true);mapZoomBtns(ay);
    // zoom and back-to-you, top right, on both tabs
  // a grid and the tile under the mouse, once a tool is picked
  if(mapTool){g.save();g.beginPath();g.rect(mx,my,mw,mh);g.clip();g.strokeStyle='#ffffff22';g.lineWidth=1;g.beginPath();
@@ -3976,7 +3982,7 @@ function drawMapScreen(){
    else if(mapTool==='road'){const m0=RC.get(ck(c,r));e0=!tileFree(c,r)||(m0!==undefined&&(m0|PIECES[mapPiece])===m0)?'x':null;pc=e0?'#ff5a5a':m0!==undefined?'#ffd166':'#5ad17a'}
    else if(mapTool==='big'){bx=3;e0=bigCheck(c,r);pc=e0?'#ff5a5a':'#5ad17a'}
    else if(mapTool==='yard'&&mapYard){const f=yardFoot(mapYard,c-1,r-1,mapYRot),e1=yardCheck(mapYard,c-1,r-1,mapYRot),col=e1?'#ff5a5a':'#5ad17a',X0=sx(f.c0),Y0=sy(f.r0),W=(f.c1-f.c0)*TS*sc,H=(f.r1-f.r0)*TS*sc;   // the lot it would take, its gates in yellow
-    g.fillStyle=col+'55';g.fillRect(X0,Y0,W,H);g.strokeStyle=col;g.lineWidth=2;g.strokeRect(X0,Y0,W,H);g.strokeStyle='#ffd166';g.lineWidth=Math.max(4,TS*sc*.08);g.beginPath();
+    g.fillStyle=col+(live?'30':'55');g.fillRect(X0,Y0,W,H);g.strokeStyle=col;g.lineWidth=2;g.strokeRect(X0,Y0,W,H);if(live)ghostBlds(mapYard,c-1,r-1,mapYRot,col,sc,mx,my,mw,mh);g.strokeStyle='#ffd166';g.lineWidth=Math.max(4,TS*sc*.08);g.beginPath();
     for(const q of f.gates){if(q.side==='E'||q.side==='W'){const x=q.side==='E'?X0+W:X0;g.moveTo(x,MAPR.y+MAPR.h/2+(q.a-mapCam.y)*sc);g.lineTo(x,MAPR.y+MAPR.h/2+(q.b-mapCam.y)*sc)}else{const y=q.side==='S'?Y0+H:Y0;g.moveTo(MAPR.x+MAPR.w/2+(q.a-mapCam.x)*sc,y);g.lineTo(MAPR.x+MAPR.w/2+(q.b-mapCam.x)*sc,y)}}g.stroke();
     g.fillStyle='#fff';g.font='bold 13px sans-serif';g.textAlign='center';g.fillText(YB[mapYard].n,X0+W/2,Y0+H/2);if(e1){g.fillStyle='#ff8a8a';g.font='bold 12px sans-serif';g.fillText(e1,X0+W/2,Y0+H+14)}bx=0}
    else if(mapTool==='del'){const k=ck(c,r),u=UH.find(u=>u.wt.includes(k)||u.wd.includes(k)),lot=LOTS.find(l=>c>=l.c0&&c<l.c1&&r>=l.r0&&r<l.r1),wf=WIDE.find(f=>!UH.some(u=>u.f===f)&&wideTiles(f).wt.concat(wideTiles(f).wd).includes(k));let tl=null,ok=true;   // demolish: the whole unit under the mouse lights up
@@ -4359,6 +4365,9 @@ async function runChecks(opt){opt=opt||{};const dry=!!opt.dry,full=dry||opt.full
  t('mines','the first mine demolished and placed again: its building, lot and pipe stand together',()=>{if(!spot)return'no place';if(m2&&!isGone(m2.id))demolishUnit(m2.id);let e=demolishUnit('mine');if(e)return'not demolished: '+e;e=moveUnit('mine',spot[0],spot[1],0,1);if(e)return'not placed: '+e;mine.built=true;
   const bad=MINES.filter(m=>!isGone(m.id)).filter(m=>{const U=YU(m.id),l=LOTS[m.li],o=mineOff(m),r=offRect(o),pc=minePipe(m).b,inL=(x,y)=>x>l.x0&&x<l.x1&&y>l.y0&&y<l.y1;return m.U!==U||o.site!==U||l.c0!==U.c0||l.r0!==U.r0||!inL((r.x0+r.x1)/2,(r.y0+r.y1)/2)||!inL(pc[0],pc[1])}).map(m=>m.id);return bad.length?'apart: '+bad.join(', '):true});   /* added 19 Nov: a demolished first mine came back with its building and pipe away from its lot */
  t('mines','a save puts every mine back where it stood, without checking the place again',()=>{const o1=YU('mine'),L=[['mine9',o1.c0,o1.r0,o1.rot]];placeBlds(L);const m=offOf('mine9');if(!m)return'the mine in the save was not made';const U=YU('mine9'),ok=U.c0===o1.c0&&U.r0===o1.r0;demolishUnit('mine9');return ok||'it was not put where the save says'});
+ t('mines','the Build tab zoomed in shows the live map under the tools, with the ghost of the yard about to be put down (its buildings where they would stand); zoomed out, the drawn map',()=>{const k0=[bigMap,mapTab,mapTool,mapYard,mapYRot,mapS,mapCam.x,mapCam.y,MX,MY,IN],g0=ghostBlds,d0=drawMap;let gh=0,dm=0,bad=null;try{if(IN)exitMine();setMap(true);mapTab='build';mapTool='yard';const e=yardPick('mine');if(e)return e;ghostBlds=function(){gh++;return g0.apply(this,arguments)};drawMap=function(){dm++;return d0.apply(this,arguments)};
+   mapS=.45;[mapCam.x,mapCam.y]=mapMe();mapCam.x+=900;MX=VW/2;MY=VH/3;drawMapScreen();if(dm)bad='zoomed in it drew the drawn map';else if(!gh)bad='no ghost of the coal mine';
+   if(!bad){gh=0;mapS=.15;drawMapScreen();if(!dm)bad='zoomed out it did not draw the drawn map';else if(gh)bad='a ghost on the drawn map'}}catch(x){bad=String(x)}finally{ghostBlds=g0;drawMap=d0;setMap(false);[bigMap,mapTab,mapTool,mapYard,mapYRot,mapS,mapCam.x,mapCam.y,MX,MY,IN]=k0}return bad||true});
  t('mines','the Yards list builds new buildings: one card per kind, a coal mine always, nothing that stands is moved',()=>{const L=yardCards();if(L.some(n=>/^mine\d+$/.test(n))||L.length!==LOTK.slice(0,12).length)return'cards: '+L.join(', ');const st=MINES.filter(m=>!isGone(m.id)).map(m=>[m.id,m.U.c0,m.U.r0]);
   let e=yardPick('mine');if(e)return'coal mine card: '+e;const k=mapYard;if(!k||!isGone(k))return'the coal mine card picked a mine that stands';const at=TEST_LAYOUT.at.mine;e=yardPlace(at[0]+1,at[1]+1);if(e)return'not built: '+e;
   const moved=st.filter(([id,c,r])=>{const m=MINES.find(q=>q.id===id);return m.U.c0!==c||m.U.r0!==r});if(moved.length||isGone(k)||mapYard)return'a standing mine moved or the new one is missing';
@@ -4860,7 +4869,7 @@ function garageFit(){useG(G1);const U=GS,h=[...(U.h0||[U.c0,U.r0])];if(isGone('g
 function unstick(){let n=0;const rs=OFFICES.filter(o=>{try{const b=o.b;return!(b&&b.built===false)&&!(o.n in YB&&isGone(bkey(o)))}catch(e){return false}}).map(o=>offRect(o));
  const out=e=>{for(const r of rs){if(!(e.x>r.x0-4&&e.x<r.x1+4&&e.y>r.y0-4&&e.y<r.y1+4))continue;const d=[[e.x-r.x0,-1,0],[r.x1-e.x,1,0],[e.y-r.y0,0,-1],[r.y1-e.y,0,1]].sort((a,b)=>a[0]-b[0])[0],m=36;
   if(d[1]<0)e.x=r.x0-m;else if(d[1]>0)e.x=r.x1+m;else if(d[2]<0)e.y=r.y0-m;else e.y=r.y1+m;n++;return true}return false};
- for(const v of Object.values(veh))if(v.out!==false&&!v.fk&&out(v)&&v.tr){let q=v.tr;while(q){q.x=v.x;q.y=v.y;q=q.tr}}
+ for(const v of Object.values(veh))if(v.out!==false&&!v.fk&&out(v)&&v.tr){let q=v.tr,nn=0;while(q&&nn++<12){q.x=v.x;q.y=v.y;q=q.tr}}
  for(const t of Object.values(trl))if(!t.coupled&&!t.fk)out(t);
  for(const A of[PALS,GI,LG,ATT])for(const e of A)if(!e.fk&&!e.on&&!e.st)out(e);
  if(!IN&&!P.driving&&!P.pass&&out(P)){cam.x=P.x;cam.y=P.y}
@@ -4898,7 +4907,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · €'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.26',VERSION='v'+VER+' · 25 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.27',VERSION='v'+VER+' · 25 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
@@ -5320,9 +5329,10 @@ function hornTick(){if(!AUD.ctx)return;let lv=hornMine()?1:0;const r=NET.room;
  if(!lv&&!AUD.hn)return;const h=hornVoice();if(!h)return;const t=AUD.ctx.currentTime,want=lv*.07;if(Math.abs(want-h.on)<1e-4)return;h.on=want;h.g.gain.cancelScheduledValues(t);h.g.gain.setTargetAtTime(want,t,want>0?.012:.04)}
 setApply();
 let lastDraw=0;
+let LOOPERR='';function loopErr(e){const m=String(e&&e.message||e);console.error(e);if(m!==LOOPERR){LOOPERR=m;try{flash('Something went wrong ('+m.slice(0,90)+'). The game goes on; please report it with what you were doing.')}catch(x){}}}
 function loop(n){if(MENU||PAUSED){last=n;sndTick(0);draw(n);requestAnimationFrame(loop);return}if(document.hidden){last=n;requestAnimationFrame(loop);return}   // tab out of sight: nothing is worked out or drawn
  if(n-lastDraw<15){requestAnimationFrame(loop);return}lastDraw=n;   // 120/144 Hz screens: no more than ~60 pictures a second (the physics already follows the clock, not the frame count)
- syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);sndTick(dt);lightsWatch();lightBtns();/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}   // payments by the fraction of a ton leave dust like 79.99999: what shows as €80 must buy an €80 hitch
+ try{syncLumber();netWatchTurns();const dt=Math.min(.05,(n-last)/1000);last=n;wSmooth(dt);if(bigMap){const sp=700/mapS*dt;mapCam.x+=((MK.right?1:0)-(MK.left?1:0))*sp;mapCam.y+=((MK.down?1:0)-(MK.up?1:0))*sp}step(dt);tickClock(dt);camTurn(dt);sndTick(dt);lightsWatch();lightBtns();/* the map does not pause the game: the world (and the other players) go on; your own keys move the map instead */netSend(n);draw(n);{const rc=Math.round(cash);if(Math.abs(cash-rc)<.01)cash=rc}}catch(e){last=n;loopErr(e)}   /* a mistake in one frame must not stop the game: it is shown once, and the game goes on */   // payments by the fraction of a ton leave dust like 79.99999: what shows as €80 must buy an €80 hitch
  requestAnimationFrame(loop)}
 for(const[k,m]of RC){const[c,r]=k.split(',').map(Number);let nm=m;for(const d of BDIR)if((nm&d.b)&&!RC.has(ck(c+d.dc,r+d.dr)))nm&=~d.b;if(nm!==m)RC.set(k,nm)}   // the gate stubs made before the units were set are dropped; snapGates puts the real ones
 applyUnits();   // the city starts turned: set every gate, zone and wall from where each unit stands now

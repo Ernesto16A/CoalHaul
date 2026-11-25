@@ -4,6 +4,10 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.27 · 25 Nov 2026
+- Freezes: a mistake in one frame no longer stops the game: the game goes on and says once 'Something went wrong (…)', to be reported. The loops that keep an angle within one turn and the ones along a trailer chain can no longer run forever (an infinite angle or a chain looping on itself used to hang the tab). Looked for after a freeze reported on getting out of the pickup on a rebuilt garage's yard (not reproduced).
+- The big map's Build tab, zoomed in, shows the live map under the tools (like the Map tab does), so you see the real ground, roads and yards where you build. A yard picked to be put down shows as a ghost under the mouse: its lot (green where it fits, red where it does not) with its gates, and its buildings' outlines where they would stand, turned with it (R). Zoomed out, the drawn map as before. Check added.
+
 ## 0.1.26 · 25 Nov 2026
 - Getting into a vehicle sounds new (option G): two clear rising notes, then a short engine blip when the engine can start (no blip with an empty tank or a broken-down vehicle, nor when getting in as a passenger). The old door thud and the five starter cranks are gone; getting out still plays the door and the engine stopping.
 - Vehicle health: a new bar under the fuel bar (green, orange under 50%, red under 25%). Every km driven takes 1%; a crash takes 0.25% for each km/h above 5 (a 40 km/h crash: about 9%). At 0% the vehicle breaks down and will not move. In the garage, at the control pad in the house: a stored vehicle shows its health, and its Parts view has Repair (back to 100%, up to 30% of the vehicle's price for a wreck); one broken down on the map can be towed home into a free slot for €100. In the save. Check added.
