@@ -5190,7 +5190,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · €'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.31',VERSION='v'+VER+' · 25 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.32',VERSION='v'+VER+' · 27 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
