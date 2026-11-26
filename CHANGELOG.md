@@ -4,6 +4,9 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.34 · 27 Nov 2026
+- Fix: a skidding hitch bought at the shop now lies on the NEW PURCHASES pad turned 90° (east-west), so a tractor can back onto it and hitch it with C; it lay north-south before and could not be hitched there. The other attachments still point north for the forklift. One already bought keeps its old angle.
+
 ## 0.1.33 · 27 Nov 2026
 - The tractors (small, big, large) show their hitch places: grey steel out of the back, always there. Two rails and a dark base plate from under the cab to a cross plate; a drawbar from it out to a round pin plate where the trailer hitch goes; a bolted bracket on each side where the skidding hitch's posts mount. Looks only: hitching works as before.
 

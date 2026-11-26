@@ -1715,7 +1715,7 @@ function forkOp(){if(!CROP&&(!P.driving||!T.out||T.kind!=='forklift'))return fla
 function spawnPallet(att){const z=spawnZ;for(let r=0;r<Math.floor(z.h/40);r++)for(let c=0;c<Math.floor(z.w/40);c++){const x=Math.round((z.x-z.w/2+20+c*40)/S)*S,y=Math.round((z.y-z.h/2+20+r*40)/S)*S;
   if(PALS.some(p=>Math.hypot(p.x-x,p.y-y)<40)||ATT.some(p=>Math.hypot(p.x-x,p.y-y)<40)||[[-1,-1],[0,-1],[-1,0],[0,0]].some(([a,b])=>cellUsed(x/S+a,y/S+b)))continue;const box={ox:x,oy:y,a:0,x0:-PALW/2,x1:PALW/2,h:PALW/2};
   if(Object.values(veh).some(v=>v.out&&boxHit(vBody(v),box))||Object.values(trl).some(t=>t.out&&boxHit(tBody(t),box)))continue;
-  if(att)ATT.push({x,y,a:-Math.PI/2,kind:att});   /* bought attachments point north: a forklift drives up to them from the south */else PALS.push({x,y,a:0,crates:Array(9).fill(null),fk:null,da:0});return true}return false}
+  if(att)ATT.push({x,y,a:att==='skid'?0:-Math.PI/2,kind:att});   /* bought attachments point north: a forklift drives up to them from the south; the skidding hitch is turned 90° from that (user, 27 Nov: it could not be hitched as it spawned) */else PALS.push({x,y,a:0,crates:Array(9).fill(null),fk:null,da:0});return true}return false}
 const GI=[];   // items lying on the ground
 // a bought traffic barrier lies on 2 free squares of the NEW PURCHASES pad (east-west, r 0)
 function spawnBarrier(kind){const z=spawnZ,i0=Math.ceil((z.x-z.w/2)/S-.01),i1=Math.floor((z.x+z.w/2)/S+.01),j0=Math.ceil((z.y-z.h/2)/S-.01),j1=Math.floor((z.y+z.h/2)/S+.01);
@@ -5199,7 +5199,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · €'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.33',VERSION='v'+VER+' · 27 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.34',VERSION='v'+VER+' · 27 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
