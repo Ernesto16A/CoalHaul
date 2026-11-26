@@ -4,6 +4,9 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.33 · 27 Nov 2026
+- The tractors (small, big, large) show their hitch places: grey steel out of the back, always there. Two rails and a dark base plate from under the cab to a cross plate; a drawbar from it out to a round pin plate where the trailer hitch goes; a bolted bracket on each side where the skidding hitch's posts mount. Looks only: hitching works as before.
+
 ## 0.1.32 · 27 Nov 2026
 - New test command **/fill all**: fills every liquid tank with water, to the top: tank containers (on the ground, on a flatbed or in a yard), liquid tanker trailers and the liquid tank beds of trucks and pickups, parked in the garage too. Fuel tanks are left alone, and so is a tank holding another liquid (milk…); the chat says how many were filled and skipped.
 

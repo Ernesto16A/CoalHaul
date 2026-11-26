@@ -3563,7 +3563,16 @@ function drawFarmTractor(v){const u=S,a=v.a,kd=TKINDS[v.kind],m=kd.ts||1,CC=v.co
  rpoly([[-.52,-.52,.08],[.54,-.52,.08],[.54,.52,.08],[-.52,.52,.08]]);g.fillStyle='#e9ecef';g.fill();g.strokeStyle=INK;g.lineWidth=.9;g.stroke();sheen(a,0,.7,.8);   // its white roof
  g.fillStyle='#ff9f1c';g.beginPath();g.arc(-.38*u,0,.07*u,0,7);g.fill();g.strokeStyle=INK;g.lineWidth=.6;g.stroke();   // the beacon on the roof
  g.fillStyle='rgba(120,170,210,.55)';g.fillRect(.56*u,-.5*u,.07*u,1*u);   // the windscreen's edge, seen past the roof
- g.restore();if(v.hitch){g.save();g.translate(v.x,v.y);g.rotate(a);hitchGfx(v);g.restore()}if(v.skid){const q=skidMid(v);drawSkid(q[0],q[1],a,0)}}
+ g.restore();g.save();g.translate(v.x,v.y);g.rotate(a);tractorMounts(v);if(v.hitch)hitchGfx(v);g.restore();if(v.skid){const q=skidMid(v);drawSkid(q[0],q[1],a,0)}}
+// the tractor's hitch places (0.1.33), grey steel going out from its back, always there so you can see where things go: a cross plate along the back, a drawbar out to the trailer hitch's pin plate (hx), and a bolted bracket each side where the skidding hitch's posts mount (SKMID, its posts .5 out to each side). World units, not scaled with the tractor
+function tractorMounts(v){const u=S,k=KOF(v),b=k.b0,hx=k.hx,W=.62,r=-.55*(k.ts||1);   // r: the back of the tractor itself, under the cab
+ g.beginPath();g.roundRect(b*u,-.3*u,(r-b)*u,.6*u,2);inked('#5d6168',1);for(const sd of[-1,1]){g.beginPath();g.roundRect(b*u,(sd*.5-.07)*u,(r-b)*u,.14*u,2);inked('#7b818a',1)}   // the frame out of the back: a dark base plate and two rails to the cross plate
+ g.fillStyle='rgba(8,12,20,.25)';g.fillRect((hx-.12)*u+1,-.11*u+2,(b-hx+.12)*u,.22*u);   // a shadow under the drawbar
+ g.beginPath();g.roundRect((b-.1)*u,-W*u,.2*u,2*W*u,2);inked('#8a9099',1);   // the cross plate on the back
+ g.beginPath();g.roundRect(hx*u,-.1*u,(b-hx)*u,.2*u,2);inked('#7b818a',1);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(hx*u,-.1*u,(b-hx)*u,.06*u);   // the drawbar out to the hitch place
+ g.beginPath();g.arc(hx*u,0,.17*u,0,7);inked('#8a9099',1);g.fillStyle='#2b2e34';g.beginPath();g.arc(hx*u,0,.06*u,0,7);g.fill();   // the pin plate at its end, its hole in the middle
+ for(const sd of[-1,1]){g.beginPath();g.roundRect((b-.34)*u,(sd*.5-.11)*u,.36*u,.22*u,2);inked('#7b818a',1);g.fillStyle='#2b2e34';for(const x of[b-.24,b-.08]){g.beginPath();g.arc(x*u,sd*.5*u,.035*u,0,7);g.fill()}}}   // the skidding hitch brackets, two bolts each
+
 // ----- the people movers: ATV, small car, mini-bus -----
 // an outline through corner points [x,y,r] (units, in order): straight sides joined by arcs of radius r. sym: the same given for the left side only (rear to front) and mirrored
 function rpoly(P){const u=S,n=P.length,a=P[n-1],b=P[0];g.beginPath();g.moveTo((a[0]+b[0])/2*u,(a[1]+b[1])/2*u);
@@ -5190,7 +5199,7 @@ setInterval(()=>{const m=+SET.auto||0;if(m>0&&performance.now()-LASTAUTO>=m*6000
 addEventListener('pagehide',()=>{if(+SET.auto>0&&sNow()>30000&&canAuto())saveTo(SAVEK+'auto')});
 const fmtT=d=>d?new Date(d.t).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · €'+Math.floor(d.cash):'empty';
 let PAUSED=false;
-const VER='0.1.32',VERSION='v'+VER+' · 27 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
+const VER='0.1.33',VERSION='v'+VER+' · 27 Nov 2026';   // every push to git adds 1 to the last number (0.1.9 → 0.1.10 …); saves and multiplayer carry it
 // ---------- the menus: the main menu (before playing) and the Esc menu (while playing) share their pages ----------
 const UI={btn:'padding:8px 12px;border-radius:8px;border:1px solid #ffffff30;background:#243645;color:#fff;font-size:14px;cursor:pointer',
  inp:'padding:8px 10px;border-radius:8px;border:1px solid #ffffff30;background:#0f171e;color:#fff;font-size:15px;box-sizing:border-box'};
