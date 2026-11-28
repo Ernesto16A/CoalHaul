@@ -4,6 +4,97 @@ Version numbers: every push to git adds 1 to the last number (0.1.0 → 0.1.1 �
 
 Saves remember the version they were made with. In multiplayer, players must be on the same version: a player on another version is turned away and asked to reload the page.
 
+## 0.1.35 · 28 Nov 2026
+- **The lumberyard is rebuilt: a 5 x 3 yard, as many as you like.** Build one from the Yards list (Lumberyard, 5 x 3; R turns it).
+  - **Layout:** the building stands in the middle of the front row, with its door facing into the yard. There are **two gates** in the front wall, one either side of the building: drive in one, round behind the building, and out the other. Plots run along the back wall and both side walls, and the two back corners are plots too.
+  - Nothing spawns there: trees grow, and you fell them.
+- **Trees:**
+  - A new lumberyard comes with its back wall planted (3 plots, 4 trees each, already grown). The trees stand 2.5 squares in from their wall.
+  - Felled with the chainsaw, a tree falls **in toward the yard** (not away from you) as one 1x8 log. The log stays inside its plot, clear of the walls and the building.
+  - A stump stays behind, and the tree grows back over 3 days.
+- **Upgrades:** the control pad in its room opens its window.
+  - The east wall with its back corner costs €600, then the west wall with its back corner €1,000: 9 plots and 36 trees in all.
+  - Newly planted trees are grown.
+  - The window shows how many trees are grown, growing and stumps.
+  - Plots still to buy show as grass with a dashed edge.
+- A lumberyard needs no power and no water: it has no main switch and gets no tank container.
+- **The old 4 x 3 lumberyard is gone**, with its log station, log production and site. An older save loses it from the map; whatever lay in its yard stays on the ground. The goal "Build the lumberyard" is now "Place a lumberyard".
+- Demolishing a lumberyard takes its trees with it. One built again starts with its back wall grown.
+- **Logs lying free are solid, every size** (1x2, 1x4, 1x6, 1x8): they stop vehicles, the trailers they pull, and the player on foot.
+  - A log held on forks or a grab, laid on a flatbed, or in tow is not solid.
+  - Logs never stop each other, so a tree can fall over a log and logs can lie across one another.
+  - A rig that a log already lies against or under (one just set down, or a tree felled onto it) can still drive off it.
+- **On the crane, the log claw lifts long logs too** (1x4, 1x6, 1x8), just like the log grab. On the forklift the claw still takes only 1x2 logs.
+- **Long logs on log beds.** A crane (claw or grab) lays a long log along a log bed. It needs length / 2 slots in a row, each slot being a place for 3 short logs:
+  - a **1x4** fits the dump truck's log bed, the medium log trailer and the short semi log trailer (2 slots);
+  - a **1x6 or 1x8** fits the semi log trailer (4 slots);
+  - it is refused on a bed that is too short (the pickup's log bed and the small log trailer have 1 slot).
+  - Up to 3 long logs lie side by side, in the same 3 lanes and at the same thickness as short logs in a slot, so they never overlap.
+- **Long logs are as thick as a 1x2** (on the ground, held and loaded), with an even width end to end. Only their length differs.
+  - A slot holds either short logs or long ones, never both.
+  - Long logs ride with the vehicle, can be lifted off again, and are kept in the save.
+- **A 1x2 cut with the chainsaw snaps to the grid**: square on, over 2 squares, like one set down by a forklift. This applies whether it comes off a 1x8, 1x6 or 1x4. The longer piece stays where it lay.
+- **The saw lines stand right behind the sawmill's building** (they stood in the yard's back row): line 1 starts a square and a half from the back wall of the building, with lines 2 and 3 beside it, 4 tiles apart. A vehicle now drives round the building and the lines as one block, with a wide lane behind them. The lines also run the other way now: LOGS IN at the south end, PLANKS OUT at the north end. A pallet already waiting on an old PLANKS OUT spot stays where it is.
+- **Several sawmills.** The Sawmill card in the Yards list now builds another sawmill (4 x 3), as many as you like.
+  - Each one is its own construction site (coal, rock, logs) and is finished switched off.
+  - Each one has its own lot and gate, main switch, saw lines (line 2 and 3 and longer belts bought in its own window), LOGS IN and PLANKS OUT spots, water tank and power.
+  - A log set on its LOGS IN spot rides its own belt into its own saw and comes out as a pallet of planks on its own PLANKS OUT.
+  - Sawmills are named "Sawmill 2"… and kept in the save with their place, site, lines, belts and what is on them. A demolished one loses its belts' contents, like the first.
+  - Vehicles bought inside one appear at that sawmill.
+  - New check (saws group).
+- **Several iron mines.** The Iron mine card in the Yards list now builds another one, as many as you like.
+  - Each one is its own construction site (coal, rock, gravel, planks) and is finished switched off.
+  - Each one has its own lot, gate, main switch, ore store and upgrades, ore pipe and water tank.
+  - It takes power and coal from a power plant touching its lot.
+  - Iron mines are named "Iron mine 2"… and kept in the save with their place, site, store, levels and switch. Vehicles bought inside one appear at that mine.
+  - New check (irons group).
+- The "no rock" message under a quarry's pipe now names the right quarry's switch and power (it always spoke of the first one).
+- **Several crushers.** The Crusher card in the Yards list now builds another crusher, as many as you like.
+  - Each one is its own construction site, needing rock, coal and logs. It is finished switched off.
+  - Each one has its own lot, gate, rock grate, main switch, rock / sand / gravel stores and upgrades, sand and gravel pipes, and water tank.
+  - It takes power and coal from a power plant touching its lot.
+  - Rock unloaded on its grate is paid as before, and crushed only by that crusher.
+  - Crushers are named "Crusher 2", "Crusher 3"… and kept in the save with their place, site, stores, levels and switches. Vehicles bought inside one appear at that crusher.
+  - New check (crushers group).
+- **Several fuel stations.** The Fuel station card in the Yards list now builds another station, as many as you like.
+  - Each one has its own lot, two gates, pump with its two FUEL squares, car wash, water bay and small tank container.
+  - Each one is closed without water in its own tank, and its car wash uses its own water.
+  - Fuel costs the same everywhere.
+  - Stations are named "Fuel station 2", "Fuel station 3"…, put down finished, and kept in the save with their place and water.
+  - New check (stations group).
+- **Several quarries.** The Quarry card in the Yards list now builds another quarry, as many as you like.
+  - Each one is its own construction site: 50 t of coal on its own unloading pad. It is finished switched off.
+  - Each one has its own lot, gate, water tank, main switch, rock store, upgrades and rock pipe.
+  - It takes power and coal from a power plant touching its lot, like the first one.
+  - Quarries are named "Quarry 2", "Quarry 3"…, are on the power plant's list of the yards it serves, and are kept in the save with their place, site, store and levels.
+  - Vehicles bought in a quarry appear at that quarry.
+  - New check (quarries group).
+- **Several shops.** The Shop card in the Yards list now builds another shop, as many as you like, like the coal mine, garage, power plant and lumberyard.
+  - Each shop has its own lot, gate, small water tank (it is closed without water) and NEW PURCHASES and SELL pads.
+  - Each shop has its own shelf of 20 slots inside.
+  - What you buy at a shop's counters lands at that shop: vehicles, trailers and pallets on its NEW PURCHASES pad, items on its shelf.
+  - Its Sell counter buys what stands on its own SELL pad.
+  - Shops are named "Shop 2", "Shop 3"… and kept in the save with their place and shelf. A demolished one is gone; the card builds it again.
+  - New checks (shop group, 2).
+- **The large tractor is gone: two tractors now, small and big.** A large tractor in an older save becomes a big tractor, with no refund of the difference.
+- **The small tractor has its own look** (the big one is unchanged): a compact utility tractor with its own small rounded cab, glazed all round under a roof in the tractor's colour. It has small wheels (the rear ones under round fenders) and a short rounded bonnet with a front weight.
+  - The bonnet is shorter as a whole, so the front wheels sit closer in: the wheelbase is 1.44 squares instead of 1.84, so it turns tighter.
+  - The body ends 1.8 squares ahead of its middle instead of 2.44.
+  - Its seat and hitches are as before.
+  - It shows the grey steel hitch places like the big tractor (0.1.33).
+- Rotation now works for yards that are not square (a 5 x 3 yard turns about its middle and stays on whole chunks).
+- New checks (skid group): solid logs; long logs on log beds with both crane claws. The cutting check now also checks that a 1x2 piece lands on the grid.
+- New checks (lumberyard group, 10):
+  - the Yards card;
+  - the old lumberyard taken off the map;
+  - the 5 x 3 lot, its two gates either side of the building, and the door facing into the yard;
+  - the trees along the back wall, whichever way the yard is turned;
+  - a felled tree lying inside the yard;
+  - the window and its upgrades (every tree in place);
+  - a second lumberyard;
+  - demolishing;
+  - no water and no levers.
+
 ## 0.1.34 · 27 Nov 2026
 - Fix: a skidding hitch bought at the shop now lies on the NEW PURCHASES pad turned 90° (east-west), so a tractor can back onto it and hitch it with C; it lay north-south before and could not be hitched there. The other attachments still point north for the forklift. One already bought keeps its old angle.
 
